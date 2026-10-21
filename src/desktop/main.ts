@@ -382,6 +382,21 @@ async function start() {
             for(let i=0;i<100;i++){const value=battles.snapshot();if(value.direction?.ready&&!value.direction.updating&&value.direction.focusId===intent.id&&value.handoffs?.ready)break;await new Promise(resolve=>setTimeout(resolve,100));}
             const handoffs=battles.snapshot().handoffs;
             if(!handoffs?.ready||!handoffs.choices.length||handoffs.choices.some(c=>!c.moves.length||c.goldAfter!==reader.snapshot().cards.gold!+c.refund-c.spent))throw Error('原生装备未进入承接比较：'+JSON.stringify(handoffs));
+            const pursuit=battles.snapshot().pursuit;
+            if(!pursuit?.ready||pursuit.paths.length<2||!pursuit.paths.some(p=>p.id==='skip'))throw Error('原生核心商店未进入留牌比较：'+JSON.stringify(pursuit));
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-advisor-workspace="tactics"]').click();new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-pursuit-slots="5"]').click();document.querySelector('[data-current-pursuit]').scrollIntoView({block:'center'});new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+            await new Promise(resolve=>setTimeout(resolve,100));
+            const pursuitLayout=await window!.webContents.executeJavaScript(`(()=>{const el=document.querySelector('[data-current-pursuit]'),r=el?.getBoundingClientRect();return {text:el?.textContent,top:r?.top,bottom:r?.bottom,height:innerHeight,overflow:document.documentElement.scrollWidth>innerWidth||el?.scrollWidth>el?.clientWidth+2,rows:el?.querySelectorAll('[data-pursuit-path]').length,five:document.querySelector('[data-pursuit-slots="5"]')?.getAttribute('aria-pressed')};})()`);
+            if(pursuitLayout.overflow||pursuitLayout.top<80||pursuitLayout.bottom>pursuitLayout.height||pursuitLayout.rows<2||pursuitLayout.five!=='true'||!pursuitLayout.text?.includes('预计余金')||!pursuitLayout.text.includes('跳过这家店')||selectedComp?.directionId!==intent.id)throw Error('留牌比较界面或手选主线保持失败：'+JSON.stringify(pursuitLayout));
+            await fs.writeFile(path.join(smokeDir,'current-pursuit.json'),JSON.stringify(pursuit,null,2));
+            await fs.writeFile(path.join(smokeDir,'pursuit-layout.json'),JSON.stringify(pursuitLayout,null,2));
+            await fs.writeFile(path.join(smokeDir,'current-pursuit.png'),(await window!.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+            console.log('CURRENT_PURSUIT_SMOKE_PASS');
+            const budgetSync=await window!.webContents.executeJavaScript(`(async()=>{const el=document.querySelector('[data-pursuit-budget]');el.value='20';el.dispatchEvent(new Event('change',{bubbles:true}));await new Promise(resolve=>setTimeout(resolve,150));const p=await window.tftDesktop.advisorPreferences();return p.searchBudget===20&&document.querySelector('[data-search-budget="20"]')?.classList.contains('active');})()`);
+            if(!budgetSync)throw Error('留牌表预算未与主线搜牌预算同步');
+            for(let i=0;i<100;i++){if(battles.snapshot().handoffs?.ready)break;await new Promise(resolve=>setTimeout(resolve,100));}
+            console.log('PURSUIT_BUDGET_SYNC_PASS');
             await window!.webContents.executeJavaScript(`document.querySelector('[data-advisor-workspace="tactics"]').click();document.querySelector('[data-handoff-details] summary').click();new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
             await window!.webContents.executeJavaScript(`document.querySelector('[data-equipment-handoffs]').scrollIntoView({block:'center'});new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
             await new Promise(resolve=>setTimeout(resolve,100));

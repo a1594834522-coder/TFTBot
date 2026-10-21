@@ -3,10 +3,12 @@ import {build} from 'esbuild';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
-const out=path.resolve('dist/search-landing-audit');await fs.mkdir(out,{recursive:true});
+const current=process.argv.includes('--current-purchases');
+const out=path.resolve(current?'dist/current-pursuit-audit':'dist/search-landing-audit');await fs.mkdir(out,{recursive:true});
 await build({stdin:{resolveDir:process.cwd(),contents:`
 export {loadBattleModel} from './src/decision/battle-model';
 export {searchLandings} from './src/decision/search-landings';
+export {currentPursuit} from './src/decision/current-pursuit';
 export {createOriginalRecognition} from './src/recognition/original-events';
 export {shoppingInput,tradingRules} from './src/decision/shopping-input';
 export {strategicInput} from './src/decision/strategic-input';
@@ -35,11 +37,16 @@ const status={phase:'receiving',lastFrameAt:Date.now(),frames:1,testMode:true,tr
 if(!shopping.ready||!strategy.ready||!request)throw Error('Fixture not coherent: '+JSON.stringify(strategy));
 const advice=runtime.directionAdvice({...runtime.directionInput(status),intent:{key:'metatft:'+profile.key,directionId:pair.id,units:pair.templates[0].poolUnits}},catalog,gear,runtime.earlyStages(18));
 if(!advice.ready||advice.mode!=='selected')throw Error('Selected mainline not retained');
+if(current){
+ const cores=[...new Set(advice.rows.filter(r=>r.regime===advice.rows.find(r=>r.id===advice.focusId).regime).slice(0,3).flatMap(r=>[r.carry,r.tank]))];
+ const offers=[...cores.slice(0,4),cores[0]].slice(0,5);
+ shopping.state.offers=offers.map((id,slot)=>({slot,id,price:runtime.tradingRules.heroes[id].cost}));
+}
 const model=await runtime.loadBattleModel(path.resolve('data/metatft-model'));
 try{
   const context=runtime.battleTacticalContext(request,shopping.state,model.lookup);if(!context.ready)throw Error(context.reason);
-  const start=performance.now(),result=await runtime.searchLandings(advice,strategy,runtime.tradingRules,context.request,model.predictCachedBatch,{yield:()=>new Promise(resolve=>setImmediate(resolve)),auxiliary:context.auxiliary,acceptsLineup:context.accepts,supportsBoard:b=>runtime.encodeBattleBoard(b,model.lookup,'player').unknown.length===0});
-  const report={scope:'Synthetic native-contract fixture and real local model. Not a real match or calibration.',milliseconds:performance.now()-start,mainline:profile.name??profile.key,status,advice,result};
+  const phases={},start=performance.now(),result=await runtime[current?'currentPursuit':'searchLandings'](advice,strategy,runtime.tradingRules,context.request,model.predictCachedBatch,{trace:(name,ms)=>{phases[name]=ms;},...(process.env.TFTBOT_AUDIT_STATES?{maxStates:Number(process.env.TFTBOT_AUDIT_STATES)}:{}),yield:()=>new Promise(resolve=>setImmediate(resolve)),auxiliary:context.auxiliary,acceptsLineup:context.accepts,supportsBoard:b=>runtime.encodeBattleBoard(b,model.lookup,'player').unknown.length===0});
+  const report={scope:'Synthetic native-contract fixture and real local model. Not a real match or calibration.',milliseconds:performance.now()-start,phases,mainline:profile.name??profile.key,status,advice,result};
   await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));
-  console.log(JSON.stringify({milliseconds:report.milliseconds,model:model.version,ready:result.ready,...(result.ready?{baseline:result.baseline,plans:result.plans.map(p=>({name:p.name,targets:p.targets.map(t=>({...t,name:names.get(t.id)})),bands:p.bands.map(b=>({slots:b.heroSlots,states:b.states,coverage:b.coverage,completion:b.completion,combat:b.combat,failureCombat:b.failureCombat,gaps:b.gaps}))}))}:{reason:result.reason})},null,2));
+  console.log(JSON.stringify({milliseconds:report.milliseconds,model:model.version,ready:result.ready,...(result.ready?current?{evaluations:result.evaluations,paths:result.paths.map(p=>({buy:p.buy.map(t=>names.get(t.id)),spent:p.spent,bands:p.bands.map(b=>({slots:b.heroSlots,coverage:b.evaluatedMass,completion:b.completion,combat:b.combat,gold:b.expectedGold}))}))}:{baseline:result.baseline,plans:result.plans.map(p=>({name:p.name,targets:p.targets.map(t=>({...t,name:names.get(t.id)})),bands:p.bands.map(b=>({slots:b.heroSlots,states:b.states,coverage:b.coverage,completion:b.completion,combat:b.combat,failureCombat:b.failureCombat,gaps:b.gaps}))}))}:{reason:result.reason})},null,2));
 }finally{model.dispose();}

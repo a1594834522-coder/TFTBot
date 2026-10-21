@@ -13,6 +13,7 @@ import {dataset} from '../game/tft-data';
 import ShoppingTacticsPanel from './ShoppingTacticsPanel.vue';
 import PurchaseOpportunities from './PurchaseOpportunities.vue';
 import SearchLandingPanel from './SearchLandingPanel.vue';
+import CurrentPursuitPanel from './CurrentPursuitPanel.vue';
 import EquipmentHandoffsPanel from './EquipmentHandoffsPanel.vue';
 import StrategicOptionsPanel from './StrategicOptionsPanel.vue';
 import type {BattleForecast} from '../game/battle-forecast';
@@ -77,6 +78,7 @@ const stamp=String(metatftMeta().fetchedAt??'').slice(0,10);
       <div v-show="workspace==='tactics'" id="advisor-pane-tactics" role="tabpanel" aria-labelledby="advisor-tab-tactics" tabindex="0">
         <header class="workspace-heading"><div><h2>当前补强</h2></div><small>当前商店 · 已持装备</small></header>
       <PurchaseOpportunities :status="status" :forecast="battle" :selection="preferences.purchase" :disabled="hydrating" @select="preferences={...preferences,purchase:$event}"/>
+      <CurrentPursuitPanel :advice="battle?.pursuit" :budget="preferences.searchBudget" @budget="preferences={...preferences,searchBudget:$event}"/>
       <ShoppingTacticsPanel :advice="battle?.tactics"/>
       <EquipmentHandoffsPanel :advice="battle?.handoffs"/>
       </div>

@@ -28,6 +28,7 @@ app.whenReady().then(async()=>{
   results.push(await check('live-lux-form',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.form,f=>f.phase==='ready'&&f.tactics?.ready&&f.tactics.choices.every(c=>c.onBoardCombatIds?.length===c.onBoard.length)));
   results.push(await check('search-landings',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.landing,f=>f.landings?.ready&&f.landings.plans.length>0&&f.landings.plans.every(p=>p.bands.length===2&&p.bands.every(b=>b.combat.lower<=b.combat.upper&&b.completion.lower<=b.completion.upper))));
   results.push(await check('equipment-handoffs',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.handoff,f=>f.handoffs?.ready&&f.handoffs.choices.length>0&&f.handoffs.choices.every(c=>c.moves.length>0&&c.lowerGain<=c.upperGain)));
+  results.push(await check('current-pursuit',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.handoff,f=>f.pursuit?.ready&&f.pursuit.paths.length>1&&f.pursuit.paths.some(p=>p.id==='skip')&&f.pursuit.paths.every(p=>p.bands.length===2&&p.bands.every(b=>b.combat.lower<=b.combat.upper&&b.expectedGold.lower<=b.expectedGold.upper))));
   results.push(await check('observed-mixed-lineups',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.mixed,f=>f.tactics?.ready&&f.tactics.deploymentSearch?.observedBoards>0&&f.tactics.choices.some(c=>c.observedSources?.length&&c.outgoing.length>=3&&c.incoming.length>=3)));
   console.log('DIRECTION_WORKER_INDEPENDENCE_PASS',JSON.stringify(results));app.exit(0);
  }catch(error){console.error(error);app.exit(1);}

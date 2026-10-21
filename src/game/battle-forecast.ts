@@ -9,6 +9,7 @@ import type {StrategicAdvice} from '../decision/strategic-advisor';
 import type {DirectionAdvice} from '../decision/direction-advisor';
 import type {SearchLandings} from '../decision/search-landings';
 import type {EquipmentHandoffs} from '../decision/equipment-handoffs';
+import type {CurrentPursuit} from '../decision/current-pursuit';
 
 export interface OpponentPrior {round:string;source:'native'|'manual';weights:Record<string,number>}
 export interface BattleTarget {id:string;name:string;weight:number;board:BattleBoard|null;gaps:string[]}
@@ -23,6 +24,7 @@ export interface BattleForecast {
   direction?:DirectionAdvice;
   landings?:SearchLandings;
   handoffs?:EquipmentHandoffs;
+  pursuit?:CurrentPursuit;
 }
 export const emptyBattleForecast=(message='等待场上棋盘'):BattleForecast=>({phase:'waiting',message,at:Date.now(),round:null,weightSource:'uniform',winRate:null,lower:0,upper:1,coverage:0,approximate:true,gaps:[],opponents:[]});
 

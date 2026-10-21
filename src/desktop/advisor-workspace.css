@@ -1,6 +1,6 @@
 .smart-panel { max-width: 1440px; margin: auto; }
 .smart-heading { margin: 0 0 24px; gap: 16px; }
-.smart-heading h1 { display: flex; align-items: center; gap: 14px; font: 500 32px/1.4 var(--font-editorial); margin: 5px 0 0; letter-spacing: -.5px; }
+.smart-heading h1 { display: flex; align-items: center; gap: 14px; font: 400 38px/1.4 var(--font-editorial); margin: 5px 0 0; letter-spacing: -.5px; }
 .round-pill { padding-left: 14px; border-left: 1px solid var(--line-strong); color: var(--muted); font: 11px/1.6 var(--font-ui); letter-spacing: .5px; }
 .input-status { gap: 20px; color: var(--muted); }
 .input-status .state-metric { display: flex; flex-direction: column; gap: 3px; border-right: 1px solid var(--line); padding-right: 20px; }
@@ -26,12 +26,12 @@
 .smart-panel :deep(.shopping-tactics),
 .smart-panel :deep(.purchase-opportunities),
 .smart-panel :deep(.handoff-panel),
-.smart-panel :deep(.strategic-options) { background: var(--surface); border-color: var(--line); border-radius: 7px; padding: 22px; margin-bottom: 22px; }
+.smart-panel :deep(.strategic-options) { background: var(--surface); border-color: var(--line); border-radius: 5px; padding: 24px; margin-bottom: 26px; }
 .smart-panel :deep(.transition-grid>button),
 .smart-panel :deep(.landing-grid>article),
 .smart-panel :deep(.tactical-grid>article),
 .smart-panel :deep(.purchase-grid>article),
-.smart-panel :deep(.strategic-options .route-grid>article) { background: var(--surface-inset); border-color: var(--line); border-radius: 6px; }
+.smart-panel :deep(.strategic-options .route-grid>article) { background: transparent; border-color: var(--line); border-radius: 4px; }
 .smart-panel :deep(.transition-grid>button.selected) { border-color: #d49a7d80; background: #d49a7d08; }
 .smart-panel :deep(.mainline-transitions h2),
 .smart-panel :deep(.landing-panel h2),
@@ -50,9 +50,9 @@
 .smart-panel :deep(.late-grid article) { min-width: 0; }
 .smart-panel :deep(.search-goals) { flex-wrap: wrap; }
 .smart-panel :deep(.search-goal) { flex: 1 1 240px; }
-.smart-panel :deep(.direction-cards article.chosen) { border-color: #d49a7d90; background: var(--surface-raised); }
+.smart-panel :deep(.direction-cards article.chosen) { border-color: #cf927578; background: var(--surface); }
 .smart-panel :deep(.direction-cards footer button) { background: transparent; border-color: #dfcbb645; color: var(--text); }
-.smart-panel :deep(.direction-cards article.chosen footer button) { background: #e3dfd2; border-color: #e3dfd2; color: #282824; }
+.smart-panel :deep(.direction-cards article.chosen footer button) { background: var(--text); border-color: var(--text); color: #282824; }
 .smart-panel :deep(.portfolio>b) { color: var(--gold); }
 .smart-panel :deep(.handoff-grid footer b) { color: var(--text); }
 .smart-panel :deep(.handoff-grid footer i) { color: var(--positive); }

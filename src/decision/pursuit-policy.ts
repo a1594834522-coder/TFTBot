@@ -1,6 +1,6 @@
 import type {createPoolKernel} from './pool-kernel';
 import type {PoolTarget} from './pool-budget';
-export type PursuitMode='upgrade-first'|'completion-first';
+export type PursuitMode='upgrade-first'|'completion-first'|'key-upgrade';
 export interface PursuitPolicyInput {
   targets:PoolTarget[];owned:number[];goals:Array<{id:string;targets:string[]}>;
   tierRemaining:Record<number,number>;tierOdds:Record<number,number>;refreshPrice:number;heroSlots:number;

@@ -2,18 +2,18 @@
 :root {
   color-scheme: dark;
   --canvas: #242422;
-  --sidebar: #1e1e1c;
-  --surface: #2b2b28;
-  --surface-raised: #33332f;
+  --sidebar: #1f1f1d;
+  --surface: #292927;
+  --surface-raised: #32322f;
   --surface-inset: #222220;
-  --line: #eeece210;
-  --line-strong: #eeece223;
-  --text: #f0eee6;
-  --muted: #b6b3a8;
-  --faint: #939187;
-  --accent: #dfcbb6;
-  --accent-soft: #dfcbb610;
-  --clay: #d49a7d;
+  --line: #eeece215;
+  --line-strong: #eeece22b;
+  --text: #eeece2;
+  --muted: #b7b4a9;
+  --faint: #969389;
+  --accent: #eeece2;
+  --accent-soft: #eeece209;
+  --clay: #cf9275;
   --positive: #a9bca6;
   --gold: #d7be96;
   --font-ui: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", sans-serif;
@@ -35,16 +35,16 @@ button svg { width: 17px; height: 17px; flex-shrink: 0; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-thumb { background: #57574f; border-radius: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-.desktop-shell { height: 100vh; display: grid; grid-template-columns: 184px minmax(0,1fr); grid-template-rows: 60px minmax(0,1fr) 30px; overflow: hidden; background: var(--canvas); }
-.desktop-sidebar { grid-column: 1; grid-row: 1/-1; display: flex; flex-direction: column; min-height: 0; padding: 32px 14px 16px; background: var(--sidebar); border-right: 1px solid var(--line); }
-.app-brand { display: flex; align-items: center; padding: 0 12px 40px; }
-.app-brand strong { font: 27px/1.1 Georgia, "Times New Roman", serif; letter-spacing: -.9px; color: var(--text); }
+.desktop-shell { height: 100vh; display: grid; grid-template-columns: 176px minmax(0,1fr); grid-template-rows: 60px minmax(0,1fr) 30px; overflow: hidden; background: var(--canvas); }
+.desktop-sidebar { grid-column: 1; grid-row: 1/-1; display: flex; flex-direction: column; min-height: 0; padding: 34px 14px 16px; background: var(--sidebar); border-right: 1px solid var(--line); }
+.app-brand { display: flex; align-items: center; padding: 0 12px 44px; }
+.app-brand strong { font: 29px/1.1 Georgia, "Times New Roman", serif; letter-spacing: -1.2px; color: var(--text); }
 .app-brand strong small { display: block; margin-top: 11px; font: 11px/1.4 var(--font-ui); letter-spacing: 1px; color: var(--faint); }
 .desktop-nav { display: flex; flex-direction: column; gap: 6px; }
 .desktop-nav button { position: relative; display: flex; align-items: center; gap: 11px; width: 100%; background: transparent; border: 1px solid transparent; padding: 11px 12px; font-size: 12px; text-align: left; color: var(--muted); border-radius: 6px; }
 .desktop-nav button svg { width: 16px; height: 16px; color: var(--faint); }
 .desktop-nav button:hover:not(:disabled) { background: #eeece206; color: var(--text); }
-.desktop-nav button.current { background: #eeece20a; color: var(--text); }
+.desktop-nav button.current { background: #eeece208; color: var(--text); }
 .desktop-nav button.current::before { content: ''; position: absolute; left: 0; top: 13px; bottom: 13px; width: 2px; background: var(--clay); border-radius: 2px; }
 .desktop-nav button.current svg { color: var(--clay); }
 .desktop-nav button:last-child { margin-top: 22px; }
@@ -54,7 +54,7 @@ button svg { width: 17px; height: 17px; flex-shrink: 0; }
 .season-card strong { font-size: 12px; font-weight: 400; color: var(--muted); }
 .sidebar-version { display: flex; justify-content: space-between; color: var(--faint); font-size: 10px; margin: 16px 12px 0; }
 .sidebar-version small { font-size: 10px; }
-.desktop-header { grid-column: 2; grid-row: 1; display: flex; justify-content: space-between; align-items: center; padding: 0 32px; border-bottom: 1px solid var(--line); background: var(--sidebar); gap: 12px; }
+.desktop-header { grid-column: 2; grid-row: 1; display: flex; justify-content: space-between; align-items: center; padding: 0 32px; border-bottom: 1px solid var(--line); background: var(--canvas); gap: 12px; }
 .header-location { display: flex; align-items: center; gap: 12px; white-space: nowrap; font-size: 11px; color: var(--faint); }
 .header-location i { font-style: normal; color: #64645b; }
 .header-location strong { font-size: 11px; font-weight: 400; color: var(--muted); }
@@ -67,17 +67,17 @@ button svg { width: 17px; height: 17px; flex-shrink: 0; }
 .header-actions .pin-button { padding: 6px; }
 .pin-button svg { width: 15px; height: 15px; }
 .header-actions .active { color: var(--accent); border-color: #dfcbb666; }
-.desktop-content { grid-column: 2; grid-row: 2; min-height: 0; min-width: 0; padding: 32px; overflow: auto; scrollbar-gutter: stable; }
+.desktop-content { grid-column: 2; grid-row: 2; min-height: 0; min-width: 0; padding: 36px 40px; overflow: auto; scrollbar-gutter: stable; }
 .desktop-content.comps-content { overflow: hidden; }
 .desktop-footer { grid-column: 2; grid-row: 3; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 0 32px; font-size: 10px; color: var(--faint); border-top: 1px solid var(--line); }
 .desktop-footer span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.eyebrow { font-size: 10px; letter-spacing: 1px; color: var(--faint); }
+.eyebrow { font-size: 10px; letter-spacing: 1.4px; color: var(--faint); }
 .page-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin: 2px 0 28px; }
-h1 { font: 500 32px/1.4 var(--font-editorial); margin: 5px 0 8px; letter-spacing: -.5px; }
+h1 { font: 400 38px/1.4 var(--font-editorial); margin: 5px 0 8px; letter-spacing: -.5px; }
 .page-heading p { font-size: 12px; color: var(--muted); margin: 0; }
 .notice { background: #dfcbb605; border: 1px solid var(--line); padding: 13px 16px; border-radius: 6px; color: var(--muted); font-size: 11px; margin-bottom: 20px; }
 .error { background: #c688740b; color: #e4b6a3; border: 1px solid #c6887438; border-radius: 6px; padding: 13px; margin-bottom: 16px; font-size: 12px; }
-.primary { background: #e3dfd2; border-color: #e3dfd2; color: #282824; font-weight: 500; }
+.primary { background: var(--text); border-color: var(--text); color: #282824; font-weight: 500; }
 .primary:hover { background: #f0ecdf; border-color: #f0ecdf; color: #282824; }
 .desktop-content .trick, .desktop-content .charwin, .desktop-content .settings { background: transparent; border-radius: 6px; }
 .desktop-shell[data-native-titlebar]>.desktop-header { padding-right: 156px; -webkit-app-region: drag; }

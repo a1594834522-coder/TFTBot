@@ -156,7 +156,7 @@ async function start() {
     const direction=battles.snapshot().direction;
     if(!value || !Array.isArray(value.items)||value.items.length>30||value.items.some(id=>typeof id!=='string'||!dataset.item(id)) || value.stage!==null&&![2,3,4,5].includes(value.stage) || value.boardId!==null&&!earlyStages(18).some(s=>s.boards.some(b=>b.id===value.boardId))&&!directionBoardUnits(value.boardId)&&!(direction?.ready&&direction.holds.boards.some(b=>b.id===value.boardId)))throw new Error('阵容助手输入无效');
     if(value.searchBudget!==undefined&&value.searchBudget!==null&&(!Number.isSafeInteger(value.searchBudget)||value.searchBudget<0||value.searchBudget>200))throw new Error('搜牌预算无效');
-    if(value.pursuitMode!==undefined&&!['upgrade-first','completion-first'].includes(value.pursuitMode))throw new Error('留牌策略无效');
+    if(value.pursuitMode!==undefined&&!['upgrade-first','completion-first','key-upgrade'].includes(value.pursuitMode))throw new Error('留牌策略无效');
     const purchase=selectedPurchase(reader.snapshot(),battles.snapshot(),value.purchase)?{context:value.purchase!.context,id:value.purchase!.id}:null;
     advisorPreferences={items:[...value.items],stage:value.stage,boardId:value.boardId,searchBudget:value.searchBudget??null,pursuitMode:value.pursuitMode??'upgrade-first',purchase};publishAdvisorPreferences();battles.update(reader.snapshot(),advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp,advisorPreferences.pursuitMode??'upgrade-first');syncAugmentLayer(reader.snapshot());return advisorPreferences;
   });
@@ -408,6 +408,16 @@ async function start() {
             await fs.writeFile(path.join(smokeDir,'adaptive-pursuit.json'),JSON.stringify(adaptive,null,2));
             await fs.writeFile(path.join(smokeDir,'adaptive-pursuit.png'),(await window!.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
             console.log('ADAPTIVE_PURSUIT_SWITCH_PASS');
+            await window!.webContents.executeJavaScript(`(()=>{const el=document.querySelector('[data-pursuit-mode]');el.value='key-upgrade';el.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+            for(let i=0;i<120;i++){const value=battles.snapshot().pursuit;if(value?.ready&&value.mode==='key-upgrade')break;await new Promise(resolve=>setTimeout(resolve,100));}
+            const keyUpgrade=battles.snapshot().pursuit;
+            const keyView=await window!.webContents.executeJavaScript(`(async()=>{await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));const el=document.querySelector('[data-current-pursuit]');return {state:el?.dataset.pursuitState,text:el?.textContent,rows:el?.querySelectorAll('[data-pursuit-path]').length,mode:document.querySelector('[data-pursuit-mode]')?.value,overflow:document.documentElement.scrollWidth>innerWidth};})()`);
+            if(!keyUpgrade?.ready||keyUpgrade.mode!=='key-upgrade'||keyUpgrade.milestone.kind!=='new-two-star'||!keyUpgrade.paths.some(p=>p.bands.some(b=>b.completion.upper>0))||keyView.state!=='ready'||keyView.mode!=='key-upgrade'||!keyView.text?.includes('新增二星')||keyView.rows<2||keyView.overflow||selectedComp?.directionId!==intent.id)throw Error('关键二星未通过原生切换：'+JSON.stringify(keyView));
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-current-pursuit]').scrollIntoView({block:'center'});new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+            await new Promise(resolve=>setTimeout(resolve,100));
+            await fs.writeFile(path.join(smokeDir,'key-upgrade-pursuit.json'),JSON.stringify(keyUpgrade,null,2));
+            await fs.writeFile(path.join(smokeDir,'key-upgrade-pursuit.png'),(await window!.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+            console.log('KEY_UPGRADE_PURSUIT_SWITCH_PASS');
             const returnStarted=Date.now();
             await window!.webContents.executeJavaScript(`(()=>{const el=document.querySelector('[data-pursuit-mode]');el.value='upgrade-first';el.dispatchEvent(new Event('change',{bubbles:true}));})()`);
             for(let i=0;i<120;i++){const value=battles.snapshot();if(value.pursuit?.ready&&value.pursuit.mode==='upgrade-first'&&value.handoffs?.ready)break;await new Promise(resolve=>setTimeout(resolve,100));}

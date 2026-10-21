@@ -108,7 +108,7 @@ async function run(){
 process.parentPort?.on('message',event=>{
   const data=event.data;
   if(data==='stop'){runtime?.dispose();process.exit(0);}
-  if(data?.type==='evaluate'&&Number.isSafeInteger(data.id)){latestId=data.id;latest={id:data.id,request:data.request,shopping:data.shopping,strategy:data.strategy,direction:data.direction,searchBudget:data.searchBudget??null,pursuitMode:data.pursuitMode==='completion-first'?'completion-first':'upgrade-first'};pending=latest;void run();}
+  if(data?.type==='evaluate'&&Number.isSafeInteger(data.id)){latestId=data.id;latest={id:data.id,request:data.request,shopping:data.shopping,strategy:data.strategy,direction:data.direction,searchBudget:data.searchBudget??null,pursuitMode:['completion-first','key-upgrade'].includes(data.pursuitMode)?data.pursuitMode:'upgrade-first'};pending=latest;void run();}
 });
 loadBattleModel(path.join(__dirname,'metatft-model')).then(value=>{
   runtime=value;process.parentPort?.postMessage({type:'ready',version:runtime.version});if(latest)pending=latest;void run();

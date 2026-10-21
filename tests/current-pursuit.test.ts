@@ -20,6 +20,52 @@ function fixture(){
 }
 const choose=(n:number,k:number)=>{let r=1;for(let i=1;i<=k;i++)r=r*(n-i+1)/i;return r;};
 describe('current-shop core purchases and their full future distribution',()=>{
+  it('counts the union of different new upgrades without double-crediting a shop that completes both',async()=>{
+    const {advice,input,request,model}=fixture();input.state.gold=4;input.state.units.find(u=>u.id==='B')!.star=1;request.local.units.find(u=>u.id==='B')!.star=1;input.pool.remaining.B=7;input.pool.tierRemaining[1]=14;
+    const r=await currentPursuit(advice,input,rules,request,model,{mode:'key-upgrade'});if(!r.ready)throw Error(r.reason);
+    for(const b of r.paths[0].bands){
+      // One fresh shop can buy the missing A, or two B. C cannot reach two-star.
+      // Enumerate physical draws independently: fail iff A=0 and B<=1.
+      const miss=(choose(4,b.heroSlots)+7*choose(4,b.heroSlots-1))/choose(14,b.heroSlots),hitA=1-choose(11,b.heroSlots)/choose(14,b.heroSlots);
+      expect(b.completion.lower).toBeCloseTo(1-miss,12);expect(b.completion.upper).toBeCloseTo(1-miss,12);
+      expect(b.expectedGold.lower).toBeCloseTo(hitA+2*miss,12);expect(b.expectedGold.upper).toBeCloseTo(hitA+2*miss,12);
+    }
+  });
+  it('waits for actual star-level synchronization rather than calling several unmerged singles an existing upgrade',async()=>{
+    const {advice,input,request,model}=fixture();input.state.units.push({key:'a3',id:'A',star:1,area:'bench',slot:1,items:[],equipmentKnown:true});
+    for(const mode of ['upgrade-first','completion-first','key-upgrade'] as const)expect(await currentPursuit(advice,input,rules,request,model,{mode})).toEqual({ready:false,controls:true,reason:'核心升星快照待同步'});
+  });
+  it('can pursue one new two-star when completing the whole pair is unaffordable, matching an independent shop-count oracle',async()=>{
+    const {advice,input,request,model}=fixture();input.state.units.find(u=>u.id==='B')!.star=1;request.local.units.find(u=>u.id==='B')!.star=1;input.pool.remaining.B=7;input.pool.tierRemaining[1]=14;
+    const whole=await currentPursuit(advice,input,rules,request,model,{mode:'completion-first'}),key=await currentPursuit(advice,input,rules,request,model,{mode:'key-upgrade'});if(!whole.ready||!key.ready)throw Error();
+    expect(key.milestone).toMatchObject({kind:'new-two-star',label:'新增二星'});expect(whole.paths[0].bands[0].completion.lower).toBe(0);
+    for(const b of key.paths[0].bands){const hit=1-choose(11,b.heroSlots)/choose(14,b.heroSlots);expect(b.completion.lower).toBeCloseTo(hit,12);expect(b.completion.upper).toBeCloseTo(hit,12);expect(b.expectedGold.lower).toBeCloseTo(1-hit,12);}
+    for(const b of key.paths.find(p=>p.id==='keep:0')!.bands){expect(b.completion).toEqual({lower:1,upper:1});expect(b.expectedGold).toEqual({lower:2,upper:2});expect(b.combat.lower).toBe(.8);}
+  });
+  it('never credits existing two-stars as new progress, including an already complete alternative pair',async()=>{
+    const {advice,input,request,model}=fixture();input.state.units.push({key:'c2',id:'C',star:2,area:'bench',slot:1,items:[],equipmentKnown:true});
+    const r=await currentPursuit(advice,input,rules,request,model,{mode:'key-upgrade'});if(!r.ready)throw Error(r.reason);
+    expect(r.milestone.targets).toEqual(['A']);expect(r.paths.map(p=>p.id)).toEqual(['skip','keep:0']);
+    expect(r.paths[0].bands[0].completion.lower).toBeLessThan(1);expect(r.paths[0].bands[0].completion.lower).toBeCloseTo(1-choose(9,4)/choose(12,4),12);
+  });
+  it('keeps reroll pursuit on its own route and makes a deliberate two-star milestone distinct from chasing three-stars',async()=>{
+    const {advice,input,request,model}=fixture();if(!advice.ready)throw Error();advice.rows[0].regime='reroll';
+    const key=await currentPursuit(advice,input,rules,request,model,{mode:'key-upgrade'}),three=await currentPursuit(advice,input,rules,request,model);if(!key.ready||!three.ready)throw Error();
+    expect(key.routes).toHaveLength(1);expect(key.routes[0].targets.find(t=>t.id==='A')!.copies).toBe(3);expect(three.routes[0].targets.find(t=>t.id==='A')!.copies).toBe(9);expect(three.milestone.label).toBe('核心追三');
+    input.state.units=input.state.units.filter(u=>u.key!=='a2').map(u=>u.id==='A'?{...u,star:2}:u);request.local.units[0].star=2;
+    const done=await currentPursuit(advice,input,rules,request,model,{mode:'key-upgrade'});expect(done).toMatchObject({ready:false,controls:true});
+    const html=await renderToString(createSSRApp({render:()=>h(CurrentPursuitPanel,{advice:done,mode:'key-upgrade'})}));expect(html).toContain('data-pursuit-mode');expect(html).not.toContain('data-pursuit-path=');expect(html).toContain('可切换追三目标');
+  });
+  it('keeps unknown physical merges out of confirmed upgrade probability even when copy-count completion is exact',async()=>{
+    const {advice,input,request,model}=fixture();input.state.units[1].items=[{key:'second-gear',id:'BT'}];input.state.offers[0]=null;
+    const r=await currentPursuit(advice,input,rules,request,model,{mode:'key-upgrade',maxBoards:0});if(!r.ready)throw Error(r.reason);
+    for(const b of r.paths[0].bands){expect(b.completion.lower).toBe(0);expect(b.completion.upper).toBeCloseTo(1-choose(9,b.heroSlots)/choose(12,b.heroSlots),12);expect(b.gaps.some(g=>g.includes('实体合成待覆盖'))).toBe(true);}
+  });
+  it('shows the new milestone and hides numbers from a different objective during switching',async()=>{
+    const {advice,input,request,model}=fixture(),key=await currentPursuit(advice,input,rules,request,model,{mode:'key-upgrade'});
+    const html=await renderToString(createSSRApp({render:()=>h(CurrentPursuitPanel,{advice:key,mode:'key-upgrade'})}));expect(html).toContain('新增二星');expect(html).toContain('关键二星');expect(html).toContain('已有二星不重复计算');
+    const stale=await renderToString(createSSRApp({render:()=>h(CurrentPursuitPanel,{advice:key,mode:'upgrade-first'})}));expect(stale).not.toContain('data-pursuit-path=');
+  });
   it('compares adaptive completion and upgrade-first as different objectives, without reusing stale-mode numbers',async()=>{
     const {advice,input,request,model}=fixture(),base=await currentPursuit(advice,input,rules,request,model),adaptive=await currentPursuit(advice,input,rules,request,model,{mode:'completion-first'});
     if(!base.ready||!adaptive.ready)throw Error();expect(adaptive.mode).toBe('completion-first');expect(adaptive.adaptive).toHaveLength(2);
@@ -101,7 +147,9 @@ describe('current-shop core purchases and their full future distribution',()=>{
     const localRules={...rules,heroes:{...rules.heroes,[pool]:rules.heroes.A}},model=(pairs:Array<{player:BattleRequest['local'];opponent:BattleRequest['local']}>)=>pairs.map(({player})=>({winRate:player.units.some(u=>u.id===form&&u.star===2&&u.items.includes('IE'))?.8:.2}));
     const r=await currentPursuit(advice,input,localRules,request,model);if(!r.ready)throw Error(r.reason);
     expect(r.paths.find(p=>p.id==='keep:0')!.bands[0].combat).toEqual({lower:.8,upper:.8});
+    expect(r.paths.find(p=>p.id==='keep:0')!.bands[0].completion).toEqual({lower:1,upper:1});
     expect(r.paths[0].bands.some(b=>b.gaps.includes('未来英雄形态未确认'))).toBe(true);
+    expect(r.paths[0].bands[0].completion.lower).toBe(0);expect(r.paths[0].bands[0].completion.upper).toBeGreaterThan(0);
   });
   it('honors auxiliary/source restrictions rather than preserving a summon after its actual source changes',async()=>{
     const {advice,input,request,model}=fixture(),auxiliary={id:'tower',star:1,items:[]};request.local.units.push(auxiliary);

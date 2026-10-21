@@ -31,6 +31,7 @@ app.whenReady().then(async()=>{
   results.push(await check('current-pursuit',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.handoff,f=>f.pursuit?.ready&&f.pursuit.paths.length>1&&f.pursuit.paths.some(p=>p.id==='skip')&&f.pursuit.paths.every(p=>p.bands.length===2&&p.bands.every(b=>b.combat.lower<=b.combat.upper&&b.expectedGold.lower<=b.expectedGold.upper))));
   const adaptive=structuredClone(fixtures.handoff);adaptive.pursuitMode='completion-first';adaptive.shopping.state.gold=40;adaptive.strategy.state.gold=40;adaptive.direction.assets.gold=40;
   results.push(await check('adaptive-pursuit',path.resolve('dist/desktop/battle-worker.cjs'),adaptive,f=>f.pursuit?.ready&&f.pursuit.mode==='completion-first'&&f.pursuit.adaptive.length===2&&f.pursuit.adaptive.some(p=>p.states>0)&&f.pursuit.paths.some(p=>p.id==='skip')));
+  results.push(await check('key-upgrade-pursuit',path.resolve('dist/desktop/battle-worker.cjs'),{...adaptive,pursuitMode:'key-upgrade'},f=>f.pursuit?.ready&&f.pursuit.mode==='key-upgrade'&&f.pursuit.milestone.kind==='new-two-star'&&f.pursuit.milestone.targets.length>0&&f.pursuit.adaptive.some(p=>p.states>0)));
   results.push(await check('observed-mixed-lineups',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.mixed,f=>f.tactics?.ready&&f.tactics.deploymentSearch?.observedBoards>0&&f.tactics.choices.some(c=>c.observedSources?.length&&c.outgoing.length>=3&&c.incoming.length>=3)));
   console.log('DIRECTION_WORKER_INDEPENDENCE_PASS',JSON.stringify(results));app.exit(0);
  }catch(error){console.error(error);app.exit(1);}

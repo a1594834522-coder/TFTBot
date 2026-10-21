@@ -21,6 +21,7 @@ import {battleTacticalContext,modelBoardGaps} from '../decision/battle-tactical-
 import {searchLandings} from '../decision/search-landings';
 import {equipmentHandoffs} from '../decision/equipment-handoffs';
 import {currentPursuit} from '../decision/current-pursuit';
+import type {PursuitMode} from '../decision/pursuit-policy';
 import type {EquipmentRules} from '../decision/equipment-ledger';
 import equipmentFile from '../../data/equipment-rules.json';
 const equipmentRules=equipmentFile as unknown as EquipmentRules;
@@ -33,14 +34,14 @@ function searchAdvice(personal:ReturnType<typeof directionAdvice>,strategy:Strat
   return withSearchHolds(personal);
 }
 
-type Work={id:number;request:BattleRequest|null;shopping:ShoppingInput;strategy:StrategicInput;direction:DirectionInput;searchBudget:number|null};
+type Work={id:number;request:BattleRequest|null;shopping:ShoppingInput;strategy:StrategicInput;direction:DirectionInput;searchBudget:number|null;pursuitMode:PursuitMode};
 let runtime:Awaited<ReturnType<typeof loadBattleModel>>|null=null,loadError:string|null=null;
 let pending:Work|null=null,latest:Work|null=null,latestId=0,running=false;
 async function run(){
   if(running)return;
   running=true;
   try{while(pending){
-    const {id,request:raw,shopping,strategy,direction,searchBudget}=pending;pending=null;
+    const {id,request:raw,shopping,strategy,direction,searchBudget,pursuitMode}=pending;pending=null;
     const model=runtime;
     let request:BattleRequest|null=null,forecast=emptyBattleForecast();
     if(raw&&model){
@@ -78,7 +79,7 @@ async function run(){
     if(strategy?.ready&&request&&model&&forecast.pursuit&&forecast.direction?.ready&&forecast.direction.mode==='selected'&&id===latestId){
       try{
         const context=battleTacticalContext(request,strategy.state,model.lookup);
-        const result=context.ready?await currentPursuit(forecast.direction,strategy,tradingRules,context.request,model.predictCachedBatch,{budget:searchBudget,cancelled:()=>id!==latestId,yield:()=>new Promise(resolve=>setImmediate(resolve)),auxiliary:context.auxiliary,acceptsLineup:context.accepts,supportsBoard:board=>encodeBattleBoard(board,model.lookup,'player').unknown.length===0}):context;
+        const result=context.ready?await currentPursuit(forecast.direction,strategy,tradingRules,context.request,model.predictCachedBatch,{mode:pursuitMode,budget:searchBudget,cancelled:()=>id!==latestId,yield:()=>new Promise(resolve=>setImmediate(resolve)),auxiliary:context.auxiliary,acceptsLineup:context.accepts,supportsBoard:board=>encodeBattleBoard(board,model.lookup,'player').unknown.length===0}):context;
         if(id===latestId){forecast={...forecast,pursuit:result};process.parentPort?.postMessage({type:'result',id,forecast});}
       }catch(error){if(id===latestId){forecast={...forecast,pursuit:{ready:false,reason:'留牌比较暂不可用：'+(error as Error).message}};process.parentPort?.postMessage({type:'result',id,forecast});}}
     }
@@ -107,7 +108,7 @@ async function run(){
 process.parentPort?.on('message',event=>{
   const data=event.data;
   if(data==='stop'){runtime?.dispose();process.exit(0);}
-  if(data?.type==='evaluate'&&Number.isSafeInteger(data.id)){latestId=data.id;latest={id:data.id,request:data.request,shopping:data.shopping,strategy:data.strategy,direction:data.direction,searchBudget:data.searchBudget??null};pending=latest;void run();}
+  if(data?.type==='evaluate'&&Number.isSafeInteger(data.id)){latestId=data.id;latest={id:data.id,request:data.request,shopping:data.shopping,strategy:data.strategy,direction:data.direction,searchBudget:data.searchBudget??null,pursuitMode:data.pursuitMode==='completion-first'?'completion-first':'upgrade-first'};pending=latest;void run();}
 });
 loadBattleModel(path.join(__dirname,'metatft-model')).then(value=>{
   runtime=value;process.parentPort?.postMessage({type:'ready',version:runtime.version});if(latest)pending=latest;void run();

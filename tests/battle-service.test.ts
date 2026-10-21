@@ -20,6 +20,13 @@ function reply(child:any){
 beforeEach(()=>{vi.useFakeTimers();state.children=[];});
 afterEach(()=>{vi.clearAllTimers();vi.useRealTimers();});
 describe('latest-state decision service',()=>{
+  it('invalidates old policy results immediately and includes the manual pursuit objective in worker scheduling',()=>{
+    const status=advisorDemo('ap'),service=createBattleService(()=>{});service.update(status);vi.advanceTimersByTime(120);const child=state.children[0],first=child.postMessage.mock.calls[0][0];
+    child.emit('message',{type:'result',id:first.id,forecast:{...emptyBattleForecast(),pursuit:{ready:false,reason:'old policy'}}});
+    service.update(status,[],null,null,'completion-first');expect(service.snapshot().pursuit).toBeUndefined();
+    child.emit('message',{type:'result',id:first.id,forecast:emptyBattleForecast('stale policy')});expect(service.snapshot().message).not.toBe('stale policy');
+    vi.advanceTimersByTime(120);expect(child.postMessage.mock.calls.at(-1)[0].pursuitMode).toBe('completion-first');service.dispose();
+  });
   it('does not reschedule inference for presentation-only mainline transition updates',()=>{
     const status=advisorDemo('ap'),service=createBattleService(()=>{}),intent={key:'metatft:demo',units:['DA_18_Kayle'],directionId:'core',transitions:[{heldCount:0}]} as any;
     service.update(status,[],null,intent);vi.advanceTimersByTime(120);const child=state.children[0];

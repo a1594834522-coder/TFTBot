@@ -68,8 +68,8 @@ async function start() {
   const monitorDirectory=path.resolve(process.env.TFTBOT_MONITOR_DIR||path.join(app.getPath('userData'),'live-monitor'));
   const monitor = !smoke ? createLiveMonitor(monitorDirectory) : null;
   const battles=createBattleService(value=>{for(const target of [window,overlayWindow,augmentWindow])if(target&&!target.isDestroyed())target.webContents.send('desktop:battle:update',value);syncAugmentLayer(reader.snapshot());monitor?.note('battle-forecast',value);});
-  const reader = createNativeReader(status => { advice(status);refreshTransitions(status);battles.update(status,advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp); for (const target of [window, overlayWindow, augmentWindow]) if (target && !target.isDestroyed()) target.webContents.send('desktop:reader:update', status); syncAugmentLayer(status); monitor?.status(status); }, { onNativeLog: message=>monitor?.note('native-overlay',message), onPacket: (payload, accepted) => monitor?.packet(payload,accepted), cacheRoot: path.join(path.dirname(app.getPath('exe')), 'resources', 'tftbot-native'), ...(nativeSmoke ? { testMode: true, channel: process.env.TFTBOT_TEST_CHANNEL } : {}) });
-  const battleFreshnessTimer=setInterval(()=>{const status=reader.snapshot();refreshTransitions(status);battles.update(status,advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp);},1000);
+  const reader = createNativeReader(status => { advice(status);refreshTransitions(status);battles.update(status,advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp,advisorPreferences.pursuitMode??'upgrade-first'); for (const target of [window, overlayWindow, augmentWindow]) if (target && !target.isDestroyed()) target.webContents.send('desktop:reader:update', status); syncAugmentLayer(status); monitor?.status(status); }, { onNativeLog: message=>monitor?.note('native-overlay',message), onPacket: (payload, accepted) => monitor?.packet(payload,accepted), cacheRoot: path.join(path.dirname(app.getPath('exe')), 'resources', 'tftbot-native'), ...(nativeSmoke ? { testMode: true, channel: process.env.TFTBOT_TEST_CHANNEL } : {}) });
+  const battleFreshnessTimer=setInterval(()=>{const status=reader.snapshot();refreshTransitions(status);battles.update(status,advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp,advisorPreferences.pursuitMode??'upgrade-first');},1000);
   let capturedLiveView = false;
   const monitorTimer = monitor ? setInterval(async () => {
     monitor.status(reader.snapshot(),true);
@@ -149,15 +149,16 @@ async function start() {
   try {const saved=JSON.parse(await storage.getItem('tftbot:desktop:selected-direction'));if(selectedComp&&saved?.key===selectedComp.key)selectedComp=applyDirectionSelection(selectedComp,saved.id);}catch{}
   try {const saved=JSON.parse(await storage.getItem('tftbot:desktop:selected-transition'));if(selectedComp&&saved?.key===selectedComp.key)selectedComp=withMainlineTransitions(selectedComp,advisorInput(reader.snapshot()),saved.id??null);}catch{}
   selectedComp=withMainlineTransitions(selectedComp,advisorInput(reader.snapshot()));
-  const publishSelectedComp=()=>{battles.update(reader.snapshot(),advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp);if(overlayWindow&&!overlayWindow.isDestroyed()&&!collapsed)overlayWindow.setSize(584,selectedComp?248:192);for(const target of [window,overlayWindow,augmentWindow])if(target && !target.isDestroyed())target.webContents.send('desktop:comp:update',selectedComp);syncAugmentLayer(reader.snapshot());};
+  const publishSelectedComp=()=>{battles.update(reader.snapshot(),advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp,advisorPreferences.pursuitMode??'upgrade-first');if(overlayWindow&&!overlayWindow.isDestroyed()&&!collapsed)overlayWindow.setSize(584,selectedComp?248:192);for(const target of [window,overlayWindow,augmentWindow])if(target && !target.isDestroyed())target.webContents.send('desktop:comp:update',selectedComp);syncAugmentLayer(reader.snapshot());};
   ipcMain.handle('desktop:advisor:get',event=>{trusted(event);return advisorPreferences;});
   ipcMain.handle('desktop:advisor:configure',(event,value:AdvisorPreferences)=>{
     trusted(event);
     const direction=battles.snapshot().direction;
     if(!value || !Array.isArray(value.items)||value.items.length>30||value.items.some(id=>typeof id!=='string'||!dataset.item(id)) || value.stage!==null&&![2,3,4,5].includes(value.stage) || value.boardId!==null&&!earlyStages(18).some(s=>s.boards.some(b=>b.id===value.boardId))&&!directionBoardUnits(value.boardId)&&!(direction?.ready&&direction.holds.boards.some(b=>b.id===value.boardId)))throw new Error('阵容助手输入无效');
     if(value.searchBudget!==undefined&&value.searchBudget!==null&&(!Number.isSafeInteger(value.searchBudget)||value.searchBudget<0||value.searchBudget>200))throw new Error('搜牌预算无效');
+    if(value.pursuitMode!==undefined&&!['upgrade-first','completion-first'].includes(value.pursuitMode))throw new Error('留牌策略无效');
     const purchase=selectedPurchase(reader.snapshot(),battles.snapshot(),value.purchase)?{context:value.purchase!.context,id:value.purchase!.id}:null;
-    advisorPreferences={items:[...value.items],stage:value.stage,boardId:value.boardId,searchBudget:value.searchBudget??null,purchase};publishAdvisorPreferences();battles.update(reader.snapshot(),advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp);syncAugmentLayer(reader.snapshot());return advisorPreferences;
+    advisorPreferences={items:[...value.items],stage:value.stage,boardId:value.boardId,searchBudget:value.searchBudget??null,pursuitMode:value.pursuitMode??'upgrade-first',purchase};publishAdvisorPreferences();battles.update(reader.snapshot(),advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp,advisorPreferences.pursuitMode??'upgrade-first');syncAugmentLayer(reader.snapshot());return advisorPreferences;
   });
   ipcMain.handle('desktop:comp:get', event => { trusted(event); return selectedComp; });
   ipcMain.handle('desktop:comp:select', async (event,key,directionId?:string) => {
@@ -230,7 +231,7 @@ async function start() {
   augmentWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   augmentWindow.webContents.on('will-navigate', (event, url) => { if (!url.startsWith('tftbot://app/')) event.preventDefault(); });
   await augmentWindow.loadURL('tftbot://app/index.html#augment-overlay');
-  const timeout = smoke ? setTimeout(() => { console.error('DESKTOP_SMOKE_TIMEOUT'); app.exit(1); }, 30_000) : null;
+  const timeout = smoke ? setTimeout(() => { console.error('DESKTOP_SMOKE_TIMEOUT'); app.exit(1); }, process.env.TFTBOT_TEST_HANDOFF==='1'?60_000:30_000) : null;
   ipcMain.once('desktop:ready', async (event, report) => {
     trusted(event);
     if (!smoke) {
@@ -397,6 +398,21 @@ async function start() {
             if(!budgetSync)throw Error('留牌表预算未与主线搜牌预算同步');
             for(let i=0;i<100;i++){if(battles.snapshot().handoffs?.ready)break;await new Promise(resolve=>setTimeout(resolve,100));}
             console.log('PURSUIT_BUDGET_SYNC_PASS');
+            await window!.webContents.executeJavaScript(`(()=>{const el=document.querySelector('[data-pursuit-mode]');el.value='completion-first';el.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+            for(let i=0;i<120;i++){const value=battles.snapshot().pursuit;if(value?.ready&&value.mode==='completion-first')break;await new Promise(resolve=>setTimeout(resolve,100));}
+            const adaptive=battles.snapshot().pursuit;
+            const adaptiveView=await window!.webContents.executeJavaScript(`(async()=>{await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));const el=document.querySelector('[data-current-pursuit]'),p=await window.tftDesktop.advisorPreferences();return {ready:el?.dataset.pursuitState,rows:el?.querySelectorAll('[data-pursuit-path]').length,mode:document.querySelector('[data-pursuit-mode]')?.value,preference:p.pursuitMode,overflow:document.documentElement.scrollWidth>innerWidth};})()`);
+            if(!adaptive?.ready||adaptive.mode!=='completion-first'||!adaptive.adaptive?.length||adaptiveView.ready!=='ready'||adaptiveView.rows<2||adaptiveView.mode!=='completion-first'||adaptiveView.preference!=='completion-first'||adaptiveView.overflow||selectedComp?.directionId!==intent.id)throw Error('补齐优先策略未完成实际界面切换：'+JSON.stringify(adaptiveView));
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-current-pursuit]').scrollIntoView({block:'center'});new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+            await new Promise(resolve=>setTimeout(resolve,100));
+            await fs.writeFile(path.join(smokeDir,'adaptive-pursuit.json'),JSON.stringify(adaptive,null,2));
+            await fs.writeFile(path.join(smokeDir,'adaptive-pursuit.png'),(await window!.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+            console.log('ADAPTIVE_PURSUIT_SWITCH_PASS');
+            const returnStarted=Date.now();
+            await window!.webContents.executeJavaScript(`(()=>{const el=document.querySelector('[data-pursuit-mode]');el.value='upgrade-first';el.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+            for(let i=0;i<120;i++){const value=battles.snapshot();if(value.pursuit?.ready&&value.pursuit.mode==='upgrade-first'&&value.handoffs?.ready)break;await new Promise(resolve=>setTimeout(resolve,100));}
+            const returned=battles.snapshot();if(!returned.pursuit?.ready||returned.pursuit.mode!=='upgrade-first'||!returned.handoffs?.ready||advisorPreferences.pursuitMode!=='upgrade-first')throw Error('留牌目标切回未完成');
+            console.log('ADAPTIVE_PURSUIT_RETURN_PASS',Date.now()-returnStarted);
             await window!.webContents.executeJavaScript(`document.querySelector('[data-advisor-workspace="tactics"]').click();document.querySelector('[data-handoff-details] summary').click();new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
             await window!.webContents.executeJavaScript(`document.querySelector('[data-equipment-handoffs]').scrollIntoView({block:'center'});new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
             await new Promise(resolve=>setTimeout(resolve,100));

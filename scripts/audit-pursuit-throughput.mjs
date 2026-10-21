@@ -6,7 +6,7 @@ import path from 'node:path';
 const out=path.resolve('dist/pursuit-throughput');await fs.mkdir(out,{recursive:true});
 const reports=[];
 for(const [name,boards,disabled]of [['reference-192',192,true],['reuse-192',192,false],['reuse-384',384,false]]){
-  const env={...process.env,TFTBOT_AUDIT_BUDGET:'40',TFTBOT_AUDIT_BOARDS:String(boards)};
+  const env={...process.env,TFTBOT_AUDIT_BUDGET:'40',TFTBOT_AUDIT_BOARDS:String(boards),TFTBOT_AUDIT_POLICY:'upgrade-first'};
   delete env.TFTBOT_AUDIT_STATES;delete env.TFTBOT_AUDIT_NO_PAIR_CACHE;delete env.TFTBOT_AUDIT_NO_SCORE_CACHE;
   if(disabled){env.TFTBOT_AUDIT_NO_PAIR_CACHE='1';env.TFTBOT_AUDIT_NO_SCORE_CACHE='1';}
   const run=spawnSync(process.execPath,['scripts/audit-search-landings.mjs','--current-purchases'],{env,windowsHide:true,encoding:'utf8',maxBuffer:4_000_000});

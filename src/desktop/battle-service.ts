@@ -6,6 +6,7 @@ import {shoppingInput,type ShoppingInput} from '../decision/shopping-input';
 import {strategicInput,type StrategicInput} from '../decision/strategic-input';
 import {directionInput} from '../decision/direction-input';
 import type {DirectionInput,DirectionIntent} from '../decision/direction-advisor';
+import type {PursuitMode} from '../decision/pursuit-policy';
 
 /** Latest-state-only scheduling. Model work never blocks the native reader or UI event loop. */
 export function createBattleService(publish:(forecast:BattleForecast)=>void){
@@ -15,6 +16,7 @@ export function createBattleService(publish:(forecast:BattleForecast)=>void){
   let strategy:StrategicInput={ready:false,reason:'等待全场持牌'};
   let direction:DirectionInput|null=null;
   let searchBudget:number|null=null;
+  let pursuitMode:PursuitMode='upgrade-first';
   let crashes=0,retryAt=0;
   let timer:ReturnType<typeof setTimeout>|null=null;
   function set(value:BattleForecast){current=value;publish(structuredClone(current));}
@@ -47,11 +49,11 @@ export function createBattleService(publish:(forecast:BattleForecast)=>void){
     spawn();if(!child||key===sentKey)return;
     pendingId=++serial;sentKey=key;
     set({...emptyBattleForecast('正在计算'),phase:'loading',round:request?.round??direction?.round??null,weightSource:request?.weightSource??'uniform',direction:refreshing()});
-    child.postMessage({type:'evaluate',id:pendingId,request,shopping,strategy,direction,searchBudget});
+    child.postMessage({type:'evaluate',id:pendingId,request,shopping,strategy,direction,searchBudget,pursuitMode});
   }
   return {
     snapshot:()=>structuredClone(current),
-    update(status:ReaderStatus,manualItems:string[]=[],budget:number|null=null,intent:DirectionIntent|null=null){
+    update(status:ReaderStatus,manualItems:string[]=[],budget:number|null=null,intent:DirectionIntent|null=null,mode:PursuitMode='upgrade-first'){
       if(disposed)return;
       let next:BattleRequest|null;
       try{next=battleRequest(status);}catch{next=null;}
@@ -60,7 +62,8 @@ export function createBattleService(publish:(forecast:BattleForecast)=>void){
       direction=directionInput(status,manualItems);
       direction.intent=intent?{key:intent.key,directionId:intent.directionId,units:intent.units?[...intent.units]:undefined}:null;
       searchBudget=budget;
-      const nextKey=next||direction.assets.localComplete?JSON.stringify([next,shopping,strategy,direction,searchBudget]):'';
+      pursuitMode=mode;
+      const nextKey=next||direction.assets.localComplete?JSON.stringify([next,shopping,strategy,direction,searchBudget,pursuitMode]):'';
       if(nextKey===key)return;
       key=nextKey;request=next;
       if(!next&&!direction.assets.localComplete){sentKey='';pendingId=++serial;if(timer){clearTimeout(timer);timer=null;}set(emptyBattleForecast());return;}

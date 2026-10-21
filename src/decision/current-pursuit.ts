@@ -8,6 +8,8 @@ import {tacticalLineupTemplates} from './observed-lineups';
 import policy from '../../data/battle-unit-policy.json';
 import {materializeLineup} from './lineup-search';
 import type {OwnedUnit,ShopState} from './shop-ledger';
+import {adaptivePursuit} from './adaptive-pursuit';
+import type {PursuitMode,PursuitPolicy} from './pursuit-policy';
 
 const formPools=new Set(Object.values(policy.forms).map(f=>f.poolId));
 type Band={lower:number;upper:number};
@@ -21,7 +23,8 @@ export interface CurrentPursuitPath {
 export type CurrentPursuit={ready:false;reason:string}|{
   ready:true;budget:number;level:number;routes:Array<{id:string;name:string;cores:string[];targets:Array<{id:string;copies:number}>}>;
   paths:CurrentPursuitPath[];opponentCoverage:number;weightSource:BattleRequest['weightSource'];
-  baseline:Band;gaps:string[];evaluations:number;
+  baseline:Band;gaps:string[];evaluations:number;mode:PursuitMode;
+  adaptive?:Array<{heroSlots:4|5;states:number;decisions:number;limited:boolean}>;
 };
 type Distribution=Extract<SearchDistribution,{cancelled:false}>;
 interface Scenario {path:CurrentPursuitPath;plan:ShoppingPlan;slots:4|5;distribution:Distribution;landings:Distribution['landings']}
@@ -31,9 +34,10 @@ interface Scenario {path:CurrentPursuitPath;plan:ShoppingPlan;slots:4|5;distribu
  * This is a controlled buy/skip comparison, not an adaptive optimal policy.
  * Combat, completion and saved gold remain separate; no invented exchange rate. */
 export async function currentPursuit(advice:DirectionAdvice,input:StrategicInput,rules:TradingRules,request:BattleRequest,predict:BatchPredictor,
-  options:TacticalOptions&{budget?:number|null;maxStates?:number;maxBoards?:number;scoreReuse?:boolean;trace?:(phase:string,milliseconds:number)=>void}={}):Promise<CurrentPursuit>{
+  options:TacticalOptions&{mode?:PursuitMode;maxPolicyStates?:number;maxPolicyDecisions?:number;budget?:number|null;maxStates?:number;maxBoards?:number;scoreReuse?:boolean;trace?:(phase:string,milliseconds:number)=>void}={}):Promise<CurrentPursuit>{
   if(!input.ready)return input;
   const physical=input.state;
+  const mode=options.mode??'upgrade-first';if(!['upgrade-first','completion-first'].includes(mode))throw Error('Invalid pursuit mode');
   if(!advice.ready||advice.updating||advice.mode!=='selected')return {ready:false,reason:'选择主线后比较当前留牌'};
   if(input.stage<4||input.state.level<7)return {ready:false,reason:'启动阶段比较当前留牌'};
   const main=advice.rows.find(r=>r.id===advice.focusId);if(!main)return {ready:false,reason:'等待主线同步'};
@@ -80,11 +84,24 @@ export async function currentPursuit(advice:DirectionAdvice,input:StrategicInput
     }
     return floor;
   }
-  const gaps=new Set([...input.gaps,...original.gaps,'各组合后续使用相同的升星优先、多路线购买规则，任一路双核达标即停止；不是自适应最优策略',
+  const gaps=new Set([...input.gaps,...original.gaps,mode==='upgrade-first'?'各组合后续使用相同的升星优先、多路线购买规则，任一路双核达标即停止；不是自适应最优策略':'各组合后续按已揭示商店调整购买，以补齐目标为先、余金为并列取舍；不是战力或名次最优策略',
     '预算包含当前买牌和后续刷新；不含收入、卖牌、接装、升级或对手后续变化',`未来每次刷新按${input.pool.refreshPrice}金，不含未确认的免费次数与价格变化`,'4与5英雄格是两个固定商店情景，不是置信区间',
     '仍可合法重放的当前已评分棋盘作为已知候选；未完整评分分支只给可实现的下界']);
   if(Object.keys(search.failures).length)gaps.add('未纳入不满足当前预算、备战席或已覆盖合成规则的购买组合');
   const cache=new SearchDistributionCache(),paths:CurrentPursuitPath[]=[],scenarios:Scenario[]=[];let phaseAt=performance.now();
+  const policies=new Map<4|5,PursuitPolicy>(),adaptive:Extract<CurrentPursuit,{ready:true}>['adaptive']=[];
+  if(mode==='completion-first')for(const slots of [4,5] as const){
+    const config={targets,owned:targets.map(t=>owned[t.id]??0),goals,tierRemaining:input.pool.tierRemaining,tierOdds:input.pool.tierOdds,cash:budget,refreshPrice:input.pool.refreshPrice,heroSlots:slots,visible};
+    const {kernel}=cache.bind(config),roots=plans.map(plan=>{
+      const held=unitCopyCounts(plan.state.units),code=kernel.root-targets.reduce((n,t,i)=>n+((held[t.id]??0)-(owned[t.id]??0))*kernel.strides[i],0);
+      return {code,cash:budget-plan.spent};
+    });
+    const prepared=await adaptivePursuit(config,roots,{kernel,maxStates:options.maxPolicyStates,maxDecisions:options.maxPolicyDecisions,cancelled:options.cancelled,yield:options.yield});
+    if(prepared.cancelled)return {ready:false,reason:'局面已变化'};
+    policies.set(slots,prepared.policy);adaptive.push({heroSlots:slots,states:prepared.states,decisions:prepared.decisions,limited:prepared.limited});
+    if(prepared.limited)gaps.add('补齐策略搜索达到限额，未能证明改进的决策沿用升星优先；不宣称全局最优');
+  }
+  options.trace?.('policy',performance.now()-phaseAt);phaseAt=performance.now();
   for(const plan of plans){
     if(options.cancelled?.())return {ready:false,reason:'局面已变化'};
     const path:CurrentPursuitPath={id:plan.buySlots.length?'keep:'+plan.buySlots.join('.'):'skip',buy:plan.buySlots.map(slot=>({id:input.state.offers[slot]!.id,slot})),spent:plan.spent,goldAfter:reserve+plan.state.gold,bands:[]};
@@ -93,7 +110,7 @@ export async function currentPursuit(advice:DirectionAdvice,input:StrategicInput
     for(const slots of [4,5] as const){
       const config:SearchDistributionInput={targets,owned:targets.map(t=>owned[t.id]??0),goals,tierRemaining:input.pool.tierRemaining,tierOdds:input.pool.tierOdds,
         cash:budget,refreshPrice:input.pool.refreshPrice,heroSlots:slots,visible,initialPurchase,maxStates:options.maxStates??20000};
-      const distribution=await searchDistribution(config,{...options,cache});
+      const distribution=await searchDistribution(config,{...options,cache,policy:policies.get(slots)});
       if(distribution.cancelled)return {ready:false,reason:'局面已变化'};
       scenarios.push({path,plan,slots,distribution,landings:distribution.landings.slice().sort((a,b)=>b.probability-a.probability)});
       await options.yield?.();
@@ -151,5 +168,5 @@ export async function currentPursuit(advice:DirectionAdvice,input:StrategicInput
   }
   options.trace?.('bounds',performance.now()-phaseAt);
   return {ready:true,budget,level:input.state.level,routes:rows.map(r=>({id:r.id,name:r.name,cores:[...new Set([r.carry,r.tank])],targets:[...new Set([r.carry,r.tank])].map(id=>({id,copies:desired.get(id)!}))})),paths,
-    opponentCoverage:coverage,weightSource:request.weightSource,baseline:{lower:baseline,upper:baseline+missing},gaps:[...gaps],evaluations};
+    opponentCoverage:coverage,weightSource:request.weightSource,baseline:{lower:baseline,upper:baseline+missing},gaps:[...gaps],evaluations,mode,...(mode==='completion-first'?{adaptive}:{})};
 }

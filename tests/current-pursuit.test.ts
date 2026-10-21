@@ -20,6 +20,14 @@ function fixture(){
 }
 const choose=(n:number,k:number)=>{let r=1;for(let i=1;i<=k;i++)r=r*(n-i+1)/i;return r;};
 describe('current-shop core purchases and their full future distribution',()=>{
+  it('compares adaptive completion and upgrade-first as different objectives, without reusing stale-mode numbers',async()=>{
+    const {advice,input,request,model}=fixture(),base=await currentPursuit(advice,input,rules,request,model),adaptive=await currentPursuit(advice,input,rules,request,model,{mode:'completion-first'});
+    if(!base.ready||!adaptive.ready)throw Error();expect(adaptive.mode).toBe('completion-first');expect(adaptive.adaptive).toHaveLength(2);
+    for(const p of adaptive.paths)for(const b of p.bands)expect(b.completion.lower+1e-12).toBeGreaterThanOrEqual(base.paths.find(q=>q.id===p.id)!.bands.find(q=>q.heroSlots===b.heroSlots)!.completion.lower);
+    expect(adaptive.paths.find(p=>p.id==='keep:2')!.bands[0].expectedGold.lower).toBe(2);expect(base.paths.find(p=>p.id==='keep:2')!.bands[0].expectedGold.lower).toBe(0);
+    const html=await renderToString(createSSRApp({render:()=>h(CurrentPursuitPanel,{advice:adaptive,mode:'completion-first'})}));expect(html).toContain('data-pursuit-state="ready"');expect(html).toContain('补齐优先');
+    const stale=await renderToString(createSSRApp({render:()=>h(CurrentPursuitPanel,{advice:base,mode:'completion-first'})}));expect(stale).toContain('data-pursuit-state="updating"');expect(stale).not.toContain('data-pursuit-path=');expect(stale).toContain('data-pursuit-mode');
+  });
   it('reuses scalar scores and model-support checks without changing any purchase distribution or physical guards',async()=>{
     const {advice,input,request,model}=fixture();let calls=0,checks=0;
     const predict:typeof model=pairs=>{calls+=pairs.length;return model(pairs);},supports=()=>{checks++;return true;};
@@ -76,7 +84,7 @@ describe('current-shop core purchases and their full future distribution',()=>{
   it('renders separate combat, completion and cash columns without purchasing or changing the mainline',async()=>{
     const {advice,input,request,model}=fixture(),result=await currentPursuit(advice,input,rules,request,model);
     const html=await renderToString(createSSRApp({render:()=>h(CurrentPursuitPanel,{advice:result})}));
-    for(const text of ['跳过这家店','买牌花费','双核补齐','搜后胜率','预计余金','data-pursuit-slots="5"','留牌比较总预算'])expect(html).toContain(text);
+    for(const text of ['跳过这家店','买牌花费','双核二星','搜后胜率','预计余金','data-pursuit-slots="5"','留牌比较总预算'])expect(html).toContain(text);
     expect(html).not.toContain('设为主线');expect(html).not.toContain('高亮这组');expect(html).not.toContain('立即购买');
   });
   it('still compares a current mainline purchase when an alternative is already complete, without rolling that branch unnecessarily',async()=>{

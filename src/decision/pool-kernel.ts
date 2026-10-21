@@ -61,5 +61,5 @@ export function createPoolKernel(input:{targets:PoolTarget[];tierRemaining:Recor
     if(Math.abs(mass-1)>1e-8)throw new Error('Completion transition lost probability mass');
     transitions+=result.length;distributions.set(key,result);return result;
   }
-  return {size,root,strides,decode,outcomes,get transitionCount(){return transitions;}};
+  return {size,root,strides,decode,outcomes,signature:JSON.stringify([input.targets,input.tierRemaining,input.tierOdds]),get transitionCount(){return transitions;}};
 }

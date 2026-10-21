@@ -5,6 +5,7 @@ import {pairGearAffinity,type PairGearAffinity} from './pair-gear-affinity';
 import type {StrategyRegime,ProfileEarly,ProfileBoard} from './comp-profiles';
 import type {EarlyStage} from '../game/metatft-early';
 import type {DirectionSearch} from './direction-search';
+import {routeProgress,type RouteProgress} from './route-progress';
 
 export interface DirectionIntent {key:string;directionId?:string;units?:string[]}
 export interface DirectionInput {
@@ -23,6 +24,7 @@ export interface DirectionRow {
   tankGear?:GearAffinity;gearAllocation?:PairGearAffinity;
   rivalCopies?:number;tankRivalCopies?:number;poolComplete?:boolean;
   lateBoards?:ProfileBoard[];
+  progress?:RouteProgress|null;
 }
 export type DirectionAdvice={ready:false;reason:string;unsupported?:boolean}|{
   ready:true;unsupported?:false;updating?:boolean;round:string|null;milestone:'opening'|'second-augment'|'roll-down'|'late';
@@ -106,11 +108,13 @@ export function directionAdvice(input:DirectionInput,catalog:DirectionCatalog,ge
         if(obtainable(id))return 1;const cost=catalog.roles[id].cost,stock=poolSize(cost)-(input.assets.units[id]??0)-(input.assets.opponents[id]??0);
         return stock>=0&&tierTotals[cost]>0?tierOdds(planningLevel,cost as 1|2|3|4|5)*stock/tierTotals[cost]:0;
       }):null;
-      rows.push({id:pair.id,key:'metatft:'+profile.key,name:profile.name,regime:pair.regime,carry:pair.carry,tank:pair.tank,units,
+      const row:DirectionRow={id:pair.id,key:'metatft:'+profile.key,name:profile.name,regime:pair.regime,carry:pair.carry,tank:pair.tank,units,
         gear,tankGear,gearAllocation,lateBoards:pair.lateTemplates??[],early:association?{units:association.board.poolUnits,retained:association.retained,missing:association.missing,count:association.board.count}:null,
         copies,traitSupport,mechanismSupport,blocked,front:0,labels:[],observedPlace:profile.avg,observations:profile.count,
         rivalCopies:input.assets.opponents[pair.carry]??0,tankRivalCopies:input.assets.opponents[pair.tank]??0,poolComplete:input.assets.poolComplete,
-        tankCopies:input.assets.units[pair.tank]??0,readyCores,hitOdds:odds?Math.min(...odds):null,support:pair.support});
+        tankCopies:input.assets.units[pair.tank]??0,readyCores,hitOdds:odds?Math.min(...odds):null,support:pair.support};
+      if(pair.templates[0])row.progress=routeProgress(input,row,pair.templates[0].level,catalog.roles);
+      rows.push(row);
     }
   }
   // The same two heroes can belong to different trait/gear contexts. Keep those

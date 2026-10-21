@@ -22,6 +22,7 @@ describe('milestone direction evidence',()=>{
     const {catalog,gear,input}=fixture();input.intent={key:'metatft:four',directionId:'four',units:['four','tank']};
     const result=directionAdvice(input,catalog,gear);if(!result.ready)throw Error();
     expect(result).toMatchObject({mode:'selected',regime:'four-cost',focusId:'four'});expect(result.rows[0].id).toBe('four');
+    expect(result.rows[0].progress).toMatchObject({targetLevel:8,populationGap:4,onBoard:['tank'],missing:['four'],firstCopiesBaseGold:4});
     expect(result.comparisonRows?.some(r=>r.regime==='reroll')).toBe(true);expect(result.rows[0].regime).toBe('four-cost');input.intent=null;
     expect(directionAdvice(input,catalog,gear)).toMatchObject({mode:'flex',regime:null});
   });

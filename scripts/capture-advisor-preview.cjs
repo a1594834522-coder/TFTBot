@@ -27,6 +27,16 @@ app.whenReady().then(async()=>{
   await wait(`document.querySelector('[data-direction-advisor]')?.dataset.mode==='selected'&&!!document.querySelector('[data-direction-search]')`);
   await js(`document.querySelector('[data-route-filter="all"]').click()`);
   const report={};
+  await wait(`!!document.querySelector('[data-route-progress]')`);
+  await js(`document.querySelector('[data-route-progress] summary').click()`);
+  await wait(`document.querySelector('[data-route-progress]')?.open===true`);
+  await new Promise(resolve=>setTimeout(resolve,1300));
+  report.routeProgress=await js(`({open:document.querySelector('[data-route-progress]').open,text:document.querySelector('[data-route-progress]').textContent,overflow:document.documentElement.scrollWidth>innerWidth})`);
+  if(!report.routeProgress.open||report.routeProgress.overflow||!report.routeProgress.text.includes('场上沿用')||!report.routeProgress.text.includes('标准买价')||!report.routeProgress.text.includes('已持待上'))throw Error('Route progress lost facts or collapsed on refresh');
+  await js(`document.querySelector('[data-route-progress]').scrollIntoView({block:'center'});new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+  await new Promise(resolve=>setTimeout(resolve,100));
+  await fs.writeFile(path.join(out,'mainline-route-progress.png'),(await win.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+  await js(`document.querySelector('[data-route-progress] summary').click()`);
   for(const budget of ['20','40','wallet']){
    await js(`document.querySelector('[data-search-budget="${budget}"]').click()`);
    await wait(`document.querySelector('[data-search-budget="${budget}"]').classList.contains('active')`);

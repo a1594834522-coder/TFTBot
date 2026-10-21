@@ -2,6 +2,7 @@
 import {computed,ref} from 'vue';
 import type {DirectionAdvice} from '../decision/direction-advisor';
 import {dataset} from '../game/tft-data';
+import RouteProgressDetails from './RouteProgressDetails.vue';
 const props=defineProps<{advice?:DirectionAdvice;selectedKey?:string|null;selectedDirectionId?:string;budget?:number|null}>();
 defineEmits<{selectComp:[key:string,directionId:string];budget:[number|null]}>();
 const labels={reroll:'赌狗','four-cost':'84',legendary:'95'};
@@ -25,6 +26,7 @@ const pct=(p:number)=>p>0&&p<.001?'<0.1%':p>0&&p<.01?(p*100).toFixed(1)+'%':Math
     <div class="route-facts"><span>主C / 前排<b>{{ row.copies }} / {{ row.tankCopies }} 张</b></span><span title="其他存活玩家持有的该核心副本数；不是对手人数。">同行占主C<b>{{ row.poolComplete?row.rivalCopies??0:'—' }}{{ row.poolComplete?' 张':'' }}</b></span><span title="与该终局家族有真实观测关联的近人口过渡棋盘，已持有英雄种数。">过渡已持<b>{{ row.early?(row.early.units.length-row.early.missing)+' / '+row.early.units.length:'—' }}</b></span><span title="依据已选海克斯的描述与机制匹配，不是该海克斯带来的胜率提升。">机制关联<b>{{ new Set([...row.traitSupport,...row.mechanismSupport]).size }} 项</b></span></div>
     <small v-if="row.blocked" class="pool-warning">追三空间不足</small>
     <div class="route-units"><img v-for="id in row.units" :key="id" :src="dataset.characterById(id)?.image_path" :alt="name(id)" :title="name(id)"/></div>
+    <RouteProgressDetails v-if="row.progress" :progress="row.progress"/>
     <footer><span :title="'按实际出装频率逐件分配给双核；不重复使用物品。转移须处理原持有者，未分配物品可考虑其它英雄。这不是战斗胜率。'">{{ row.gear.supporting.length?'核心装支持':row.tankGear?.supporting.length?'前排装支持':row.gear.known||row.tankGear?.known?'散件方向已比较':'等待装备信号' }}</span><button :data-advisor-pick="row.key" :data-direction-pick="row.id" :data-late-count="row.lateBoards?.length??0" @click="$emit('selectComp',row.key,row.id)">{{ (selectedDirectionId?selectedDirectionId===row.id:selectedKey===row.key)?'当前主线':'设为主线' }}</button></footer>
   </article></div>
   <section v-if="mainRoute?.lateBoards?.length" class="late-variants" data-late-variants><header><strong>主线后期变体</strong><small>真实棋盘参考</small></header><div class="late-grid"><article v-for="(board,index) in mainRoute.lateBoards" :key="index" title="高人口样本存在筛选偏差；均名不是本局升级收益，也不保证该变体更强。"><div><b>{{ board.level }} 人口</b><span v-if="board.avg!==null">汇总均名 {{ board.avg.toFixed(2) }}</span><small>{{ board.count.toLocaleString() }} 次观测</small></div><div class="late-units"><img v-for="id in board.poolUnits" :key="id" :class="{owned:advice.owned[id]>0}" :src="dataset.characterById(id)?.image_path" :alt="name(id)" :title="name(id)+(advice.owned[id]?' · 已持有':'')"/></div></article></div></section>

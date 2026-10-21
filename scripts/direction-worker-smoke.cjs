@@ -20,7 +20,8 @@ app.whenReady().then(async()=>{
   if(!fixtures.full.request||!fixtures.full.strategy.ready)throw Error('Synthetic worker fixture is incomplete');
   const results=await Promise.all([
    check('missing-model',path.join(out,'broken/battle-worker.cjs'),fixtures.full,f=>f.phase==='error'&&f.direction?.ready&&f.strategy?.ready),
-   check('without-opponents',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.single,f=>f.phase==='waiting'&&f.direction?.ready)
+   check('without-opponents',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.single,f=>f.phase==='waiting'&&f.direction?.ready),
+   check('startup-mainline',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.startup,f=>f.direction?.ready&&f.direction.mode==='selected'&&f.tactics?.ready&&f.tactics.maxSwaps===2&&f.tactics.choices.some(c=>c.mainlineCores?.length===2))
   ]);
   console.log('DIRECTION_WORKER_INDEPENDENCE_PASS',JSON.stringify(results));app.exit(0);
  }catch(error){console.error(error);app.exit(1);}

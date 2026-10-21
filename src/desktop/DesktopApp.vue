@@ -17,6 +17,7 @@ import { dataset } from '../game/tft-data';
 import { allComps, sourcesFor, metatftMeta } from '../game/comps-sources';
 import { bundledAugmentTiers } from '../game/metatft-augments';
 import { normalizeSettings, type Settings } from '../core/settings';
+import {version as appVersion} from '../../package.json';
 
 type View = 'comps' | 'advisor' | 'augments' | 'champions' | 'board' | 'settings';
 const view = ref<View>('comps');
@@ -93,7 +94,7 @@ async function togglePin() { await window.tftDesktop.setAlwaysOnTop(!pinned.valu
 </script>
 <template>
   <div class="desktop-shell" data-desktop-ready="true">
-    <header class="desktop-header"><div class="app-brand"><span class="brand-symbol">◈</span><strong>TFTBot</strong><small>1.0</small><span class="season-badge">赛季 {{ set }}</span><span class="latest-label">最新赛季</span></div><div class="header-actions"><span>TypeScript 桌面版</span><button :class="{ active: pinned }" @click="togglePin">{{ pinned ? '已置顶' : '窗口置顶' }}</button></div></header>
+    <header class="desktop-header"><div class="app-brand"><span class="brand-symbol">◈</span><strong>TFTBot</strong><small>{{ appVersion }}</small><span class="season-badge">赛季 {{ set }}</span><span class="latest-label">最新赛季</span></div><div class="header-actions"><span>TypeScript 桌面版</span><button :class="{ active: pinned }" @click="togglePin">{{ pinned ? '已置顶' : '窗口置顶' }}</button></div></header>
     <nav class="desktop-nav"><button v-for="item in nav" :key="item.id" :class="{ current: view === item.id }" :data-nav="item.id" @click="view = item.id"><span>{{ item.icon }}</span>{{ item.name }}</button><span class="data-status"><i></i>本地数据已就绪</span></nav>
     <main class="desktop-content" :class="{ 'comps-content': view === 'comps' }">
       <div v-if="error" class="error">{{ error }}</div>

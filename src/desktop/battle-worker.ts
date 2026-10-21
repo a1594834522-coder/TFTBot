@@ -2,7 +2,7 @@ import path from 'node:path';
 import {loadBattleModel} from '../decision/battle-model';
 import {encodeBattleBoard} from '../game/battle-model-encoding';
 import {aggregateBattleForecast,emptyBattleForecast,type BattleRequest} from '../game/battle-forecast';
-import {shoppingTactics} from '../decision/shopping-tactics';
+import {shoppingTactics,mainlineTacticalReference} from '../decision/shopping-tactics';
 import {tradingRules,type ShoppingInput} from '../decision/shopping-input';
 import {strategicAdvice} from '../decision/strategic-advisor';
 import type {StrategicInput} from '../decision/strategic-input';
@@ -52,7 +52,7 @@ async function run(){
     forecast.strategy=strategy?.ready?{ready:false,reason:'正在比较后续路线'}:strategy??{ready:false,reason:'等待全场持牌'};
     process.parentPort?.postMessage({type:'result',id,forecast});
     if(shopping?.ready&&request&&model){
-      try{const tactics=await shoppingTactics(shopping.state,tradingRules,request,model.predictCachedBatch,{cancelled:()=>id!==latestId,yield:()=>new Promise(resolve=>setImmediate(resolve))});
+      try{const tactics=await shoppingTactics(shopping.state,tradingRules,request,model.predictCachedBatch,{cancelled:()=>id!==latestId,yield:()=>new Promise(resolve=>setImmediate(resolve)),reference:mainlineTacticalReference(forecast.direction),supportsBoard:board=>encodeBattleBoard(board,model.lookup,'player').unknown.length===0});
         if(id===latestId){forecast={...forecast,tactics:tactics.ready?{...tactics,gaps:[...new Set([...tactics.gaps,...shopping.gaps])]}:tactics};process.parentPort?.postMessage({type:'result',id,forecast});}
       }catch(error){if(id===latestId){forecast={...forecast,tactics:{ready:false,reason:'商店方案暂不可用：'+(error as Error).message}};process.parentPort?.postMessage({type:'result',id,forecast});}}
     }

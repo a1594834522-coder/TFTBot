@@ -11,6 +11,7 @@ import {directionInput} from './src/decision/direction-input';
 import {shoppingInput} from './src/decision/shopping-input';
 import {strategicInput} from './src/decision/strategic-input';
 import {battleRequest} from './src/game/battle-forecast';
+import catalog from './data/metatft-direction-catalog.json';
 export function fixtures(){
  const status=advisorDemo('ap'),local=status.tracker.snapshot.players.find(p=>p.isLocal),now=Date.now();
  status.cards.gold=40;status.cards.itemBenches=[{summoner:local.summoner,tag_line:local.tagLine,bench_items:[]}];
@@ -18,7 +19,15 @@ export function fixtures(){
  status.cards.ownHoldings={board,bench:[]};status.cards.battleBoards={local:{at:now,units:board},opponents:{}};
  const make=s=>{const shopping=shoppingInput(s);return {request:battleRequest(s),shopping,strategy:strategicInput(s,shopping),direction:directionInput(s),searchBudget:null};};
  const full=make(status),single=structuredClone(status);single.tracker.snapshot.players=single.tracker.snapshot.players.filter(p=>p.isLocal);
- return {full,single:make(single)};
+ const startup=structuredClone(full),pairProfile=catalog.profiles.find(p=>p.regime.primary==='four-cost'&&p.pairs.some(pair=>[pair.carry,pair.tank].every(id=>!full.request.local.units.some(u=>u.id===id))));
+ const pair=pairProfile.pairs.find(pair=>[pair.carry,pair.tank].every(id=>!full.request.local.units.some(u=>u.id===id)));
+ startup.request.round='4-2';startup.shopping.state.level=8;startup.shopping.state.boardCapacity=8;
+ startup.shopping.state.units.push(...[pair.carry,pair.tank].map((id,slot)=>({key:'bench:'+slot,id,star:1,area:'bench',slot,items:[],equipmentKnown:true})));
+ startup.direction.round='4-2';startup.direction.assets.level=8;startup.direction.assets.stage=4;
+ startup.direction.assets.units={};for(const u of startup.shopping.state.units)startup.direction.assets.units[u.id]=(startup.direction.assets.units[u.id]??0)+3**(u.star-1);
+ startup.direction.intent={key:'metatft:'+pairProfile.key,directionId:pair.id,units:pair.templates[0].poolUnits};
+ startup.strategy={ready:false,reason:'Isolated current-board test; no fabricated lobby pool updates'};
+ return {full,single:make(single),startup};
 }`},bundle:true,platform:'node',format:'cjs',outfile:path.join(out,'fixtures.cjs')});
 const require=createRequire(import.meta.url),env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
 const child=spawn(require('electron'),[path.resolve('scripts/direction-worker-smoke.cjs')],{env,windowsHide:true,stdio:'inherit'});

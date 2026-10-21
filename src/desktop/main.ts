@@ -309,7 +309,8 @@ async function start() {
           for(let i=0;i<40&&!battles.snapshot().tactics?.ready;i++)await new Promise(resolve=>setTimeout(resolve,100));
           const tactics=battles.snapshot().tactics;
           if(!tactics?.ready||!tactics.choices.length||tactics.searchedPlans<2)throw new Error('原生经济数据未进入合法购买组合搜索：'+JSON.stringify(tactics));
-          if(tactics.choices.some(c=>c.delta!==null&&c.delta< -1e-6))throw new Error('战术方案错误地排除了真实不动棋盘对照');
+          if(tactics.maxSwaps!==2||tactics.choices.some(c=>c.id!=='mainline'&&c.delta!==null&&c.delta< -1e-6))throw new Error('战术方案错误地排除了真实不动棋盘对照');
+          if(tactics.choices.some(c=>!c.incoming||!c.outgoing||!c.onBoardItems||c.onBoardItems.length!==c.onBoard.length))throw new Error('换牌方案缺少实际上下场与装备去向');
           await fs.writeFile(path.join(smokeDir,'shopping-tactics.json'),JSON.stringify(tactics,null,2));
           console.log('SHOPPING_TACTICS_SMOKE_PASS');
           for(let i=0;i<80&&!battles.snapshot().strategy?.ready;i++)await new Promise(resolve=>setTimeout(resolve,100));
@@ -348,7 +349,10 @@ async function start() {
           await new Promise(resolve=>setTimeout(resolve,100));
           await fs.writeFile(path.join(smokeDir,'strategic-options.png'),(await window!.webContents.capturePage()).toPNG());
           await window!.webContents.executeJavaScript(`document.querySelector('[data-shopping-tactics]').scrollIntoView({block:'center'})`);
+          await window!.webContents.executeJavaScript(`document.querySelector('[data-tactical-details] summary').click()`);
           await new Promise(resolve=>setTimeout(resolve,100));
+          const tacticalDetails=await window!.webContents.executeJavaScript(`({open:document.querySelector('[data-tactical-details]')?.open,text:document.querySelector('[data-tactical-details]')?.textContent,overflow:document.documentElement.scrollWidth>innerWidth})`);
+          if(!tacticalDetails.open||!tacticalDetails.text.includes('换上')||!tacticalDetails.text.includes('换下')||tacticalDetails.overflow)throw new Error('换牌明细未渲染或出现横向溢出');
           await fs.writeFile(path.join(smokeDir,'shopping-tactics.png'),(await window!.webContents.capturePage()).toPNG());
           const firstDirection=battles.snapshot().direction;
           if(!firstDirection?.ready)throw new Error('定阵结果丢失');

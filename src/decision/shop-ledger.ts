@@ -64,6 +64,30 @@ function combine(s:ShopState,id:string,r:TradingRules):MergeEffect[]|TradeFailur
   }
   return effects;
 }
+function addPhysicalCopy(next:ShopState,offer:Pick<HeroOffer,'id'|'combatId'>,key:string,r:TradingRules):MergeEffect[]|TradeFailure{
+  const taken=new Set(next.units.filter(u=>u.area==='bench').map(u=>u.slot));
+  const slot=Array.from({length:r.benchCapacity},(_,i)=>i).find(i=>!taken.has(i))??r.benchCapacity;
+  next.units.push({key,id:offer.id,...(offer.combatId?{combatId:offer.combatId}:{}),star:1,area:'bench',slot,items:[]});
+  const effects=combine(next,offer.id,r);if(typeof effects==='string')return effects;
+  if(next.units.filter(u=>u.area==='bench').length>r.benchCapacity)return 'bench-full';
+  const overflow=next.units.find(u=>u.area==='bench'&&u.slot>=r.benchCapacity);
+  if(overflow){const used=new Set(next.units.filter(u=>u.area==='bench'&&u!==overflow).map(u=>u.slot));overflow.slot=Array.from({length:r.benchCapacity},(_,i)=>i).find(i=>!used.has(i))!;}
+  return effects;
+}
+/** Materialize explicitly supplied counterfactual copies for combat ONLY. The
+ * stochastic search has already accounted for their purchase/refresh costs.
+ * This is not a trade or an execution plan, and deliberately returns no cash.
+ * Uses the same merge/equipment rules as real purchase scenarios. */
+export function materializeAcquisitions(state:ShopState,acquired:Array<{id:string;combatId?:string;copies:number}>,r:TradingRules):{ok:true;units:OwnedUnit[]}|{ok:false;reason:TradeFailure}{
+  validateShopState(state,r);const next=clone(state);
+  if(acquired.some(a=>!r.heroes[a.id]||!integer(a.copies)||a.copies>9))return {ok:false,reason:'invalid-action'};
+  let serial=0;
+  for(const entry of acquired)for(let n=0;n<entry.copies;n++){
+    let key:string;do{key='pursuit:'+serial++;}while(next.units.some(u=>u.key===key));
+    const result=addPhysicalCopy(next,entry,key,r);if(typeof result==='string')return {ok:false,reason:result};
+  }
+  return {ok:true,units:next.units};
+}
 /** Atomic: failures never mutate the caller's state. Purchases may immediately merge on a full bench. */
 export function trade(s:ShopState,action:TradeAction,r:TradingRules):TradeResult {
   const next=clone(s);
@@ -85,15 +109,8 @@ export function trade(s:ShopState,action:TradeAction,r:TradingRules):TradeResult
   if(!offer||next.units.some(u=>u.key===`shop:${action.slot}`))return {ok:false,reason:'invalid-action'};
   if(next.gold<offer.price)return {ok:false,reason:'gold'};
   next.gold-=offer.price;next.offers[action.slot]=null;
-  const taken=new Set(next.units.filter(u=>u.area==='bench').map(u=>u.slot));
-  const slot=Array.from({length:r.benchCapacity},(_,i)=>i).find(i=>!taken.has(i))??r.benchCapacity;
-  next.units.push({key:`shop:${action.slot}`,id:offer.id,...(offer.combatId?{combatId:offer.combatId}:{}),star:1,area:'bench',slot,items:[]});
-  const effects=combine(next,offer.id,r);
+  const effects=addPhysicalCopy(next,offer,`shop:${action.slot}`,r);
   if(typeof effects==='string')return {ok:false,reason:effects};
-  if(next.units.filter(u=>u.area==='bench').length>r.benchCapacity)return {ok:false,reason:'bench-full'};
-  // A temporary full-bench purchase may survive a merge; assign it the newly freed slot.
-  const overflow=next.units.find(u=>u.area==='bench'&&u.slot>=r.benchCapacity);
-  if(overflow){const used=new Set(next.units.filter(u=>u.area==='bench'&&u!==overflow).map(u=>u.slot));overflow.slot=Array.from({length:r.benchCapacity},(_,i)=>i).find(i=>!used.has(i))!;}
   return {ok:true,state:next,merges:effects};
 }
 

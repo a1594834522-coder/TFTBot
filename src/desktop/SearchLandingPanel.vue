@@ -1,0 +1,27 @@
+<script setup lang="ts">
+import {computed,ref} from 'vue';
+import type {SearchLandings} from '../decision/search-landings';
+import {dataset} from '../game/tft-data';
+const props=defineProps<{advice?:SearchLandings}>();
+const slots=ref<4|5>(4);
+const pct=(n:number)=>n>0&&n<.001?'<0.1%':(Math.max(0,Math.min(1,n))*100).toFixed(1)+'%';
+const interval=(r:{lower:number;upper:number})=>Math.abs(r.upper-r.lower)<.0001?pct(r.lower):pct(r.lower)+'～'+pct(r.upper);
+const name=(id:string)=>dataset.characterById(id)?.display_name??'名称待更新';
+const rows=computed(()=>props.advice?.ready?props.advice.plans.flatMap(plan=>{const band=plan.bands.find(b=>b.heroSlots===slots.value);return band?[{plan,band}]:[];}):[]);
+const explanation=computed(()=>props.advice?.ready?props.advice.gaps.join(' · '):'');
+</script>
+<template><section v-if="advice?.ready" class="landing-panel" data-search-landings>
+  <header><div><h2>预算落点</h2><small :title="explanation">{{ advice.level }}级 · {{ advice.budget }}金 · 原装部署参考</small></div><nav title="未来商店分别固定为4或5个英雄格；实际仙灵周期尚未同步。这是两个情景，不是置信区间。"><button v-for="n in [4,5] as const" :key="n" :class="{active:slots===n}" :data-landing-slots="n" @click="slots=n">{{ n }}英雄格</button></nav></header>
+  <div class="landing-grid"><article v-for="{plan,band} in rows" :key="plan.id" :data-landing-plan="plan.id">
+    <h3 :title="plan.name">{{ plan.alternative?'兼留 · '+plan.alternative.map(name).join(' / '):plan.name }}</h3>
+    <div class="landing-heroes"><span v-for="target in plan.targets" :key="target.id" :title="name(target.id)+' · '+(target.copies===9?'追三':'二星目标')"><img :src="dataset.characterById(target.id)?.image_path" :alt="name(target.id)"/><small>{{ target.copies===9?'三星':'二星' }}</small></span></div>
+    <div class="landing-combat" :title="'按全部成功和未齐分支加权；对手棋盘固定。'+band.gaps.join(' · ')"><small>{{ advice.weightSource==='uniform'?'全场':'候选对手' }}模型参考</small><strong>{{ interval(band.combat) }}</strong></div>
+    <div class="landing-risk"><span>核心未齐 <b>{{ interval({lower:1-band.completion.upper,upper:1-band.completion.lower}) }}</b></span><span title="全部搜牌落点中，模型值低于当前持牌免费换牌后最好棋盘的概率；未假定升星合并可以撤销。">低于当前 <b>{{ interval(band.weaker) }}</b></span><span v-if="band.coverage<.9999" title="未展开、合成不支持或尚未评估的落点保留未知质量，不按已知部分重新归一化。">落点评估 {{ pct(band.coverage) }}</span></div>
+    <details><summary>没抽齐时</summary><div v-if="band.failureCombat" class="failure-combat" :title="'以核心未齐为条件的平均单场模型参考。'+band.gaps.join(' · ')">模型参考 <b>{{ interval(band.failureCombat) }}</b></div><div v-else class="failure-combat">此情景核心已齐</div>
+      <div v-for="(example,index) in band.examples.slice(0,1)" :key="index" class="landing-example"><small>一个可能落点 · {{ pct(example.probability) }}</small><div><span v-for="unit in example.units" :key="unit.key" :title="name(unit.id)+' · '+unit.star+'星'+(unit.items.length?' · '+unit.items.map(id=>dataset.item(id)?.display_name??'装备').join('、'):'')"><img :src="dataset.characterById(unit.id)?.image_path" :alt="name(unit.id)"/><b>{{ '★'.repeat(unit.star) }}</b></span></div></div>
+    </details>
+  </article></div>
+</section><p v-else-if="advice" class="landing-pending" role="status">{{ advice.reason }}</p></template>
+<style scoped>
+.landing-pending{font-size:10px;color:#778694;margin:0 0 24px}.landing-panel{padding:18px 20px;background:linear-gradient(130deg,#1d2229,#131b22);border:1px solid #3a4148;border-radius:8px;margin:0 0 24px}.landing-panel>header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}h2{margin:0 0 5px;font-size:14px;color:#cbd1cb;font-weight:500}header small{font-size:9px;color:#738493;cursor:help}nav{display:flex;gap:4px}nav button{padding:5px 9px;font-size:9px;border:1px solid transparent;background:transparent;color:#738493;border-radius:4px}nav button.active{border-color:#91815b66;color:#c6b58c;background:#c5ac7010}.landing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}article{background:#10171e;border:1px solid #2e3b44;border-radius:5px;padding:14px;min-width:0}h3{font-size:11px;font-weight:500;color:#babfae;margin:0 0 15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.landing-heroes{display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap}.landing-heroes>span{display:flex;flex-direction:column;align-items:center;gap:4px}.landing-heroes img{width:30px;height:30px;object-fit:cover;border:1px solid #66705f;border-radius:3px}.landing-heroes small{font-size:8px;color:#7d8b8b}.landing-combat{display:flex;align-items:baseline;justify-content:space-between;gap:8px}.landing-combat small{font-size:9px;color:#778c94}.landing-combat strong{font-size:20px;font-weight:500;color:#c2c9b0;font-variant-numeric:tabular-nums;white-space:nowrap}.landing-risk{display:flex;justify-content:space-between;gap:8px;font-size:9px;color:#71808d;margin-top:12px;flex-wrap:wrap}.landing-risk b{font-weight:400;color:#b4a68e;margin-left:4px}details{font-size:9px;margin-top:14px;color:#647d89}summary{cursor:pointer}.failure-combat{display:flex;justify-content:space-between;margin-top:14px;color:#7c8b99;font-size:10px}.failure-combat b{font-size:12px;font-weight:400;color:#b0bfa7}.landing-example{margin-top:15px}.landing-example>small{font-size:9px;color:#5d7888}.landing-example>div{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}.landing-example span{display:flex;flex-direction:column;align-items:center;gap:3px}.landing-example img{width:24px;height:24px;border:1px solid #475b63;object-fit:cover;border-radius:2px}.landing-example b{font-size:6px;color:#c1ac75;line-height:1}
+</style>

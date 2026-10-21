@@ -17,6 +17,7 @@ import {earlyStages} from '../game/metatft-early';
 import {directionSearch} from '../decision/direction-search';
 import {withSearchHolds} from '../decision/search-holds';
 import {battleTacticalContext,modelBoardGaps} from '../decision/battle-tactical-context';
+import {searchLandings} from '../decision/search-landings';
 const catalog=catalogFile as unknown as DirectionCatalog,gearModel=gearFile as unknown as GearModel;
 function searchAdvice(personal:ReturnType<typeof directionAdvice>,strategy:StrategicInput,budget:number|null){
   if(personal.ready){
@@ -55,12 +56,22 @@ async function run(){
     catch(error){forecast.direction={ready:false,unsupported:true,reason:'方向计算暂不可用：'+(error as Error).message};}
     forecast.tactics=shopping?.ready?{ready:false,reason:request&&model?'正在搜索当前商店':loadError?'胜率模型不可用，暂停战力比较':'等待可用对战棋盘'}:shopping??{ready:false,reason:'等待金币与实体棋盘'};
     forecast.strategy=strategy?.ready?{ready:false,reason:'正在比较后续路线'}:strategy??{ready:false,reason:'等待全场持牌'};
+    if(forecast.direction?.ready&&forecast.direction.mode==='selected'&&['roll-down','late'].includes(forecast.direction.milestone)&&(direction.assets.level??0)>=7){
+      forecast.landings={ready:false,reason:!strategy?.ready?strategy?.reason??'等待全场持牌':!request||!model?'等待可用对战棋盘':'正在比较预算落点'};
+    }
     process.parentPort?.postMessage({type:'result',id,forecast});
     if(shopping?.ready&&request&&model){
       try{const context=battleTacticalContext(request,shopping.state,model.lookup);
         const tactics=context.ready?await shoppingTactics(shopping.state,tradingRules,context.request,model.predictCachedBatch,{cancelled:()=>id!==latestId,yield:()=>new Promise(resolve=>setImmediate(resolve)),reference:mainlineTacticalReference(forecast.direction),supportsBoard:board=>encodeBattleBoard(board,model.lookup,'player').unknown.length===0,auxiliary:context.auxiliary,acceptsLineup:context.accepts,purchaseContext:shoppingContextKey(shopping.state,raw!)}):context;
         if(id===latestId){forecast={...forecast,tactics:tactics.ready?{...tactics,gaps:[...new Set([...tactics.gaps,...shopping.gaps,...(context.ready?context.gaps:[])])]}:tactics};process.parentPort?.postMessage({type:'result',id,forecast});}
       }catch(error){if(id===latestId){forecast={...forecast,tactics:{ready:false,reason:'商店方案暂不可用：'+(error as Error).message}};process.parentPort?.postMessage({type:'result',id,forecast});}}
+    }
+    if(strategy?.ready&&request&&model&&forecast.direction?.ready&&forecast.direction.mode==='selected'&&id===latestId){
+      try{
+        const context=battleTacticalContext(request,strategy.state,model.lookup);
+        const result=context.ready?await searchLandings(forecast.direction,strategy,tradingRules,context.request,model.predictCachedBatch,{budget:searchBudget,cancelled:()=>id!==latestId,yield:()=>new Promise(resolve=>setImmediate(resolve)),auxiliary:context.auxiliary,acceptsLineup:context.accepts,supportsBoard:board=>encodeBattleBoard(board,model.lookup,'player').unknown.length===0}):context;
+        if(id===latestId){forecast={...forecast,landings:result};process.parentPort?.postMessage({type:'result',id,forecast});}
+      }catch(error){if(id===latestId){forecast={...forecast,landings:{ready:false,reason:'预算落点暂不可用：'+(error as Error).message}};process.parentPort?.postMessage({type:'result',id,forecast});}}
     }
     if(strategy?.ready&&id===latestId){
       try{const result=await strategicAdvice(strategy,libraryFile as TransitionLibrary,tradingRules,{cancelled:()=>id!==latestId,yield:()=>new Promise(resolve=>setImmediate(resolve))});

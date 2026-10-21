@@ -7,6 +7,7 @@ import {combatHeroId} from './combat-unit-identity';
 import type {ShoppingTactics} from '../decision/shopping-tactics';
 import type {StrategicAdvice} from '../decision/strategic-advisor';
 import type {DirectionAdvice} from '../decision/direction-advisor';
+import type {SearchLandings} from '../decision/search-landings';
 
 export interface OpponentPrior {round:string;source:'native'|'manual';weights:Record<string,number>}
 export interface BattleTarget {id:string;name:string;weight:number;board:BattleBoard|null;gaps:string[]}
@@ -19,6 +20,7 @@ export interface BattleForecast {
   tactics?:ShoppingTactics;
   strategy?:StrategicAdvice;
   direction?:DirectionAdvice;
+  landings?:SearchLandings;
 }
 export const emptyBattleForecast=(message='等待场上棋盘'):BattleForecast=>({phase:'waiting',message,at:Date.now(),round:null,weightSource:'uniform',winRate:null,lower:0,upper:1,coverage:0,approximate:true,gaps:[],opponents:[]});
 

@@ -1,7 +1,7 @@
 {
   "name": "tftbot",
   "private": true,
-  "version": "1.6.0",
+  "version": "1.7.0",
   "type": "module",
   "main": "dist/desktop/main.cjs",
   "description": "TFT 对局信息面板：事件驱动的悬浮窗、记牌器、三星预警与阵容推荐",

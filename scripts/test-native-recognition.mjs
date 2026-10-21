@@ -4,7 +4,7 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 const require = createRequire(import.meta.url);
 const electron = require('electron');
-const env = { ...process.env, TFTBOT_TEST_CHANNEL: `TFTBot-native-test-${process.pid}-${Date.now()}`, TFTBOT_SMOKE_DIR: path.resolve(process.env.TFTBOT_TEST_PURCHASE==='1'?'dist/native-purchase-smoke':process.env.TFTBOT_TEST_COMBAT_AUX==='1'?'dist/native-combat-smoke':'dist/native-recognition-smoke') };
+const env = { ...process.env, TFTBOT_TEST_CHANNEL: `TFTBot-native-test-${process.pid}-${Date.now()}`, TFTBOT_SMOKE_DIR: path.resolve(process.env.TFTBOT_TEST_LANDING==='1'?'dist/native-landing-smoke':process.env.TFTBOT_TEST_PURCHASE==='1'?'dist/native-purchase-smoke':process.env.TFTBOT_TEST_COMBAT_AUX==='1'?'dist/native-combat-smoke':'dist/native-recognition-smoke') };
 await fs.access('E:/amumu/resources/win64/node-native.node');
 const fixture = spawn(electron, [path.resolve('scripts/native-recognition-fixture.cjs')], { env: { ...env, ELECTRON_RUN_AS_NODE: '1' }, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
 try {

@@ -12,6 +12,7 @@ import {metatftComps,metatftMeta} from '../game/comps-sources';
 import {dataset} from '../game/tft-data';
 import ShoppingTacticsPanel from './ShoppingTacticsPanel.vue';
 import PurchaseOpportunities from './PurchaseOpportunities.vue';
+import SearchLandingPanel from './SearchLandingPanel.vue';
 import StrategicOptionsPanel from './StrategicOptionsPanel.vue';
 import type {BattleForecast} from '../game/battle-forecast';
 import DirectionPanel from './DirectionPanel.vue';
@@ -65,6 +66,7 @@ const stamp=String(metatftMeta().fetchedAt??'').slice(0,10);
     <div v-if="!result.ready" class="smart-empty"><span>◈</span><h2>{{ result.message }}</h2><button v-if="!status||['stopped','error'].includes(status.phase)" class="primary" data-advisor-start @click="emit('start')">连接对局</button></div>
     <template v-else>
       <DirectionPanel :advice="battle?.direction" :selected-key="selectedKey" :selected-direction-id="selectedDirectionId" :budget="preferences.searchBudget" @select-comp="(key,id)=>emit('selectComp',key,id)" @budget="preferences={...preferences,searchBudget:$event}"/>
+      <SearchLandingPanel :advice="battle?.landings"/>
       <div v-if="battle?.direction&&!battle.direction.ready&&battle.direction.unsupported" class="notice">{{ battle.direction.reason }}</div>
       <EarlyHoldPanel v-if="!selectedKey&&holds.ready" :advice="holds" :focused="preferences.boardId" @stage="preferences={...preferences,stage:$event,boardId:null}" @focus="preferences={...preferences,boardId:$event}"/>
       <PurchaseOpportunities :status="status" :forecast="battle" :selection="preferences.purchase" :disabled="hydrating" @select="preferences={...preferences,purchase:$event}"/>

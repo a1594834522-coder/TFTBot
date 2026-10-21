@@ -342,6 +342,26 @@ async function start() {
           }
           await fs.writeFile(path.join(smokeDir,'shopping-tactics.json'),JSON.stringify(tactics,null,2));
           console.log('SHOPPING_TACTICS_SMOKE_PASS');
+          if(process.env.TFTBOT_TEST_LANDING==='1'){
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-nav="advisor"]').click()`);
+            for(let i=0;i<30;i++){if(await window!.webContents.executeJavaScript(`!!document.querySelector('[data-route-filter="four-cost"]')`))break;await new Promise(resolve=>setTimeout(resolve,50));}
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-route-filter="four-cost"]').click()`);
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-direction-pick]').click()`);
+            for(let i=0;i<100;i++){const value=battles.snapshot().landings;if(value?.ready&&value.plans[0].id===selectedComp?.directionId)break;await new Promise(resolve=>setTimeout(resolve,100));}
+            const landings=battles.snapshot().landings;
+            if(!landings?.ready||!landings.plans.length||landings.budget!==20||landings.plans[0].id!==selectedComp?.directionId)throw Error('原生输入未进入预算落点：'+JSON.stringify(landings));
+            const mainlineBefore=selectedComp?.directionId;
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-landing-slots="5"]').click();document.querySelector('[data-search-landings] summary').click();new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-search-landings]').scrollIntoView({block:'center'});new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+            await new Promise(resolve=>setTimeout(resolve,100));
+            const view=await window!.webContents.executeJavaScript(`(()=>{const el=document.querySelector('[data-search-landings]'),rect=el?.getBoundingClientRect();return {text:el?.textContent,overflow:document.documentElement.scrollWidth>innerWidth,top:rect?.top,bottom:rect?.bottom,height:innerHeight,five:document.querySelector('[data-landing-slots="5"]')?.classList.contains('active')};})()`);
+            if(!view.five||view.overflow||view.top<80||view.bottom>view.height||!view.text?.includes('核心未齐')||!view.text.includes('没抽齐时')||selectedComp?.directionId!==mainlineBefore)throw Error('预算落点显示或主线保持失败：'+JSON.stringify(view));
+            await fs.writeFile(path.join(smokeDir,'landing-layout.json'),JSON.stringify(view,null,2));
+            await fs.writeFile(path.join(smokeDir,'search-landings.json'),JSON.stringify(landings,null,2));
+            await fs.writeFile(path.join(smokeDir,'search-landings.png'),(await window!.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+            console.log('SEARCH_LANDINGS_SMOKE_PASS');
+            if(timeout)clearTimeout(timeout);app.quit();return;
+          }
           if(process.env.TFTBOT_TEST_PURCHASE==='1'){
             if(!tactics.purchases.length)throw Error('购买组合测试没有产生额外补强：'+JSON.stringify(tactics.choices));
             await window!.webContents.executeJavaScript(`document.querySelector('[data-nav="advisor"]').click()`);

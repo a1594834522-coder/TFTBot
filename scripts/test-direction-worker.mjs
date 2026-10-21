@@ -34,7 +34,9 @@ export function fixtures(){
  first.id='DA_Lux18_Base';first.combatId='DA_18_Lux_Elderwood';form.request.local.units[0].id=first.combatId;
  form.direction.assets.units={};for(const u of form.shopping.state.units)form.direction.assets.units[u.id]=(form.direction.assets.units[u.id]??0)+3**(u.star-1);
  form.direction.board=form.shopping.state.units.filter(u=>u.area==='board').map(u=>u.id);
- return {full,single:make(single),startup,unencoded,tower,form};
+ const rollStatus=structuredClone(status);rollStatus.cards.gold=20;rollStatus.cards.level=8;rollStatus.cards.stage=4;rollStatus.cards.round='4-2';
+ const landing=make(rollStatus);landing.direction.intent={key:'metatft:'+pairProfile.key,directionId:pair.id,units:pair.templates[0].poolUnits};
+ return {full,single:make(single),startup,unencoded,tower,form,landing};
 }`},bundle:true,platform:'node',format:'cjs',outfile:path.join(out,'fixtures.cjs')});
 const require=createRequire(import.meta.url),env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
 const child=spawn(require('electron'),[path.resolve('scripts/direction-worker-smoke.cjs')],{env,windowsHide:true,stdio:'inherit'});

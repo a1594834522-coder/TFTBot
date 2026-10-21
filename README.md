@@ -6,7 +6,7 @@ TypeScript / Vue 重构的独立 Windows 云顶助手，直接打开桌面窗口
 
 双击 [启动TFTBot.cmd](启动TFTBot.cmd)，或运行已打包的 `desktop-release/TFTBot-win32-x64/TFTBot.exe`。请保留整个发布文件夹。
 
-1.13.0 增加“关键二星”留牌目标，比较当前核心买入或跳过后，预算内新增任一关键二星的机会、模型战力与余金；已有二星不重复计算，未知合成保留区间。桌面进一步采用墨色、米白、细分隔线与精简列表。详见 [版本说明](docs/RELEASE-1.13.0.md)、[可观察搜牌策略](docs/ADAPTIVE-PURSUIT.md) 与 [当前留牌比较](docs/CURRENT-PURSUIT.md)。
+1.13.1 减少实时留牌计算的重复等待：复用已核对的转移和冻结策略，当前商店实体、成本及对手仍重新验证。保留“关键二星”目标及墨色精简桌面。详见 [版本说明](docs/RELEASE-1.13.1.md)、[响应对照](docs/PURSUIT-REUSE.md)、[可观察搜牌策略](docs/ADAPTIVE-PURSUIT.md) 与 [当前留牌比较](docs/CURRENT-PURSUIT.md)。
 
 ```bash
 npm start              # 构建并打开独立桌面窗口

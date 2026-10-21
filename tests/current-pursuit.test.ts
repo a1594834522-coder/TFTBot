@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {currentPursuit} from '../src/decision/current-pursuit';
+import {currentPursuit,CurrentPursuitWorkspace} from '../src/decision/current-pursuit';
 import type {DirectionAdvice} from '../src/decision/direction-advisor';
 import type {StrategicInput} from '../src/decision/strategic-input';
 import type {TradingRules} from '../src/decision/shop-ledger';
@@ -20,6 +20,18 @@ function fixture(){
 }
 const choose=(n:number,k:number)=>{let r=1;for(let i=1;i<=k;i++)r=r*(n-i+1)/i;return r;};
 describe('current-shop core purchases and their full future distribution',()=>{
+  it('reuses only scratch data, replaying new purchases, equipment and opponent coverage rather than an old recommendation',async()=>{
+    const {advice,input,request,model}=fixture(),workspace=new CurrentPursuitWorkspace(),strip=(r:Awaited<ReturnType<typeof currentPursuit>>)=>r.ready?{...r,adaptive:r.adaptive?.map(({reused,...a})=>a)}:r;
+    const options={workspace,mode:'key-upgrade' as const},first=await currentPursuit(advice,input,rules,request,model,options),repeat=await currentPursuit(advice,input,rules,request,model,options);
+    if(!repeat.ready)throw Error();expect(repeat.adaptive?.every(a=>a.reused)).toBe(true);expect(strip(repeat)).toEqual(strip(first));
+    input.state.gold=4;input.state.offers=[{slot:0,id:'C',price:1},null,{slot:2,id:'A',price:1}];request.targets[0].weight=.6;request.targets.push({id:'missing',name:'缺失对手',weight:.4,board:null,gaps:[]});
+    const updated=await currentPursuit(advice,input,rules,request,model,options),fresh=await currentPursuit(advice,input,rules,request,model,{mode:'key-upgrade'});
+    expect(strip(updated)).toEqual(strip(fresh));if(!updated.ready)throw Error();expect(updated.opponentCoverage).toBe(.6);expect(updated.paths.find(p=>p.buy.some(b=>b.id==='A'))!.buy[0].slot).toBe(2);
+    // Same copy counts/policy, but ambiguous equipment merges must be rejected anew.
+    input.state.units[1].items=[{key:'other-item',id:'BT'}];
+    const ambiguous=await currentPursuit(advice,input,rules,request,model,options);expect(strip(ambiguous)).toEqual(strip(await currentPursuit(advice,input,rules,request,model,{mode:'key-upgrade'})));
+    if(!ambiguous.ready)throw Error();expect(ambiguous.paths.some(p=>p.buy.some(b=>b.id==='A'))).toBe(false);expect(ambiguous.paths[0].bands[0].completion.lower).toBe(0);
+  });
   it('counts the union of different new upgrades without double-crediting a shop that completes both',async()=>{
     const {advice,input,request,model}=fixture();input.state.gold=4;input.state.units.find(u=>u.id==='B')!.star=1;request.local.units.find(u=>u.id==='B')!.star=1;input.pool.remaining.B=7;input.pool.tierRemaining[1]=14;
     const r=await currentPursuit(advice,input,rules,request,model,{mode:'key-upgrade'});if(!r.ready)throw Error(r.reason);

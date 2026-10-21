@@ -418,10 +418,19 @@ async function start() {
             await fs.writeFile(path.join(smokeDir,'key-upgrade-pursuit.json'),JSON.stringify(keyUpgrade,null,2));
             await fs.writeFile(path.join(smokeDir,'key-upgrade-pursuit.png'),(await window!.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
             console.log('KEY_UPGRADE_PURSUIT_SWITCH_PASS');
+            await window!.webContents.executeJavaScript(`(()=>{const el=document.querySelector('[data-pursuit-mode]');el.value='completion-first';el.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+            for(let i=0;i<120;i++){const value=battles.snapshot().pursuit;if(value?.ready&&value.mode==='completion-first')break;await new Promise(resolve=>setTimeout(resolve,100));}
+            const intermediary=battles.snapshot().pursuit;if(!intermediary?.ready||intermediary.mode!=='completion-first')throw Error('复用检查未到达中间目标');
+            await window!.webContents.executeJavaScript(`(()=>{const el=document.querySelector('[data-pursuit-mode]');el.value='key-upgrade';el.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+            for(let i=0;i<120;i++){const value=battles.snapshot().pursuit;if(value?.ready&&value.mode==='key-upgrade')break;await new Promise(resolve=>setTimeout(resolve,100));}
+            const repeated=battles.snapshot().pursuit;
+            if(!repeated?.ready||repeated.mode!=='key-upgrade'||!repeated.adaptive?.every(a=>a.reused)||JSON.stringify(repeated.paths)!==JSON.stringify(keyUpgrade.paths)||selectedComp?.directionId!==intent.id)throw Error('策略复用改变了当前局面的比较结果');
+            await fs.writeFile(path.join(smokeDir,'key-upgrade-reuse.json'),JSON.stringify(repeated,null,2));
+            console.log('PURSUIT_POLICY_REUSE_PASS');
             const returnStarted=Date.now();
             await window!.webContents.executeJavaScript(`(()=>{const el=document.querySelector('[data-pursuit-mode]');el.value='upgrade-first';el.dispatchEvent(new Event('change',{bubbles:true}));})()`);
             for(let i=0;i<120;i++){const value=battles.snapshot();if(value.pursuit?.ready&&value.pursuit.mode==='upgrade-first'&&value.handoffs?.ready)break;await new Promise(resolve=>setTimeout(resolve,100));}
-            const returned=battles.snapshot();if(!returned.pursuit?.ready||returned.pursuit.mode!=='upgrade-first'||!returned.handoffs?.ready||advisorPreferences.pursuitMode!=='upgrade-first')throw Error('留牌目标切回未完成');
+            const returned=battles.snapshot();if(!returned.pursuit?.ready||returned.pursuit.mode!=='upgrade-first'||!returned.handoffs?.ready||advisorPreferences.pursuitMode!=='upgrade-first'||JSON.stringify(returned.pursuit.paths)!==JSON.stringify(pursuit.paths))throw Error('留牌目标切回未完成或默认结果发生变化');
             console.log('ADAPTIVE_PURSUIT_RETURN_PASS',Date.now()-returnStarted);
             await window!.webContents.executeJavaScript(`document.querySelector('[data-advisor-workspace="tactics"]').click();document.querySelector('[data-handoff-details] summary').click();new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
             await window!.webContents.executeJavaScript(`document.querySelector('[data-equipment-handoffs]').scrollIntoView({block:'center'});new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);

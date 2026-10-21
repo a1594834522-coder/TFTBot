@@ -3,14 +3,15 @@ const out=path.resolve('dist/direction-worker-smoke'),profile=path.join(out,'tes
 app.whenReady().then(async()=>{
  const fixtures=require(path.join(out,'fixtures.cjs')).fixtures();
  async function check(name,file,payload,accept){
-  const child=utilityProcess.fork(file,[],{stdio:'pipe',serviceName:'TFTBot decision regression'});let done=false;
+  const child=utilityProcess.fork(file,[],{stdio:'pipe',serviceName:'TFTBot decision regression'});let done=false,last=null;const started=Date.now();
   try{return await new Promise((resolve,reject)=>{
-   const timer=setTimeout(()=>{child.kill();reject(Error(name+' timed out'));},15000);
+   const timer=setTimeout(()=>{child.kill();reject(Error(name+' timed out after '+(Date.now()-started)+'ms; last stage: '+JSON.stringify(last)));},15000);
    child.on('exit',code=>{if(!done){clearTimeout(timer);reject(Error(name+' exited '+code));}});
    child.on('message',message=>{
+    if(message.type==='result')last={phase:message.forecast.phase,pursuit:message.forecast.pursuit?.ready?'ready':message.forecast.pursuit?.reason};
     if(message.type==='result'&&accept(message.forecast)){
      done=true;clearTimeout(timer);fs.writeFileSync(path.join(out,name+'.json'),JSON.stringify(message.forecast,null,2));
-     child.postMessage('stop');resolve({name,direction:message.forecast.direction.ready,phase:message.forecast.phase,strategy:message.forecast.strategy?.ready});
+     child.postMessage('stop');resolve({name,milliseconds:Date.now()-started,direction:message.forecast.direction.ready,phase:message.forecast.phase,strategy:message.forecast.strategy?.ready});
     }
    });
    child.postMessage({type:'evaluate',id:1,...payload});

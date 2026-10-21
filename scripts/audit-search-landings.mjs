@@ -8,7 +8,7 @@ const out=path.resolve(current?'dist/current-pursuit-audit':'dist/search-landing
 await build({stdin:{resolveDir:process.cwd(),contents:`
 export {loadBattleModel} from './src/decision/battle-model';
 export {searchLandings} from './src/decision/search-landings';
-export {currentPursuit} from './src/decision/current-pursuit';
+export {currentPursuit,CurrentPursuitWorkspace} from './src/decision/current-pursuit';
 export {createOriginalRecognition} from './src/recognition/original-events';
 export {shoppingInput,tradingRules} from './src/decision/shopping-input';
 export {strategicInput} from './src/decision/strategic-input';

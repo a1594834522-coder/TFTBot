@@ -8,7 +8,7 @@ import {tacticalLineupTemplates} from './observed-lineups';
 import policy from '../../data/battle-unit-policy.json';
 import {materializeLineup} from './lineup-search';
 import type {OwnedUnit,ShopState} from './shop-ledger';
-import {adaptivePursuit} from './adaptive-pursuit';
+import {adaptivePursuit,AdaptivePursuitCache} from './adaptive-pursuit';
 import type {PursuitMode,PursuitPolicy} from './pursuit-policy';
 
 const formPools=new Set(Object.values(policy.forms).map(f=>f.poolId));
@@ -25,17 +25,25 @@ export type CurrentPursuit={ready:false;reason:string;controls?:true}|{
   paths:CurrentPursuitPath[];opponentCoverage:number;weightSource:BattleRequest['weightSource'];
   baseline:Band;gaps:string[];evaluations:number;mode:PursuitMode;
   milestone:{kind:'route-cores'|'new-two-star';label:string;targets:string[]};
-  adaptive?:Array<{heroSlots:4|5;states:number;decisions:number;limited:boolean}>;
+  adaptive?:Array<{heroSlots:4|5;states:number;decisions:number;limited:boolean;reused:boolean}>;
 };
 type Distribution=Extract<SearchDistribution,{cancelled:false}>;
 interface Scenario {path:CurrentPursuitPath;plan:ShoppingPlan;slots:4|5;distribution:Distribution;landings:Distribution['landings']}
+
+/** Worker-owned scratch data, never a cached recommendation. Each request still
+ * replays current purchases, entity merges, forms, equipment and opponent bounds. */
+export class CurrentPursuitWorkspace {
+  readonly distributions=new SearchDistributionCache();
+  readonly policies=new AdaptivePursuitCache();
+  readonly scores=new TacticalScoreCache();
+}
 
 /** Compare every legal subset of CURRENT core offers, before seeing future
  * shops. Every root then follows the SAME declared observable purchase policy.
  * Adaptive policies optimize only their copy-count milestone, not combat.
  * Combat, completion and saved gold remain separate; no invented exchange rate. */
 export async function currentPursuit(advice:DirectionAdvice,input:StrategicInput,rules:TradingRules,request:BattleRequest,predict:BatchPredictor,
-  options:TacticalOptions&{mode?:PursuitMode;maxPolicyStates?:number;maxPolicyDecisions?:number;budget?:number|null;maxStates?:number;maxBoards?:number;scoreReuse?:boolean;trace?:(phase:string,milliseconds:number)=>void}={}):Promise<CurrentPursuit>{
+  options:TacticalOptions&{workspace?:CurrentPursuitWorkspace;mode?:PursuitMode;maxPolicyStates?:number;maxPolicyDecisions?:number;budget?:number|null;maxStates?:number;maxBoards?:number;scoreReuse?:boolean;trace?:(phase:string,milliseconds:number)=>void}={}):Promise<CurrentPursuit>{
   if(!input.ready)return input;
   const physical=input.state;
   const mode=options.mode??'upgrade-first';if(!['upgrade-first','completion-first','key-upgrade'].includes(mode))throw Error('Invalid pursuit mode');
@@ -69,7 +77,7 @@ export async function currentPursuit(advice:DirectionAdvice,input:StrategicInput
     return targets.every(t=>(count[t.id]??0)-(owned[t.id]??0)<=t.needed);
   }).sort((a,b)=>a.spent-b.spent||a.buySlots.join('.').localeCompare(b.buySlots.join('.')));
   if(!plans.some(p=>p.buySlots.length))return {ready:false,reason:'当前预算或实体规则下无法保留核心牌'};
-  const templates=tacticalLineupTemplates(advice,input.state.boardCapacity),deployment={...options,scoreCache:options.scoreCache??(options.scoreReuse===false?undefined:new TacticalScoreCache()),observedLineups:options.observedLineups??(templates.length?{templates}:undefined)};
+  const templates=tacticalLineupTemplates(advice,input.state.boardCapacity),deployment={...options,scoreCache:options.scoreCache??(options.scoreReuse===false?undefined:options.workspace?.scores??new TacticalScoreCache()),observedLineups:options.observedLineups??(templates.length?{templates}:undefined)};
   const original=await shoppingTactics({...input.state,offers:[]},rules,request,predict,deployment);
   if(!original.ready)return original;
   const coverage=original.coverage,baseline=Math.max(...original.choices.map(c=>c.knownWin)),missing=1-coverage;
@@ -94,7 +102,7 @@ export async function currentPursuit(advice:DirectionAdvice,input:StrategicInput
     '预算包含当前买牌和后续刷新；不含收入、卖牌、接装、升级或对手后续变化',`未来每次刷新按${input.pool.refreshPrice}金，不含未确认的免费次数与价格变化`,'4与5英雄格是两个固定商店情景，不是置信区间',
     '仍可合法重放的当前已评分棋盘作为已知候选；未完整评分分支只给可实现的下界']);
   if(Object.keys(search.failures).length)gaps.add('未纳入不满足当前预算、备战席或已覆盖合成规则的购买组合');
-  const cache=new SearchDistributionCache(),paths:CurrentPursuitPath[]=[],scenarios:Scenario[]=[];let phaseAt=performance.now();
+  const cache=options.workspace?.distributions??new SearchDistributionCache(),paths:CurrentPursuitPath[]=[],scenarios:Scenario[]=[];let phaseAt=performance.now();
   const policies=new Map<4|5,PursuitPolicy>(),adaptive:Extract<CurrentPursuit,{ready:true}>['adaptive']=[];
   if(mode!=='upgrade-first')for(const slots of [4,5] as const){
     const config={targets,owned:targets.map(t=>owned[t.id]??0),goals,tierRemaining:input.pool.tierRemaining,tierOdds:input.pool.tierOdds,cash:budget,refreshPrice:input.pool.refreshPrice,heroSlots:slots,visible};
@@ -102,9 +110,9 @@ export async function currentPursuit(advice:DirectionAdvice,input:StrategicInput
       const held=unitCopyCounts(plan.state.units),code=kernel.root-targets.reduce((n,t,i)=>n+((held[t.id]??0)-(owned[t.id]??0))*kernel.strides[i],0);
       return {code,cash:budget-plan.spent};
     });
-    const prepared=await adaptivePursuit(config,roots,{kernel,maxStates:options.maxPolicyStates,maxDecisions:options.maxPolicyDecisions,cancelled:options.cancelled,yield:options.yield});
+    const prepared=await adaptivePursuit(config,roots,{kernel,cache:options.workspace?.policies,maxStates:options.maxPolicyStates,maxDecisions:options.maxPolicyDecisions,cancelled:options.cancelled,yield:options.yield});
     if(prepared.cancelled)return {ready:false,reason:'局面已变化'};
-    policies.set(slots,prepared.policy);adaptive.push({heroSlots:slots,states:prepared.states,decisions:prepared.decisions,limited:prepared.limited});
+    policies.set(slots,prepared.policy);adaptive.push({heroSlots:slots,states:prepared.states,decisions:prepared.decisions,limited:prepared.limited,reused:prepared.reused});
     if(prepared.limited)gaps.add('补齐策略搜索达到限额，未能证明改进的决策沿用升星优先；不宣称全局最优');
   }
   options.trace?.('policy',performance.now()-phaseAt);phaseAt=performance.now();

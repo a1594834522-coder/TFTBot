@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {adaptivePursuit} from '../src/decision/adaptive-pursuit';
+import {adaptivePursuit,AdaptivePursuitCache} from '../src/decision/adaptive-pursuit';
 import {createPoolKernel} from '../src/decision/pool-kernel';
 import {SearchDistributionCache,searchDistribution,type SearchDistributionInput} from '../src/decision/search-distribution';
 function fixture():SearchDistributionInput{return {
@@ -28,6 +28,49 @@ function oracle(input:SearchDistributionInput){
   return value(input.targets.map(t=>t.needed),input.cash,initial);
 }
 describe('observable adaptive completion policy',()=>{
+  it('reuses a frozen complete policy for solved lower-cash descendants, matching a fresh solver and independent oracle',async()=>{
+    const input=fixture(),root=createPoolKernel(input).root,cache=new AdaptivePursuitCache();
+    const first=await adaptivePursuit(input,[{code:root,cash:6}],{cache});if(first.cancelled)throw Error();expect(first.limited).toBe(false);
+    // A later revealed shop cannot affect the prior continuation calculation.
+    const next={...input,cash:4,visible:[{id:'C',price:1}]},warm=await adaptivePursuit(next,[{code:root,cash:4}],{cache}),cold=await adaptivePursuit(next,[{code:root,cash:4}]);
+    if(warm.cancelled||cold.cancelled)throw Error();expect(warm.reused).toBe(true);expect(cold.reused).toBe(false);expect(warm.bounds).toEqual(cold.bounds);
+    const result=await searchDistribution(next,{policy:warm.policy});if(result.cancelled)throw Error();
+    expect(result).toEqual(await searchDistribution(next,{policy:cold.policy}));expect(result.completion.lower).toBeCloseTo(oracle(next).p,12);
+    expect(cache.metrics).toMatchObject({entries:1,hits:1,misses:1});
+  });
+  it('does not let returned bounds or policy properties corrupt cached continuation values',async()=>{
+    const input=fixture(),root=createPoolKernel(input).root,cache=new AdaptivePursuitCache(),roots=[{code:root,cash:6}];
+    const first=await adaptivePursuit(input,roots,{cache});if(first.cancelled)throw Error();const expected=structuredClone(first.bounds);first.bounds[0].lower=123;
+    expect(Object.isFrozen(first.policy)).toBe(true);
+    const again=await adaptivePursuit(input,roots,{cache});if(again.cancelled)throw Error();expect(again.bounds).toEqual(expected);expect(again.policy).toBe(first.policy);expect(again.reused).toBe(true);
+  });
+  it('reuses a limited table only for its exact ordered roots and limits, never treating its values as an optimal descendant seed',async()=>{
+    const input=fixture(),root=createPoolKernel(input).root,cache=new AdaptivePursuitCache(),roots=[{code:root,cash:6},{code:root,cash:5}],limits={cache,maxStates:1};
+    const first=await adaptivePursuit(input,roots,limits),same=await adaptivePursuit(input,roots,limits);if(first.cancelled||same.cancelled)throw Error();
+    expect(first.limited).toBe(true);expect(same.reused).toBe(true);expect(same.policy).toBe(first.policy);
+    expect(await searchDistribution(input,{policy:same.policy})).toEqual(await searchDistribution(input,{policy:first.policy}));
+    for(const [nextRoots,nextLimits]of [[roots.slice().reverse(),limits],[[{code:root,cash:4}],limits],[roots,{cache,maxStates:2}]] as const){
+      const next=await adaptivePursuit(input,[...nextRoots],nextLimits);if(next.cancelled)throw Error();expect(next.reused).toBe(false);
+    }
+  });
+  it('invalidates policy reuse for every physical law or objective change and bounds retained contexts',async()=>{
+    const input=fixture(),root=createPoolKernel(input).root;
+    const changes=[(v:SearchDistributionInput)=>{v.targets[0].remaining++;},(v:SearchDistributionInput)=>{v.owned[0]--;},(v:SearchDistributionInput)=>{v.goals=[{id:'A',targets:['A']}];},
+      (v:SearchDistributionInput)=>{v.tierRemaining[1]++;},(v:SearchDistributionInput)=>{v.tierOdds[1]=.9;v.tierOdds[2]=.1;},(v:SearchDistributionInput)=>{v.targets[0].price=2;},
+      (v:SearchDistributionInput)=>{v.refreshPrice=1;},(v:SearchDistributionInput)=>{v.heroSlots=3;}];
+    for(const change of changes){
+      const cache=new AdaptivePursuitCache(1);await adaptivePursuit(input,[{code:root,cash:6}],{cache});const next=structuredClone(input);change(next);
+      const changed=await adaptivePursuit(next,[{code:root,cash:6}],{cache});if(changed.cancelled)throw Error();expect(changed.reused).toBe(false);expect(cache.metrics.entries).toBe(1);
+      const evicted=await adaptivePursuit(input,[{code:root,cash:6}],{cache});if(evicted.cancelled)throw Error();expect(evicted.reused).toBe(false);
+    }
+  });
+  it('never publishes partially prepared policies after cancellation and honors cancellation even on a hit',async()=>{
+    const input=fixture(),root=createPoolKernel(input).root,cache=new AdaptivePursuitCache();let cancelled=false,yields=0;
+    expect(await adaptivePursuit(input,[{code:root,cash:14}],{cache,cancelled:()=>cancelled,yield:async()=>{yields++;cancelled=true;}})).toEqual({cancelled:true});
+    expect(yields).toBeGreaterThan(0);expect(cache.metrics.entries).toBe(0);
+    await adaptivePursuit(input,[{code:root,cash:6}],{cache});const before=cache.metrics;
+    expect(await adaptivePursuit(input,[{code:root,cash:6}],{cache,cancelled:()=>true})).toEqual({cancelled:true});expect(cache.metrics).toEqual(before);
+  });
   it('keeps mixed-cost slots correlated and saves cash on a failed final affordable shop',async()=>{
     const input:SearchDistributionInput={targets:[{id:'A',cost:1,needed:1,remaining:2,price:1},{id:'B',cost:2,needed:1,remaining:2,price:2}],owned:[2,2],goals:[{id:'AB',targets:['A','B']}],
       tierRemaining:{1:3,2:3,3:10,4:10,5:10},tierOdds:{1:.5,2:.5,3:0,4:0,5:0},cash:5,refreshPrice:2,heroSlots:2,visible:[],initialPurchase:[]};

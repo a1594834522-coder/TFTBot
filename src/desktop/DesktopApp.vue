@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef } from 'vue';
 import CompBrowser from './CompBrowser.vue';
+import DesktopSidebar from './DesktopSidebar.vue';
+import NavigationIcon from './NavigationIcon.vue';
 import SmartCompPanel from './SmartCompPanel.vue';
 import ReaderPanel from './ReaderPanel.vue';
 import TrackerPanel from './TrackerPanel.vue';
@@ -8,7 +10,6 @@ import {highlightedCompUnits} from '../game/selected-comp';
 import type { SelectedComp } from '../game/selected-comp';
 import type { ReaderStatus } from '../recognition/status';
 import { CURRENT_SET } from '../game/current-season';
-import CharacterPage from '../windows/characterwin/CharacterPage.vue';
 import SettingsPage from '../windows/settings/SettingsPage.vue';
 import TrickPage from '../windows/trick/TrickPage.vue';
 import AugmentsPage from './AugmentsPage.vue';
@@ -17,16 +18,15 @@ import { dataset } from '../game/tft-data';
 import { allComps, sourcesFor, metatftMeta } from '../game/comps-sources';
 import { bundledAugmentTiers } from '../game/metatft-augments';
 import { normalizeSettings, type Settings } from '../core/settings';
-import {version as appVersion} from '../../package.json';
 
-type View = 'comps' | 'advisor' | 'augments' | 'champions' | 'board' | 'settings';
+
+type View = 'comps' | 'advisor' | 'augments' | 'board' | 'settings';
 const view = ref<View>('comps');
-const nav = [{ id: 'comps', name: '热门阵容', icon: '◈', desc: '阵容 · 站位 · 运营' }, { id: 'advisor', name: '阵容助手', icon: '◇', desc: '持牌 · 装备 · 转型' }, { id: 'augments', name: '海克斯评级', icon: '✦', desc: 'MetaTFT S–D 评级' }, { id: 'champions', name: '英雄资料', icon: '♙', desc: '属性 · 装备 · 羁绊' }, { id: 'board', name: '对局面板', icon: '▦', desc: '棋盘 · 记牌器 · 录像' }, { id: 'settings', name: '偏好设置', icon: '⚙', desc: '显示与数据源' }] as const;
+const nav = [{id:'comps',name:'热门阵容'},{id:'advisor',name:'阵容助手'},{id:'augments',name:'海克斯评级'},{id:'board',name:'对局面板'},{id:'settings',name:'偏好设置'}] as const;
 const session = shallowRef<Awaited<ReturnType<typeof createDesktopSession>> | null>(null);
 const set = ref(CURRENT_SET);
 const settings = shallowRef(normalizeSettings({}));
 const selected = ref<string | number | null>(null);
-const champion = ref(dataset.charactersOf(set.value)[0].character_id);
 const error = ref('');
 const readerStatus = shallowRef<ReaderStatus | null>(null);
 const selectedComp = shallowRef<SelectedComp|null>(null);
@@ -58,7 +58,6 @@ onMounted(async () => {
     offReader = window.tftDesktop.onReader(acceptReader);
     acceptReader(await window.tftDesktop.readerSnapshot());
     set.value = session.value.currentSet();
-    champion.value = dataset.charactersOf(set.value)[0].character_id;
     settings.value = session.value.settings.get();
     offSettings = session.value.settings.subscribe((s) => { settings.value = s; });
     const cached = await window.tftDesktop.augments(true);
@@ -72,7 +71,6 @@ onUnmounted(() => { offComp?.(); offReader?.(); offSettings?.(); session.value?.
 async function updateSetting(key: keyof Settings, value: unknown) {
   try { await session.value?.settings.patch({ [key]: value }); } catch (e) { error.value = String((e as Error).message); }
 }
-function openChampion(id: string) { champion.value = id; view.value = 'champions'; }
 async function refreshAugments() {
   if (refreshing.value) return;
   refreshing.value = true; augmentError.value = '';
@@ -93,15 +91,15 @@ async function importRecording() {
 async function togglePin() { await window.tftDesktop.setAlwaysOnTop(!pinned.value); pinned.value = !pinned.value; }
 </script>
 <template>
-  <div class="desktop-shell" data-desktop-ready="true">
-    <header class="desktop-header"><div class="app-brand"><span class="brand-symbol">◈</span><strong>TFTBot</strong><small>{{ appVersion }}</small><span class="season-badge">赛季 {{ set }}</span><span class="latest-label">最新赛季</span></div><div class="header-actions"><span>TypeScript 桌面版</span><button :class="{ active: pinned }" @click="togglePin">{{ pinned ? '已置顶' : '窗口置顶' }}</button></div></header>
-    <nav class="desktop-nav"><button v-for="item in nav" :key="item.id" :class="{ current: view === item.id }" :data-nav="item.id" @click="view = item.id"><span>{{ item.icon }}</span>{{ item.name }}</button><span class="data-status"><i></i>本地数据已就绪</span></nav>
+  <div class="desktop-shell" data-desktop-ready="true" data-native-titlebar="true">
+    <DesktopSidebar :view="view" :set="set" @navigate="view=$event"/>
+    <header class="desktop-header"><div class="header-location"><span>工作台</span><i>/</i><strong>{{ nav.find(item=>item.id===view)?.name }}</strong></div><div class="header-actions"><span class="connection-status" :class="{live:readerStatus?.phase==='receiving'}" :title="readerStatus?.message??recordStatus"><i/>{{ readerStatus?.testMode?'协议测试':readerStatus?.phase==='receiving'?'正在同步对局':'等待对局' }}</span><button class="header-overlay" @click="showOverlay"><NavigationIcon name="overlay"/>局内浮窗</button><button class="pin-button" :class="{active:pinned}" :aria-pressed="pinned" :title="pinned?'取消窗口置顶':'窗口置顶'" aria-label="窗口置顶" @click="togglePin"><NavigationIcon name="pin"/></button></div></header>
     <main class="desktop-content" :class="{ 'comps-content': view === 'comps' }">
       <div v-if="error" class="error">{{ error }}</div>
-      <CompBrowser v-if="view === 'comps'" :comps="comps" :set="set" :source="settings.compsSource" :snapshot-date="snapshotDate" :selected-key="selectedComp?.key" @select-comp="pickComp" @select-character="openChampion" @update:source="updateSetting('compsSource', $event)" />
+      <CompBrowser v-if="view === 'comps'" :comps="comps" :set="set" :source="settings.compsSource" :snapshot-date="snapshotDate" :selected-key="selectedComp?.key" @select-comp="pickComp" @update:source="updateSetting('compsSource', $event)" />
       <AugmentsPage v-else-if="view === 'augments'" :snapshot="augments" :set="set" :loading="refreshing" :error="augmentError" @refresh="refreshAugments" />
       <SmartCompPanel v-else-if="view === 'advisor'" :status="readerStatus" :selected-key="selectedComp?.key" :selected-direction-id="selectedComp?.directionId" :mainline="selectedComp" @select-transition="pickTransition" @select-comp="pickComp" @start="startReader"/>
-      <template v-else-if="view === 'champions'"><div class="page-heading"><div><span class="eyebrow">CHAMPION LIBRARY · S{{ set }}</span><h1>英雄资料</h1><p>英雄属性、羁绊、推荐装备及相关阵容。</p></div><select v-model="champion" aria-label="选择英雄"><option v-for="c in characters" :key="c.character_id" :value="c.character_id">{{ c.cost }}费 · {{ c.display_name }}</option></select></div><CharacterPage :character-id="champion" :set="set" :comps="comps" :settings="settings" /></template>
+
       <template v-else-if="view === 'board'"><div class="page-heading"><div><h1>对局面板</h1><p>{{ recordStatus }}</p></div><div><button data-show-overlay class="primary" @click="showOverlay">打开记牌浮窗</button> <button @click="importRecording">导入 JSONL 录像</button></div></div><ReaderPanel :status="readerStatus" :selected-ids="highlightedCompUnits(selectedComp)" @start="startReader" @stop="stopReader" /><div class="notice">商店、海克斯与全场持牌通过原版原生组件接收。全场数据以同一记分板快照统计；未齐或过期时暂停金币估算。</div><TrackerPanel v-if="session" :controller="session.controller" :status="readerStatus" /><TrickPage v-if="session" :controller="session.controller" :set="set" :settings="settings" /></template>
       <template v-else-if="view === 'settings'"><div class="page-heading"><div><h1>功能设置</h1><p>设置自动保存 · 仅使用最新赛季 S{{ set }}</p></div></div><div class="notice">独立版已接入原版只读采集链路；真实对局待验证，当前不执行游戏操作。</div><SettingsPage :settings="settings" @update:setting="updateSetting" /></template>
     </main>

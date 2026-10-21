@@ -27,6 +27,7 @@ app.whenReady().then(async()=>{
   results.push(await check('independent-tower',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.tower,f=>f.phase==='ready'&&f.tactics?.ready&&f.tactics.choices.every(c=>c.auxiliary?.some(u=>u.id==='DA_TheTower_TrainingDummy'&&u.items.includes('DA_WarmogsArmor')))));
   results.push(await check('live-lux-form',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.form,f=>f.phase==='ready'&&f.tactics?.ready&&f.tactics.choices.every(c=>c.onBoardCombatIds?.length===c.onBoard.length)));
   results.push(await check('search-landings',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.landing,f=>f.landings?.ready&&f.landings.plans.length>0&&f.landings.plans.every(p=>p.bands.length===2&&p.bands.every(b=>b.combat.lower<=b.combat.upper&&b.completion.lower<=b.completion.upper))));
+  results.push(await check('equipment-handoffs',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.handoff,f=>f.handoffs?.ready&&f.handoffs.choices.length>0&&f.handoffs.choices.every(c=>c.moves.length>0&&c.lowerGain<=c.upperGain)));
   console.log('DIRECTION_WORKER_INDEPENDENCE_PASS',JSON.stringify(results));app.exit(0);
  }catch(error){console.error(error);app.exit(1);}
 });

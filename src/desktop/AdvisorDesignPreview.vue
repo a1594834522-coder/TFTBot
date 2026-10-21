@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import {ref,computed,onMounted,onUnmounted,watch} from 'vue';
 import SmartCompPanel from './SmartCompPanel.vue';
+import DesktopSidebar from './DesktopSidebar.vue';
+import CompBrowser from './CompBrowser.vue';
+import {allComps,metatftMeta,type CompsSource} from '../game/comps-sources';
 import CompanionOverlay from './CompanionOverlay.vue';
 import {advisorDemo,type AdvisorScenario} from './advisor-demo';
 import {resolveSelectedComp} from '../game/selected-comp';
@@ -19,6 +22,8 @@ import type {DirectionCatalog} from '../decision/direction-catalog';
 import type {GearModel} from '../decision/gear-affinity';
 import catalog from '../../data/metatft-direction-catalog.json';
 import gear from '../../data/metatft-gear-model.json';
+const previewView=ref('advisor'),source=ref<CompsSource|'all'>('metatft');
+const previewComps=allComps({set:18}),stamp=String(metatftMeta().fetchedAt??'').slice(0,10);
 const scenario=ref<AdvisorScenario|'startup'>('ap'),budget=ref<number|null>(null);
 const tick=ref(0);let timer:ReturnType<typeof setInterval>;
 onMounted(()=>{timer=setInterval(()=>tick.value++,1000);});onUnmounted(()=>clearInterval(timer));
@@ -41,5 +46,17 @@ function transition(id:string|null){if(selected.value)selected.value=withMainlin
 function pick(key:string|null,id?:string){selected.value=withMainlineTransitions(applyDirectionSelection(resolveSelectedComp(key,null),id),advisorInput(status.value));}
 watch(status,value=>{selected.value=withMainlineTransitions(selected.value,advisorInput(value));});
 </script>
-<template><div class="advisor-preview"><header class="preview-toolbar"><strong>◈ TFTBot</strong><span>阵容助手 · 示例数据</span><button v-for="s in [{id:'ap',name:'法系开局'},{id:'ad',name:'物理开局'},{id:'contested',name:'同行挤压'},{id:'partial',name:'缺少同行数据'},{id:'startup',name:'4-2 多路启动'}]" :key="s.id" :class="{chosen:scenario===s.id}" @click="scenario=s.id as AdvisorScenario|'startup'">{{ s.name }}</button></header><main><SmartCompPanel :status="status" :selected-key="selected?.key" :selected-direction-id="selected?.directionId" :preview-forecast="forecast" :mainline="selected" @select-transition="transition" @preview-budget="budget=$event" @select-comp="pick"/><div v-if="selected" class="linked-preview"><small>已同步到局内浮窗</small><div class="linked-hud"><CompanionOverlay :comp="selected" :status="status" :state="state" @transition="transition" @action="a=>{if(a==='collapse'||a==='expand')state.collapsed=a==='collapse';}"/></div></div></main></div></template>
-<style scoped>.advisor-preview{min-height:100vh;background:#0e1117;color:#e5e4df;font:13px/1.5 "Segoe UI","Microsoft YaHei",sans-serif;overflow:auto}.preview-toolbar{height:64px;padding:0 38px;display:flex;align-items:center;gap:10px;background:#141820;border-bottom:1px solid #292c33}.preview-toolbar strong{font-size:12px;margin-right:15px;color:#bcaa85;white-space:nowrap}.preview-toolbar>span{font-size:11px;color:#646f7f;margin-right:auto;white-space:nowrap}.preview-toolbar button{border:0;background:none;color:#6c7887;padding:5px 9px;font-size:10px}.preview-toolbar button.chosen{background:#2c2b25;color:#c6b38d}.advisor-preview>main{padding:35px 38px;max-width:1600px;margin:auto}.linked-preview{margin:40px auto 0;width:584px}.linked-preview>small{display:block;font-size:10px;color:#647383;letter-spacing:1px;margin-bottom:12px}.linked-hud{height:248px;width:584px}</style>
+<template>
+  <div class="desktop-shell advisor-preview">
+    <DesktopSidebar :view="previewView" :set="18" preview @navigate="previewView=$event"/>
+    <header class="desktop-header preview-toolbar"><div class="header-location"><span>设计预览</span><i>/</i><strong>{{ previewView==='comps'?'热门阵容':'阵容助手' }}</strong></div><div v-if="previewView==='advisor'" class="preview-scenarios"><button v-for="s in [{id:'ap',name:'法系开局'},{id:'ad',name:'物理开局'},{id:'contested',name:'同行挤压'},{id:'partial',name:'数据未齐'},{id:'startup',name:'4-2 启动'}]" :key="s.id" :class="{chosen:scenario===s.id}" @click="scenario=s.id as AdvisorScenario|'startup'">{{ s.name }}</button></div><span class="preview-badge">示例数据</span></header>
+    <main class="desktop-content" :class="{'comps-content':previewView==='comps'}">
+      <CompBrowser v-if="previewView==='comps'" :comps="previewComps" :set="18" :source="source" :snapshot-date="stamp" :selected-key="selected?.key" @update:source="source=$event" @select-comp="pick"/>
+      <template v-else><SmartCompPanel :status="status" :selected-key="selected?.key" :selected-direction-id="selected?.directionId" :preview-forecast="forecast" :mainline="selected" @select-transition="transition" @preview-budget="budget=$event" @select-comp="pick"/><div v-if="selected" class="linked-preview"><small>局内浮窗预览</small><div class="linked-hud"><CompanionOverlay :comp="selected" :status="status" :state="state" @transition="transition" @action="a=>{if(a==='collapse'||a==='expand')state.collapsed=a==='collapse';}"/></div></div></template>
+    </main>
+    <footer class="desktop-footer"><span>{{ selected?'当前主线 · '+selected.name:'S18 · MetaTFT' }}</span><span>界面预览 · 不连接游戏</span></footer>
+  </div>
+</template>
+<style scoped>
+.preview-scenarios{display:flex;align-items:center;gap:4px;margin-left:auto}.preview-toolbar button{border:1px solid transparent;background:none;color:#a19f95;padding:5px 8px;font-size:9px;white-space:nowrap}.preview-toolbar button.chosen{background:#bcb8ac10;border-color:#bcb8ac25;color:#d1cbbc}.preview-badge{font-size:9px;padding:3px 8px;border:1px solid #d7be8830;background:#d7be8807;color:#c4b28d;border-radius:5px;white-space:nowrap}.linked-preview{margin:40px auto 0;width:584px}.linked-preview>small{display:block;font-size:10px;color:#a19f95;letter-spacing:1px;margin-bottom:12px}.linked-hud{height:248px;width:584px}
+</style>

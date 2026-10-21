@@ -27,6 +27,7 @@ app.whenReady().then(async()=>{
   await wait(`document.querySelector('[data-direction-advisor]')?.dataset.mode==='selected'&&!!document.querySelector('[data-direction-search]')`);
   await js(`document.querySelector('[data-route-filter="all"]').click()`);
   const report={};
+  if(await js(`!!document.querySelector('[data-nav="champions"]')`))throw Error('Removed champion library is still in navigation');
   await wait(`!!document.querySelector('[data-route-progress]')`);
   await js(`document.querySelector('[data-route-progress] summary').click()`);
   await wait(`document.querySelector('[data-route-progress]')?.open===true`);
@@ -42,7 +43,7 @@ app.whenReady().then(async()=>{
    await wait(`document.querySelector('[data-search-budget="${budget}"]').classList.contains('active')`);
    report[budget]=await js(`({text:document.querySelector('[data-direction-search]').textContent,mode:document.querySelector('[data-direction-advisor]').dataset.mode,rows:document.querySelectorAll('[data-direction-advisor] [data-suggestion]').length,overflow:document.documentElement.scrollWidth>innerWidth})`);
   }
-  await js(`scrollTo(0,0);new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+  await js(`document.querySelector('.desktop-content').scrollTo(0,0);new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
   await fs.writeFile(path.join(out,'startup-desktop.png'),(await win.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
   if(report.wallet.overflow||report.wallet.rows<2||!report.wallet.text.includes('含买牌'))throw Error('Startup planning layout failed');
   if(report['20'].text===report['40'].text)throw Error('Budget controls did not change planning results');
@@ -88,6 +89,34 @@ app.whenReady().then(async()=>{
   }
   await js(`document.querySelector('[data-clear-direction]').click()`);
   await wait(`!document.querySelector('[data-game-overlay]')&&document.querySelector('[data-direction-advisor]')?.dataset.mode==='flex'`);
+  // Verify the shared desktop shell at the supported minimum size and a wide window.
+  report.responsive={};
+  for(const width of [1080,1280,1440]){
+   win.setSize(width,960);
+   await js(`document.querySelector('.desktop-content').scrollTo(0,0);new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))`);
+   report.responsive[width]=await js(`({overflow:document.documentElement.scrollWidth>innerWidth||document.querySelector('.desktop-content').scrollWidth>document.querySelector('.desktop-content').clientWidth+2,sidebar:document.querySelector('.desktop-sidebar').getBoundingClientRect().width,tab:document.querySelector('[role=tab][aria-selected=true]')?.dataset.advisorWorkspace})`);
+   if(report.responsive[width].overflow||report.responsive[width].sidebar<140||report.responsive[width].sidebar>200)throw Error('Advisor shell layout failed at '+width+': '+JSON.stringify(report.responsive[width]));
+   await fs.writeFile(path.join(out,'advisor-'+width+'.png'),(await win.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+  }
+  await js(`document.querySelector('[data-advisor-workspace="tactics"]').click();new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))`);
+  if(!await js(`getComputedStyle(document.querySelector('#advisor-pane-routes')).display==='none'&&getComputedStyle(document.querySelector('#advisor-pane-tactics')).display!=='none'`))throw Error('Workspace tab did not change visible content');
+  await js(`document.querySelector('[data-advisor-workspace="routes"]').focus();document.querySelector('[data-advisor-workspace="routes"]').dispatchEvent(new KeyboardEvent('keydown',{key:'End',bubbles:true}));new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))`);
+  if(!await js(`document.activeElement?.dataset.advisorWorkspace==='outlook'&&document.querySelector('[data-advisor-workspace="outlook"]').getAttribute('aria-selected')==='true'`))throw Error('Keyboard tab selection lost focus');
+  await js(`document.querySelector('[data-nav="comps"]').click()`);
+  await wait(`!!document.querySelector('[data-desktop-view="comps"]')`);
+  report.compositions={};
+  for(const width of [1080,1440]){
+   win.setSize(width,960);
+   await js(`new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))`);
+   report.compositions[width]=await js(`({rows:document.querySelectorAll('[data-comp]').length,expandedWidth:document.querySelector('.comp-card.expanded')?.getBoundingClientRect().width,contentWidth:document.querySelector('.compositions').clientWidth,overflow:document.querySelector('.compositions').scrollWidth>document.querySelector('.compositions').clientWidth+2})`);
+   if(report.compositions[width].rows<1||report.compositions[width].overflow||report.compositions[width].expandedWidth<report.compositions[width].contentWidth*.9)throw Error('Compositions layout failed at '+width);
+   await fs.writeFile(path.join(out,'compositions-'+width+'.png'),(await win.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+  }
+  await js(`document.querySelector('[data-pick-comp]').click()`);
+  await wait(`document.querySelector('[data-pick-comp]').classList.contains('chosen')`);
+  await js(`document.querySelector('[data-pick-comp]').click()`);
+  await wait(`!document.querySelector('[data-pick-comp].chosen')`);
+  report.compositionSelection=true;
   await fs.writeFile(path.join(out,'checks.json'),JSON.stringify(report,null,2));
   console.log('ADVISOR_DESIGN_SMOKE_PASS',JSON.stringify(report.selected));app.exit(0);
  }catch(error){console.error(error);app.exit(1);}

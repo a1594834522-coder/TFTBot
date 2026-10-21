@@ -11,7 +11,8 @@ const picks = ratings.response.content.content.tierList.flatMap(t => t.content).
 const choices = Object.fromEntries(picks.map((a, i) => [`augment_${i + 1}`, { name: a.id }]));
 const withAux=process.env.TFTBOT_TEST_COMBAT_AUX==='1';
 const board={cell_1:{name:heroes[0].name,level:2,item_1:'',item_2:'',item_3:''}};
-const withLanding=process.env.TFTBOT_TEST_LANDING==='1';
+const withHandoff=process.env.TFTBOT_TEST_HANDOFF==='1';
+const withLanding=process.env.TFTBOT_TEST_LANDING==='1'||withHandoff;
 const withPurchase=process.env.TFTBOT_TEST_PURCHASE==='1'||withLanding;
 const bench={cell_1:{name:heroes[0].name,level:1,item_1:'',item_2:'',item_3:''}};
 if(withPurchase){
@@ -19,11 +20,20 @@ if(withPurchase){
  bench.cell_2={name:'DA_18_Akali_AD',level:1,item_1:'',item_2:'',item_3:''};
  heroes[1]={name:'DA_18_Akali_AD'};heroes[2]={name:'DA_18_Rengar'};heroes[3]={name:'DA_18_Rakan'};
 }
+if(withHandoff){
+ const fs=require('node:fs'),path=require('node:path'),catalog=require('../data/metatft-direction-catalog.json'),workers=[...Object.values(board).map(u=>u.name),heroes[0].name];
+ const profile=catalog.profiles.find(p=>p.pairs.some(pair=>pair.regime==='four-cost'&&![pair.carry,pair.tank].some(id=>workers.includes(id))));
+ const pair=profile.pairs.find(pair=>pair.regime==='four-cost'&&![pair.carry,pair.tank].some(id=>workers.includes(id)));
+ heroes[1]={name:pair.carry};heroes[2]={name:pair.tank};
+ board.cell_2={name:'DA_18_Akali_AD',level:2,item_1:'DA_InfinityEdge',item_2:'DA_GuinsoosRageblade',item_3:''};
+ board.cell_3={name:'DA_18_Leona',level:2,item_1:'DA_WarmogsArmor',item_2:'',item_3:''};
+ fs.mkdirSync(process.env.TFTBOT_SMOKE_DIR,{recursive:true});fs.writeFileSync(path.join(process.env.TFTBOT_SMOKE_DIR,'handoff-intent.json'),JSON.stringify({key:'metatft:'+profile.key,id:pair.id}));
+}
 if(withAux){
  board.cell_10={name:'DA_TheTower_TrainingDummy',level:1,item_1:'DA_WarmogsArmor',item_2:'',item_3:''};
  board.cell_11={name:'DA_Elderwood18_Lifeblossom',level:0,item_1:'',item_2:'',item_3:''};
 }
-const selectedAugments=withAux?[['tft_picked_augment',{slot_1:{name:'DA_TheTower'},slot_2:{name:''},slot_3:{name:''},slot_4:{name:''}}]]:[];
+const selectedAugments=withAux||withHandoff?[['tft_picked_augment',{slot_1:{name:withAux?'DA_TheTower':'DA_TradeSector'},slot_2:{name:''},slot_3:{name:''},slot_4:{name:''}}]]:[];
 const server = new native.IpcConnection(process.env.TFTBOT_TEST_CHANNEL, true, () => {});
 server.connect();
 console.log('NATIVE_FIXTURE_READY');

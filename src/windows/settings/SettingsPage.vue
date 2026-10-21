@@ -101,6 +101,7 @@ function pickSource(id: string) {
           <button
             type="button"
             class="sw"
+            :aria-label="labelOf(k)"
             :class="{ on: local[k] }"
             :aria-pressed="local[k] ? 'true' : 'false'"
             @click="toggle(k)"

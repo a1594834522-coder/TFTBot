@@ -1,0 +1,2512 @@
+{
+  "set": 18,
+  "version": "S18-PBE-18.4-equipment-reference",
+  "provisional": true,
+  "source": {
+    "file": "TFTSet18_latest_en_us.json",
+    "sha256": "2b7d15ea589eaf45db193d2cea85b7bdd29c666533afa9f6c0c79ebc06577dce",
+    "metadata": {
+      "set": "TFTSet18",
+      "setName": "Enchanted Wilds",
+      "patch": "pbe",
+      "generated": "2026-10-06T21:13:15.212Z",
+      "coreHash": "69ca9bf869348e7a3365b1fe58a2a15944f4a6c1",
+      "release": "rls-18.4.0.5637330.Set18FullPC.Shipping.pbe",
+      "manifest": "F9A0F56B2A0F292A",
+      "tooltips": "curvetable"
+    },
+    "blockedAugments": {
+      "DA_NoScoutNoPivot": "Champions that fight in player combat cannot be benched or sold. Your team gains <TFTCurveTable format=\"percent\" row=\"PostCombatHealthBoost\"/> Health, and <TFTCurveTable format=\"percent\" row=\"PostCombatApBoost\"/> Attack Damage and Ability Power after player combat.",
+      "DA_SalvageBin": "Gain 1 random completed item now, and 1 component after <TFTCurveTable row=\"Rounds\"/> player combats. Selling champions breaks completed items into components (excluding Tactician's items and Emblems).",
+      "DA_SalvageBinPlus": "Gain 1 random completed item now, and 1 component after <TFTCurveTable row=\"RoundsPlus\"/> player combats. Selling champions breaks completed items into components (excluding Tactician's items and Emblems)."
+    }
+  },
+  "items": {
+    "DA_AdaptiveHelm": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Magic",
+        "Item.Equippable.Category.Tank",
+        "Item.Equippable.Provides.Resource.Mana"
+      ],
+      "recipe": [
+        "DA_Component_TearOfTheGoddess",
+        "DA_Component_NegatronCloak"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_AdaptiveHelm_Radiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Magic",
+        "Item.Equippable.Category.Tank",
+        "Item.Equippable.Provides.Resource.Mana"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_ArchangelsStaff": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Item.Stacking",
+        "Item.Equippable.Category.Magic",
+        "Item.Equippable.Provides.Resource.Mana"
+      ],
+      "recipe": [
+        "DA_Component_NeedlesslyLargeRod",
+        "DA_Component_TearOfTheGoddess"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_ArchangelsStaffRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Item.Stacking",
+        "Item.Equippable.Category.Magic",
+        "Item.Equippable.Provides.Resource.Mana"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_AegisOfDawn": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_AegisOfDusk": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_BlightingJewel": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_CappaJuice": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact",
+        "Item.Equippable.Item.Stacking"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_Dawncore": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_DeathsDefiance": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_EternalPact": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_Fishbones": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_ForbiddenIdol": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_GamblersBlade": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact",
+        "Item.Equippable.Item.GoldGenerating"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_GoldCollector": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact",
+        "Item.Equippable.Item.GoldGenerating"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_HellfireHatchet": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_HorizonFocus": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_Hullcrusher": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_InfinityForce": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_LichBane": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_LightshieldCrest": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_LudensTempest": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_Manazane": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_Mittens": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_MogulsMail": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact",
+        "Item.Equippable.Item.Stacking",
+        "Item.Equippable.Item.GoldGenerating"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_NavoriFlickerblade": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact",
+        "Item.Equippable.Item.Stacking"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_RapidFireCannon": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_SeekersArmguard": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact",
+        "Item.Equippable.Item.Stacking"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_SilvermereDawn": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_StatikkShiv": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Item_Artifact_TalismanOfAscension": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_TheIndomitable": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_TitanicHydra": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_VoidGauntlet": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_WitsEnd": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Artifact_ZhonyasParadox": {
+      "unique": false,
+      "tags": [
+        "Artifact",
+        "Item.Equippable.Item.Artifact"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Bloodthirster": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [
+        "DA_Component_BFSword",
+        "DA_Component_NegatronCloak"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_BloodthirsterRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_BlueBuff": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Magic",
+        "Item.Equippable.Provides.Resource.Mana"
+      ],
+      "recipe": [
+        "DA_Component_TearOfTheGoddess",
+        "DA_Component_TearOfTheGoddess"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_BlueBuffRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Magic",
+        "Item.Equippable.Provides.Resource.Mana"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_BrambleVest": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Tank"
+      ],
+      "recipe": [
+        "DA_Component_ChainVest",
+        "DA_Component_ChainVest"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_BrambleVestRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Tank"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Component_BFSword": {
+      "unique": false,
+      "tags": [
+        "Component",
+        "Item.Equippable.Item.Component"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Component_ChainVest": {
+      "unique": false,
+      "tags": [
+        "Component",
+        "Item.Equippable.Item.Component"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Component_FryingPan": {
+      "unique": false,
+      "tags": [
+        "Component",
+        "Item.Equippable.Item.Component.SpatOrPan",
+        "Item.Equippable.Item.Component"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Component_GiantsBelt": {
+      "unique": false,
+      "tags": [
+        "Component",
+        "Item.Equippable.Item.Component"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Component_NeedlesslyLargeRod": {
+      "unique": false,
+      "tags": [
+        "Component",
+        "Item.Equippable.Item.Component"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Component_NegatronCloak": {
+      "unique": false,
+      "tags": [
+        "Component",
+        "Item.Equippable.Item.Component"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Component_RecurveBow": {
+      "unique": false,
+      "tags": [
+        "Component",
+        "Item.Equippable.Item.Component"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Component_SparringGloves": {
+      "unique": false,
+      "tags": [
+        "Component",
+        "Item.Equippable.Item.Component"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Component_Spatula": {
+      "unique": false,
+      "tags": [
+        "Component",
+        "Item.Equippable.Item.Component.SpatOrPan",
+        "Item.Equippable.Item.Component"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Component_TearOfTheGoddess": {
+      "unique": false,
+      "tags": [
+        "Component",
+        "Item.Equippable.Item.Component",
+        "Item.Equippable.Provides.Resource.Mana"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Crownguard": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Tank"
+      ],
+      "recipe": [
+        "DA_Component_NeedlesslyLargeRod",
+        "DA_Component_ChainVest"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_CrownguardRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Tank"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Deathblade": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [
+        "DA_Component_BFSword",
+        "DA_Component_BFSword"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_DeathbladeRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_DragonsClaw": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Tank"
+      ],
+      "recipe": [
+        "DA_Component_NegatronCloak",
+        "DA_Component_NegatronCloak"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_DragonsClawRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Tank"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_EdgeOfNight": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [
+        "DA_Component_BFSword",
+        "DA_Component_ChainVest"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_EdgeOfNightRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Evenshroud": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Tank"
+      ],
+      "recipe": [
+        "DA_Component_NegatronCloak",
+        "DA_Component_GiantsBelt"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_EvenshroudRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Tank"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_GargoyleStoneplate": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Tank"
+      ],
+      "recipe": [
+        "DA_Component_ChainVest",
+        "DA_Component_NegatronCloak"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_GargoyleStoneplate_Radiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Tank"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_GiantSlayer": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Attack",
+        "Item.Equippable.Category.Magic"
+      ],
+      "recipe": [
+        "DA_Component_RecurveBow",
+        "DA_Component_BFSword"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_GiantSlayer_Radiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Magic",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_GuinsoosRageblade": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Item.Stacking",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [
+        "DA_Component_RecurveBow",
+        "DA_Component_NeedlesslyLargeRod"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_GuinsoosRagebladeRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Item.Stacking",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_HandOfJustice": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Attack",
+        "Item.Equippable.Category.Magic",
+        "Item.Equippable.Provides.Resource.Mana"
+      ],
+      "recipe": [
+        "DA_Component_TearOfTheGoddess",
+        "DA_Component_SparringGloves"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_HandOfJusticeRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Attack",
+        "Item.Equippable.Category.Magic",
+        "Item.Equippable.Provides.Resource.Mana"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_HextechGunblade": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Magic"
+      ],
+      "recipe": [
+        "DA_Component_BFSword",
+        "DA_Component_NeedlesslyLargeRod"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_HextechGunbladeRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Magic"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_InfinityEdge": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [
+        "DA_Component_BFSword",
+        "DA_Component_SparringGloves"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_InfinityEdgeRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_IonicSpark": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Tank"
+      ],
+      "recipe": [
+        "DA_Component_NeedlesslyLargeRod",
+        "DA_Component_NegatronCloak"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_IonicSparkRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Tank"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_JeweledGauntlet": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Magic"
+      ],
+      "recipe": [
+        "DA_Component_SparringGloves",
+        "DA_Component_NeedlesslyLargeRod"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_JeweledGauntletRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Magic"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_KrakensFury": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Item.Stacking",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [
+        "DA_Component_RecurveBow",
+        "DA_Component_NegatronCloak"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_KrakensFury_Radiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Item.Stacking",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_LastWhisper": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [
+        "DA_Component_RecurveBow",
+        "DA_Component_SparringGloves"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_LastWhisperRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_LuckyItemChest": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Consumable"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_RadiantLuckyItemChest": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Consumable",
+        "Item.Equippable.Item.Radiant"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_MasterworkUpgrade": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Consumable"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Morellonomicon": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Magic"
+      ],
+      "recipe": [
+        "DA_Component_GiantsBelt",
+        "DA_Component_NeedlesslyLargeRod"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_MorellonomiconRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Magic"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_NashorsTooth": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Magic"
+      ],
+      "recipe": [
+        "DA_Component_RecurveBow",
+        "DA_Component_GiantsBelt"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_NashorsToothRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Magic"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_ProtectorsVow": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Tank",
+        "Item.Equippable.Provides.Resource.Mana"
+      ],
+      "recipe": [
+        "DA_Component_ChainVest",
+        "DA_Component_TearOfTheGoddess"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_ProtectorsVowRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Tank",
+        "Item.Equippable.Provides.Resource.Mana"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_Quicksilver": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [
+        "DA_Component_NegatronCloak",
+        "DA_Component_SparringGloves"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_QuicksilverRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_RabadonsDeathcap": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Magic"
+      ],
+      "recipe": [
+        "DA_Component_NeedlesslyLargeRod",
+        "DA_Component_NeedlesslyLargeRod"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_RabadonsDeathcap_Radiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Magic"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_RedBuff": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [
+        "DA_Component_RecurveBow",
+        "DA_Component_RecurveBow"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_RedBuffRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_SpearOfShojin": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Attack",
+        "Item.Equippable.Category.Magic",
+        "Item.Equippable.Provides.Resource.Mana"
+      ],
+      "recipe": [
+        "DA_Component_TearOfTheGoddess",
+        "DA_Component_BFSword"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_SpearOfShojinRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Attack",
+        "Item.Equippable.Category.Magic",
+        "Item.Equippable.Provides.Resource.Mana"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_SpiritVisage": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Item.SpiritVisage",
+        "Item.Equippable.Category.Tank",
+        "Item.Equippable.Provides.Resource.Mana"
+      ],
+      "recipe": [
+        "DA_Component_GiantsBelt",
+        "DA_Component_TearOfTheGoddess"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_SpiritVisage_Radiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Item.SpiritVisage",
+        "Item.Equippable.Category.Tank",
+        "Item.Equippable.Provides.Resource.Mana"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_SteadfastHeart": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.SteadfastHeart",
+        "Item.Equippable.Category.Tank"
+      ],
+      "recipe": [
+        "DA_Component_ChainVest",
+        "DA_Component_SparringGloves"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_SteadfastHeartRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.SteadfastHeart",
+        "Item.Equippable.Category.Tank"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_SteraksGage": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [
+        "DA_Component_BFSword",
+        "DA_Component_GiantsBelt"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_SteraksGageRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_StrikersFlail": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Attack",
+        "Item.Equippable.Category.Magic"
+      ],
+      "recipe": [
+        "DA_Component_GiantsBelt",
+        "DA_Component_SparringGloves"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_StrikersFlailRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Attack",
+        "Item.Equippable.Category.Magic"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_SunfireCape_Radiant": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Tank"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_SunfireCape": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Tank"
+      ],
+      "recipe": [
+        "DA_Component_ChainVest",
+        "DA_Component_GiantsBelt"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_TacticiansCape": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Item.Tacticians"
+      ],
+      "recipe": [
+        "DA_Component_Spatula",
+        "DA_Component_FryingPan"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_TacticiansCrown": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Item.Tacticians"
+      ],
+      "recipe": [
+        "DA_Component_Spatula",
+        "DA_Component_Spatula"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_TacticiansShield": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Item.Tacticians"
+      ],
+      "recipe": [
+        "DA_Component_FryingPan",
+        "DA_Component_FryingPan"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_ThiefsGloves": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Item.ThiefsGloves"
+      ],
+      "recipe": [
+        "DA_Component_SparringGloves",
+        "DA_Component_SparringGloves"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_ThiefsGlovesRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Item.ThiefsGloves"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_TitansResolve": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Item.Stacking",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [
+        "DA_Component_RecurveBow",
+        "DA_Component_ChainVest"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_TitansResolve_Radiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Item.Stacking",
+        "Item.Equippable.Category.Attack"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_VoidStaff": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Magic",
+        "Item.Equippable.Provides.Resource.Mana"
+      ],
+      "recipe": [
+        "DA_Component_RecurveBow",
+        "DA_Component_TearOfTheGoddess"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_VoidStaffRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Magic",
+        "Item.Equippable.Provides.Resource.Mana"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_WarmogsArmor": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.Category.Tank"
+      ],
+      "recipe": [
+        "DA_Component_GiantsBelt",
+        "DA_Component_GiantsBelt"
+      ],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_WarmogsArmorRadiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Item.Radiant",
+        "Item.Equippable.Category.Tank"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_BlastPotion18": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Potion.Normal",
+        "Item.Equippable.Item.Temporary"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_BlastPotion18_Radiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Potion.Radiant",
+        "Item.Equippable.Item.Temporary"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_HealthPotion18": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Potion.Normal",
+        "Item.Equippable.Item.Temporary"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_HealthPotion18_Radiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Potion.Radiant",
+        "Item.Equippable.Item.Temporary"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_ManaPotion18": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.Potion.Normal",
+        "Item.Equippable.Item.Temporary"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_ManaPotion18_Radiant": {
+      "unique": false,
+      "tags": [
+        "Radiant",
+        "Item.Equippable.Potion.Radiant",
+        "Item.Equippable.Item.Temporary"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_18_EmblemBlackthorn": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem",
+        "Item.Equippable.Item.Craftable"
+      ],
+      "recipe": [
+        "DA_Component_Spatula",
+        "DA_Component_GiantsBelt"
+      ],
+      "traits": [
+        "DA_18_Blackthorn"
+      ],
+      "incompatible": [
+        "DA_18_Blackthorn"
+      ]
+    },
+    "DA_18_EmblemBlossom": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem",
+        "Item.Equippable.Item.Craftable"
+      ],
+      "recipe": [
+        "DA_Component_Spatula",
+        "DA_Component_NeedlesslyLargeRod"
+      ],
+      "traits": [
+        "DA_18_Blossom"
+      ],
+      "incompatible": [
+        "DA_18_Blossom"
+      ]
+    },
+    "DA_18_EmblemBrawler": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem",
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.WeStickTogetherBanned"
+      ],
+      "recipe": [
+        "DA_Component_FryingPan",
+        "DA_Component_GiantsBelt"
+      ],
+      "traits": [
+        "DA_18_Brawler"
+      ],
+      "incompatible": [
+        "DA_18_Brawler"
+      ]
+    },
+    "DA_18_EmblemCoven": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem.Elusive"
+      ],
+      "recipe": [],
+      "traits": [
+        "DA_18_Coven"
+      ],
+      "incompatible": [
+        "DA_18_Coven"
+      ]
+    },
+    "DA_18_EmblemDefender": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem.Elusive",
+        "Item.Equippable.WeStickTogetherBanned"
+      ],
+      "recipe": [],
+      "traits": [
+        "DA_18_Defender"
+      ],
+      "incompatible": [
+        "DA_18_Defender"
+      ]
+    },
+    "DA_18_EmblemElderwood": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem",
+        "Item.Equippable.Item.Craftable"
+      ],
+      "recipe": [
+        "DA_Component_Spatula",
+        "DA_Component_ChainVest"
+      ],
+      "traits": [
+        "DA_18_Elderwood"
+      ],
+      "incompatible": [
+        "DA_18_Elderwood"
+      ]
+    },
+    "DA_18_EmblemExecutioner": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem",
+        "Item.Equippable.Item.Craftable"
+      ],
+      "recipe": [
+        "DA_Component_FryingPan",
+        "DA_Component_SparringGloves"
+      ],
+      "traits": [
+        "DA_18_Executioner"
+      ],
+      "incompatible": [
+        "DA_18_Executioner"
+      ]
+    },
+    "DA_18_EmblemFae": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem",
+        "Item.Equippable.Item.Craftable"
+      ],
+      "recipe": [
+        "DA_Component_Spatula",
+        "DA_Component_BFSword"
+      ],
+      "traits": [
+        "DA_18_Fae"
+      ],
+      "incompatible": [
+        "DA_18_Fae"
+      ]
+    },
+    "DA_18_EmblemFloraFatalisAugment": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem.Elusive"
+      ],
+      "recipe": [],
+      "traits": [
+        "DA_FloraFatalis18"
+      ],
+      "incompatible": [
+        "DA_FloraFatalis18"
+      ]
+    },
+    "DA_18_EmblemFloraFatalis": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem.Elusive"
+      ],
+      "recipe": [],
+      "traits": [
+        "DA_FloraFatalis18"
+      ],
+      "incompatible": [
+        "DA_FloraFatalis18"
+      ]
+    },
+    "DA_18_EmblemHunter": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem",
+        "Item.Equippable.Item.Craftable"
+      ],
+      "recipe": [
+        "DA_Component_FryingPan",
+        "DA_Component_BFSword"
+      ],
+      "traits": [
+        "DA_18_Hunter"
+      ],
+      "incompatible": [
+        "DA_18_Hunter"
+      ]
+    },
+    "DA_18_EmblemInferno": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem",
+        "Item.Equippable.Item.Craftable"
+      ],
+      "recipe": [
+        "DA_Component_Spatula",
+        "DA_Component_RecurveBow"
+      ],
+      "traits": [
+        "DA_18_Inferno"
+      ],
+      "incompatible": [
+        "DA_18_Inferno"
+      ]
+    },
+    "DA_18_EmblemInvoker": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem",
+        "Item.Equippable.Item.Craftable"
+      ],
+      "recipe": [
+        "DA_Component_FryingPan",
+        "DA_Component_TearOfTheGoddess"
+      ],
+      "traits": [
+        "DA_18_Invoker"
+      ],
+      "incompatible": [
+        "DA_18_Invoker"
+      ]
+    },
+    "DA_18_EmblemJuggernaut": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem.Elusive",
+        "Item.Equippable.WeStickTogetherBanned"
+      ],
+      "recipe": [],
+      "traits": [
+        "DA_Juggernaut18"
+      ],
+      "incompatible": [
+        "DA_Juggernaut18"
+      ]
+    },
+    "DA_18_EmblemLunar": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem",
+        "Item.Equippable.Item.Craftable"
+      ],
+      "recipe": [
+        "DA_Component_Spatula",
+        "DA_Component_TearOfTheGoddess"
+      ],
+      "traits": [
+        "DA_18_Lunar"
+      ],
+      "incompatible": [
+        "DA_18_Lunar"
+      ]
+    },
+    "DA_18_EmblemPrimal": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem",
+        "Item.Equippable.Item.Craftable",
+        "Item.Equippable.WeStickTogetherBanned"
+      ],
+      "recipe": [
+        "DA_Component_Spatula",
+        "DA_Component_SparringGloves"
+      ],
+      "traits": [
+        "DA_Primal18"
+      ],
+      "incompatible": [
+        "DA_Primal18"
+      ]
+    },
+    "DA_18_EmblemRapidfire": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem",
+        "Item.Equippable.Item.Craftable"
+      ],
+      "recipe": [
+        "DA_Component_FryingPan",
+        "DA_Component_RecurveBow"
+      ],
+      "traits": [
+        "DA_18_Rapidfire"
+      ],
+      "incompatible": [
+        "DA_18_Rapidfire"
+      ]
+    },
+    "TFTSet18_Item_RiftbeastSelector_TwoAlphaAugment": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.CantReforge",
+        "Item.Equippable.CantBeCombined",
+        "Item.Equippable.Reusable.Selector.Riftbeast"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "TFTSet18_Item_RiftbeastSelector": {
+      "unique": false,
+      "tags": [
+        "Item.Equippable.CantReforge",
+        "Item.Equippable.CantBeCombined",
+        "Item.Equippable.Reusable.Selector.Riftbeast"
+      ],
+      "recipe": [],
+      "traits": [],
+      "incompatible": []
+    },
+    "DA_18_EmblemSlayer": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem",
+        "Item.Equippable.Item.Craftable"
+      ],
+      "recipe": [
+        "DA_Component_FryingPan",
+        "DA_Component_NegatronCloak"
+      ],
+      "traits": [
+        "DA_18_Slayer"
+      ],
+      "incompatible": [
+        "DA_18_Slayer"
+      ]
+    },
+    "DA_18_EmblemSpellweaver": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem",
+        "Item.Equippable.Item.Craftable"
+      ],
+      "recipe": [
+        "DA_Component_FryingPan",
+        "DA_Component_NeedlesslyLargeRod"
+      ],
+      "traits": [
+        "DA_18_Spellweaver"
+      ],
+      "incompatible": [
+        "DA_18_Spellweaver"
+      ]
+    },
+    "DA_18_EmblemSprykin": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem",
+        "Item.Equippable.Item.Craftable"
+      ],
+      "recipe": [
+        "DA_Component_Spatula",
+        "DA_Component_NegatronCloak"
+      ],
+      "traits": [
+        "DA_18_Sprykin"
+      ],
+      "incompatible": [
+        "DA_18_Sprykin"
+      ]
+    },
+    "DA_18_EmblemVanguard": {
+      "unique": false,
+      "tags": [
+        "Emblem",
+        "Item.Equippable.Item.Emblem",
+        "Item.Equippable.Item.Craftable"
+      ],
+      "recipe": [
+        "DA_Component_FryingPan",
+        "DA_Component_ChainVest"
+      ],
+      "traits": [
+        "DA_18_Vanguard"
+      ],
+      "incompatible": [
+        "DA_18_Vanguard"
+      ]
+    }
+  },
+  "traits": {
+    "TFT_GoldenEgg": [],
+    "DA_GoldenEggCharacter": [],
+    "DA_MagicEggCharacter": [],
+    "TFT_TrainingDummy": [],
+    "DA_TheTower_TrainingDummy": [],
+    "DA_TrainingDummy": [],
+    "TFT_BlueGolem": [],
+    "DA_Golem": [],
+    "TFT18_Ahri": [
+      "DA_18_Blossom",
+      "DA_18_Spellweaver"
+    ],
+    "DA_18_Ahri": [
+      "DA_18_Blossom",
+      "DA_18_Spellweaver"
+    ],
+    "TFT18_Akali": [
+      "DA_18_Inferno",
+      "DA_18_Adaptor",
+      "DA_18_Slayer"
+    ],
+    "DA_18_Akali_AD": [
+      "DA_18_Inferno",
+      "DA_18_Adaptor",
+      "DA_18_Slayer"
+    ],
+    "DA_18_Akali_AP": [
+      "DA_18_Inferno",
+      "DA_18_Adaptor",
+      "DA_18_Slayer"
+    ],
+    "TFT18_Alistar": [
+      "DA_18_Elderwood",
+      "DA_18_Brawler"
+    ],
+    "DA_18_Alistar": [
+      "DA_18_Elderwood",
+      "DA_18_Brawler"
+    ],
+    "TFT18_Alune": [
+      "DA_AluneUniqueTrait18",
+      "DA_18_Lunar",
+      "DA_18_Spellweaver"
+    ],
+    "DA_18_Alune": [
+      "DA_AluneUniqueTrait18",
+      "DA_18_Lunar",
+      "DA_18_Spellweaver"
+    ],
+    "TFT18_Amumu": [
+      "DA_18_Inferno",
+      "DA_Juggernaut18"
+    ],
+    "DA_Amumu18": [
+      "DA_18_Inferno",
+      "DA_Juggernaut18"
+    ],
+    "TFT18_Aphelios": [
+      "DA_18_Lunar",
+      "DA_18_Rapidfire"
+    ],
+    "DA_18_Aphelios": [
+      "DA_18_Lunar",
+      "DA_18_Rapidfire"
+    ],
+    "TFT18_Ashe": [
+      "DA_18_Blossom",
+      "DA_18_Hunter"
+    ],
+    "DA_18_Ashe": [
+      "DA_18_Blossom",
+      "DA_18_Hunter"
+    ],
+    "TFT18_AzirSoldier": [],
+    "DA_18_AzirSoldier": [],
+    "TFT18_Azir": [
+      "DA_18_Blackthorn",
+      "DA_18_Executioner",
+      "DA_18_Summoner"
+    ],
+    "DA_18_Azir": [
+      "DA_18_Blackthorn",
+      "DA_18_Executioner",
+      "DA_18_Summoner"
+    ],
+    "TFT18_Brambleback": [
+      "DA_Riftbeast18",
+      "DA_18_Slayer"
+    ],
+    "DA_Brambleback18": [
+      "DA_Riftbeast18",
+      "DA_18_Slayer"
+    ],
+    "TFT18_Caitlyn": [
+      "DA_18_Coven",
+      "DA_18_Hunter"
+    ],
+    "DA_18_Caitlyn": [
+      "DA_18_Coven",
+      "DA_18_Hunter"
+    ],
+    "TFT18_Camille": [
+      "DA_18_Coven",
+      "DA_18_Slayer"
+    ],
+    "DA_18_Camille": [
+      "DA_18_Coven",
+      "DA_18_Slayer"
+    ],
+    "TFT18_Cassiopeia": [
+      "DA_18_Coven",
+      "DA_18_Spellweaver"
+    ],
+    "DA_18_Cassiopeia": [
+      "DA_18_Coven",
+      "DA_18_Spellweaver"
+    ],
+    "TFT18_Cinderling": [
+      "DA_Riftbeast18",
+      "DA_18_Hunter"
+    ],
+    "DA_Cinderling18": [
+      "DA_Riftbeast18",
+      "DA_18_Hunter"
+    ],
+    "TFT18_MamaBeak": [
+      "DA_Riftbeast18",
+      "DA_18_Summoner",
+      "DA_18_Rapidfire"
+    ],
+    "DA_CrimsonRaptor18": [
+      "DA_Riftbeast18",
+      "DA_18_Summoner",
+      "DA_18_Rapidfire"
+    ],
+    "TFT18_CrimsonRaptor_Mini": [],
+    "DA_18_CrimsonRaptor_Mini": [],
+    "TFT18_Diana": [
+      "DA_18_Lunar",
+      "DA_18_Slayer",
+      "DA_18_Vanguard"
+    ],
+    "DA_18_Diana": [
+      "DA_18_Lunar",
+      "DA_18_Slayer",
+      "DA_18_Vanguard"
+    ],
+    "TFT18_Draven": [
+      "DA_DravenUniqueTrait18"
+    ],
+    "DA_Draven18": [
+      "DA_DravenUniqueTrait18"
+    ],
+    "TFT18_ElderDragon": [
+      "DA_18_ApexPredator",
+      "DA_Riftbeast18"
+    ],
+    "DA_18_ElderDragon": [
+      "DA_18_ApexPredator",
+      "DA_Riftbeast18"
+    ],
+    "TFT18_Elise": [
+      "DA_18_Coven",
+      "DA_18_Vanguard"
+    ],
+    "DA_18_Elise": [
+      "DA_18_Coven",
+      "DA_18_Vanguard"
+    ],
+    "TFT18_EliseSpider": [
+      "DA_18_Coven",
+      "DA_18_Vanguard"
+    ],
+    "DA_18_EliseSpider": [
+      "DA_18_Coven",
+      "DA_18_Vanguard"
+    ],
+    "TFT18_Ezreal": [
+      "DA_18_Elderwood",
+      "DA_18_Executioner"
+    ],
+    "DA_18_Ezreal": [
+      "DA_18_Elderwood",
+      "DA_18_Executioner"
+    ],
+    "TFT18_Fiddlesticks": [
+      "DA_FloraFatalis18",
+      "DA_18_Defender",
+      "DA_18_Spellweaver"
+    ],
+    "DA_Fiddlesticks18": [
+      "DA_FloraFatalis18",
+      "DA_18_Defender",
+      "DA_18_Spellweaver"
+    ],
+    "TFT18_GnarBig": [
+      "DA_18_Elderwood",
+      "DA_18_Sprykin",
+      "DA_18_Brawler"
+    ],
+    "DA_18_GnarBig": [
+      "DA_18_Elderwood",
+      "DA_18_Sprykin",
+      "DA_18_Brawler"
+    ],
+    "TFT18_Gnar": [
+      "DA_18_Elderwood",
+      "DA_18_Sprykin",
+      "DA_18_Brawler"
+    ],
+    "DA_18_GnarSmall": [
+      "DA_18_Elderwood",
+      "DA_18_Sprykin",
+      "DA_18_Brawler"
+    ],
+    "TFT18_Gromp": [
+      "DA_Riftbeast18",
+      "DA_18_Adaptor"
+    ],
+    "DA_Gromp18_AP": [
+      "DA_Riftbeast18",
+      "DA_18_Adaptor"
+    ],
+    "DA_Gromp18_AD": [
+      "DA_Riftbeast18",
+      "DA_18_Adaptor"
+    ],
+    "TFT18_Hecarim": [
+      "DA_18_Elderwood",
+      "DA_18_Vanguard"
+    ],
+    "DA_18_Hecarim": [
+      "DA_18_Elderwood",
+      "DA_18_Vanguard"
+    ],
+    "TFT18_Ivern": [
+      "DA_18_Greenfather"
+    ],
+    "DA_18_Ivern": [
+      "DA_18_Greenfather"
+    ],
+    "TFT18_Karma": [
+      "DA_18_Blossom",
+      "DA_18_Spellweaver"
+    ],
+    "DA_Karma18": [
+      "DA_18_Blossom",
+      "DA_18_Spellweaver"
+    ],
+    "TFT18_Kayle": [
+      "DA_18_Solar",
+      "DA_18_Rapidfire"
+    ],
+    "DA_18_Kayle": [
+      "DA_18_Solar",
+      "DA_18_Rapidfire"
+    ],
+    "TFT18_Kennen": [
+      "DA_18_Inferno",
+      "DA_18_Executioner"
+    ],
+    "DA_18_Kennen": [
+      "DA_18_Inferno",
+      "DA_18_Executioner"
+    ],
+    "TFT18_KhaZix": [
+      "DA_18_Rival"
+    ],
+    "DA_18_KhaZix": [
+      "DA_18_Rival"
+    ],
+    "TFT18_Kobuko": [
+      "DA_18_Sprykin",
+      "DA_18_Brawler"
+    ],
+    "DA_18_Kobuko": [
+      "DA_18_Sprykin",
+      "DA_18_Brawler"
+    ],
+    "TFT18_KogMaw": [
+      "DA_18_Caustic",
+      "DA_18_Adaptor",
+      "DA_18_Invoker"
+    ],
+    "DA_KogMaw18_AD": [
+      "DA_18_Caustic",
+      "DA_18_Adaptor",
+      "DA_18_Invoker"
+    ],
+    "DA_KogMaw18_AP": [
+      "DA_18_Caustic",
+      "DA_18_Adaptor",
+      "DA_18_Invoker"
+    ],
+    "TFT18_KrugMini": [],
+    "DA_Krug18_MiniKrug": [],
+    "TFT18_Krug": [
+      "DA_Riftbeast18",
+      "DA_18_Brawler"
+    ],
+    "DA_Krug18": [
+      "DA_Riftbeast18",
+      "DA_18_Brawler"
+    ],
+    "TFT18_LeBlanc": [
+      "DA_18_Elderwood",
+      "DA_18_Spellweaver"
+    ],
+    "DA_18_LeBlanc": [
+      "DA_18_Elderwood",
+      "DA_18_Spellweaver"
+    ],
+    "TFT18_Leona": [
+      "DA_18_Solar",
+      "DA_18_Defender"
+    ],
+    "DA_18_Leona": [
+      "DA_18_Solar",
+      "DA_18_Defender"
+    ],
+    "TFT18_Lillia": [
+      "DA_18_Fae",
+      "DA_18_Defender"
+    ],
+    "DA_18_Lillia": [
+      "DA_18_Fae",
+      "DA_18_Defender"
+    ],
+    "TFT18_Lux_Base": [
+      "DA_18_LuxUniqueTrait"
+    ],
+    "DA_Lux18_Base": [
+      "DA_18_LuxUniqueTrait"
+    ],
+    "DA_Lux18_Blackthorn": [
+      "DA_18_LuxUniqueTrait"
+    ],
+    "DA_Lux18_Blossom": [
+      "DA_18_LuxUniqueTrait"
+    ],
+    "DA_18_Lux_Coven": [
+      "DA_18_LuxUniqueTrait"
+    ],
+    "DA_18_Lux_Elderwood": [
+      "DA_18_LuxUniqueTrait"
+    ],
+    "DA_18_Lux_Fae": [
+      "DA_18_LuxUniqueTrait"
+    ],
+    "DA_18_Lux_Inferno": [
+      "DA_18_LuxUniqueTrait"
+    ],
+    "DA_18_Lux_Moonbeam": [
+      "DA_18_LuxUniqueTrait"
+    ],
+    "DA_18_Lux_Primal": [
+      "DA_18_LuxUniqueTrait"
+    ],
+    "DA_18_Lux_Sunbeam": [
+      "DA_18_LuxUniqueTrait"
+    ],
+    "TFT18_Malphite": [
+      "DA_18_Blackthorn",
+      "DA_18_Battlemage"
+    ],
+    "DA_18_Malphite": [
+      "DA_18_Blackthorn",
+      "DA_18_Battlemage"
+    ],
+    "TFT18_Maokai": [
+      "DA_18_Maokai_UniqueTrait",
+      "DA_Juggernaut18"
+    ],
+    "DA_18_Maokai": [
+      "DA_18_Maokai_UniqueTrait",
+      "DA_Juggernaut18"
+    ],
+    "TFT18_Maokai_BigSapling": [],
+    "DA_18_Maokai_BigSapling": [],
+    "TFT18_Maokai_Sapling": [],
+    "DA_18_Maokai_Sapling": [],
+    "TFT18_MasterYi": [
+      "DA_18_Blossom",
+      "DA_18_Adaptor"
+    ],
+    "DA_18_MasterYi_AD": [
+      "DA_18_Blossom",
+      "DA_18_Adaptor"
+    ],
+    "DA_18_MasterYi_AP": [
+      "DA_18_Blossom",
+      "DA_18_Adaptor"
+    ],
+    "TFT18_Morgana": [
+      "DA_18_Coven",
+      "DA_18_Invoker"
+    ],
+    "DA_18_Morgana": [
+      "DA_18_Coven",
+      "DA_18_Invoker"
+    ],
+    "TFT18_Murkwolf": [
+      "DA_Riftbeast18",
+      "DA_18_Slayer"
+    ],
+    "DA_Murkwolf18": [
+      "DA_Riftbeast18",
+      "DA_18_Slayer"
+    ],
+    "TFT18_Nidalee": [
+      "DA_Primal18",
+      "DA_18_Adaptor"
+    ],
+    "DA_Nidalee18_AP": [
+      "DA_Primal18",
+      "DA_18_Adaptor"
+    ],
+    "DA_NidaleeCougar18_AD": [
+      "DA_Primal18",
+      "DA_18_Adaptor"
+    ],
+    "TFT18_NunuWillump": [],
+    "DA_18_NunuWillump": [],
+    "TFT18_Ornn": [
+      "DA_18_Elderwood",
+      "DA_18_Defender"
+    ],
+    "DA_18_Ornn": [
+      "DA_18_Elderwood",
+      "DA_18_Defender"
+    ],
+    "TFT18_Rakan": [
+      "DA_18_Fae",
+      "DA_Juggernaut18",
+      "DA_18_Vanguard"
+    ],
+    "DA_18_Rakan": [
+      "DA_18_Fae",
+      "DA_Juggernaut18",
+      "DA_18_Vanguard"
+    ],
+    "TFT18_Rammus": [
+      "DA_18_Sprykin",
+      "DA_18_Defender"
+    ],
+    "DA_18_Rammus": [
+      "DA_18_Sprykin",
+      "DA_18_Defender"
+    ],
+    "TFT18_RekSai": [
+      "DA_18_Blackthorn",
+      "DA_18_Brawler"
+    ],
+    "DA_18_RekSai": [
+      "DA_18_Blackthorn",
+      "DA_18_Brawler"
+    ],
+    "TFT18_Rengar": [
+      "DA_18_Rival"
+    ],
+    "DA_18_Rengar": [
+      "DA_18_Rival"
+    ],
+    "TFT18_Scuttlecrab": [
+      "DA_Riftbeast18",
+      "DA_Juggernaut18"
+    ],
+    "DA_Scuttlecrab18": [
+      "DA_Riftbeast18",
+      "DA_Juggernaut18"
+    ],
+    "TFT18_Sejuani": [
+      "DA_18_Solar",
+      "DA_Juggernaut18"
+    ],
+    "DA_18_Sejuani": [
+      "DA_18_Solar",
+      "DA_Juggernaut18"
+    ],
+    "TFT18_Sentinel": [
+      "DA_Riftbeast18",
+      "DA_18_Vanguard",
+      "DA_18_Invoker"
+    ],
+    "DA_Sentinel18": [
+      "DA_Riftbeast18",
+      "DA_18_Vanguard",
+      "DA_18_Invoker"
+    ],
+    "TFT18_Pebbles": [
+      "DA_Riftbeast18",
+      "DA_18_Invoker"
+    ],
+    "DA_18_Sentry": [
+      "DA_Riftbeast18",
+      "DA_18_Invoker"
+    ],
+    "TFT18_Sett": [
+      "DA_18_Blossom",
+      "DA_18_Brawler"
+    ],
+    "DA_18_Sett": [
+      "DA_18_Blossom",
+      "DA_18_Brawler"
+    ],
+    "TFT18_Shen": [
+      "DA_18_Inferno",
+      "DA_18_Defender"
+    ],
+    "DA_18_Shen": [
+      "DA_18_Inferno",
+      "DA_18_Defender"
+    ],
+    "TFT18_Sivir": [
+      "DA_Primal18",
+      "DA_18_Hunter"
+    ],
+    "DA_18_Sivir": [
+      "DA_Primal18",
+      "DA_18_Hunter"
+    ],
+    "TFT18_Soraka": [
+      "DA_FloraFatalis18",
+      "DA_18_Executioner"
+    ],
+    "DA_18_Soraka": [
+      "DA_FloraFatalis18",
+      "DA_18_Executioner"
+    ],
+    "TFT18_Taric": [
+      "DA_Emerald18",
+      "DA_18_Vanguard"
+    ],
+    "DA_Taric18": [
+      "DA_Emerald18",
+      "DA_18_Vanguard"
+    ],
+    "TFT18_Teemo": [
+      "DA_18_Sprykin",
+      "DA_18_Invoker"
+    ],
+    "DA_18_Teemo": [
+      "DA_18_Sprykin",
+      "DA_18_Invoker"
+    ],
+    "TFT18_Tristana": [
+      "DA_18_Fae",
+      "DA_18_Sprykin",
+      "DA_18_Hunter"
+    ],
+    "DA_18_Tristana": [
+      "DA_18_Fae",
+      "DA_18_Sprykin",
+      "DA_18_Hunter"
+    ],
+    "TFT18_Varus": [
+      "DA_18_Inferno",
+      "DA_18_Rapidfire"
+    ],
+    "DA_18_Varus": [
+      "DA_18_Inferno",
+      "DA_18_Rapidfire"
+    ],
+    "TFT18_Veigar": [
+      "DA_18_Blackthorn",
+      "DA_18_Sprykin",
+      "DA_18_Spellweaver"
+    ],
+    "DA_18_Veigar": [
+      "DA_18_Blackthorn",
+      "DA_18_Sprykin",
+      "DA_18_Spellweaver"
+    ],
+    "TFT18_Vi": [
+      "DA_Primal18",
+      "DA_Juggernaut18"
+    ],
+    "DA_Vi18": [
+      "DA_Primal18",
+      "DA_Juggernaut18"
+    ],
+    "TFT18_Warwick": [
+      "DA_18_Blackthorn",
+      "DA_18_Slayer"
+    ],
+    "DA_18_Warwick": [
+      "DA_18_Blackthorn",
+      "DA_18_Slayer"
+    ],
+    "TFT18_Xayah": [
+      "DA_18_Elderwood",
+      "DA_18_Fae",
+      "DA_18_Rapidfire"
+    ],
+    "DA_18_Xayah": [
+      "DA_18_Elderwood",
+      "DA_18_Fae",
+      "DA_18_Rapidfire"
+    ],
+    "TFT18_Yorick": [
+      "DA_18_Blossom",
+      "DA_Juggernaut18",
+      "DA_18_Summoner"
+    ],
+    "DA_18_Yorick": [
+      "DA_18_Blossom",
+      "DA_Juggernaut18",
+      "DA_18_Summoner"
+    ],
+    "TFT18_Yorick_Spirit": [],
+    "DA_18_Yorick_Spirit": [],
+    "TFT18_Yunara": [
+      "DA_18_Blossom",
+      "DA_18_Executioner"
+    ],
+    "DA_18_Yunara": [
+      "DA_18_Blossom",
+      "DA_18_Executioner"
+    ],
+    "TFT18_Zyra": [
+      "DA_18_ZyraUniqueTrait",
+      "DA_18_Summoner"
+    ],
+    "DA_18_Zyra": [
+      "DA_18_ZyraUniqueTrait",
+      "DA_18_Summoner"
+    ],
+    "TFT18_Zyra_ThornSpitter": [],
+    "DA_18_Zyra_ThornSpitter": [],
+    "TFT18_Elderwood_TreeSummon": [],
+    "DA_Elderwood18_Lifeblossom": [],
+    "DA_Elderwood18_StonebarkTree": [],
+    "TFT18_Elderwood_GolemSummon": [],
+    "DA_Elderwood18_Protector": [],
+    "TFT18_SprykinSummonMelee": [],
+    "DA_18_SprykinAugmentSummonMelee": [],
+    "TFT18_SprykinSummonRanged": [],
+    "DA_18_SprykinAugmentSummonRanged": []
+  }
+}

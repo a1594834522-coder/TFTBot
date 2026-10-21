@@ -1,0 +1,14 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {createHash} from 'node:crypto';
+const root=process.env.METATFT_REFERENCE_DIR??'C:/Users/Abruzz1/Documents/deepseek-harness/default-workspace/metatft';
+const raw=await fs.readFile(path.join(root,'TFTSet18_latest_en_us.json')),data=JSON.parse(raw.toString('utf8').replace(/^\uFEFF/,''));
+if(data._metadata?.set!=='TFTSet18'||!Array.isArray(data.items)||!Array.isArray(data.units))throw Error('Equipment source season/schema mismatch');
+if(new Set(data.items.map(i=>i.apiName)).size!==data.items.length||data.items.some(i=>!i.apiName||typeof i.unique!=='boolean'))throw Error('Equipment identities or uniqueness flags incomplete');
+const blocked=['DA_NoScoutNoPivot','DA_SalvageBin','DA_SalvageBinPlus'];
+const augments=Object.fromEntries(blocked.map(id=>{const row=data.augments.find(a=>a.apiName===id);if(!row?.desc)throw Error('Missing sale mechanism evidence: '+id);return [id,row.desc];}));
+const items=Object.fromEntries(data.items.map(item=>[item.apiName,{unique:item.unique===true,tags:item.tags??[],recipe:item.composition??[],traits:item.associatedTraits??[],incompatible:item.incompatibleTraits??[]}])) ;
+const traits=Object.fromEntries(data.units.flatMap(unit=>[unit.apiName,...unit.assetNames??[]].map(id=>[id,unit.traitApiNames??[]])));
+const result={set:18,version:'S18-PBE-18.4-equipment-reference',provisional:true,source:{file:'TFTSet18_latest_en_us.json',sha256:createHash('sha256').update(raw).digest('hex'),metadata:data._metadata,blockedAugments:augments},items,traits};
+await fs.writeFile('data/equipment-rules.json',JSON.stringify(result,null,2));
+console.log(JSON.stringify({items:Object.keys(items).length,unitIdentities:Object.keys(traits).length,blockedAugments:blocked}));

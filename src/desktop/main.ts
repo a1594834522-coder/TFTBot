@@ -214,7 +214,8 @@ async function start() {
   ipcMain.handle('desktop:pin', (event, enabled) => { trusted(event); window!.setAlwaysOnTop(enabled === true); });
   window = new BrowserWindow({
     title: 'TFTBot · 云顶助手', width: 1440, height: 960, minWidth: 1080, minHeight: 720,
-    backgroundColor: '#0b0f17', show: false, autoHideMenuBar: true,
+    backgroundColor: '#141413', show: false, autoHideMenuBar: true,
+    titleBarStyle:'hidden',titleBarOverlay:{color:'#181817',symbolColor:'#aaa79e',height:44},
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: !smoke },
   });
   window.once('closed', () => { overlayWindow?.close(); augmentWindow?.close(); app.quit(); });
@@ -258,11 +259,18 @@ async function start() {
           historicalSwitcher: !!document.querySelector('select[aria-label="赛季"]')
         })`);
         if (!initial.primary || !initial.cards || !initial.chinese || initial.historicalSwitcher) throw new Error('默认 MetaTFT、中文名称或最新赛季约束未生效');
-        for (const page of ['advisor','augments', 'champions', 'board', 'settings', 'comps']) {
+        for (const page of ['advisor','augments', 'board', 'settings', 'comps']) {
           await window!.webContents.executeJavaScript(`document.querySelector('[data-nav="${page}"]').click()`);
           await new Promise(resolve => setTimeout(resolve, 150));
+          await window!.webContents.executeJavaScript(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
           const visible = await window!.webContents.executeJavaScript(`!!document.querySelector('[data-nav="${page}"].current') && !!document.querySelector('.desktop-content')?.textContent.trim()`);
           if (!visible) throw new Error(`桌面页面 ${page} 未显示`);
+          if(page==='settings'){
+            const layout=await window!.webContents.executeJavaScript(`(()=>{const panel=document.querySelector('[data-settings]'),content=document.querySelector('.desktop-content');return {ready:!!panel,display:panel?getComputedStyle(panel).display:null,overflow:content.scrollWidth>content.clientWidth+2};})()`);
+            if(!layout.ready||layout.display!=='grid'||layout.overflow)throw Error('设置页面布局或内容异常：'+JSON.stringify(layout));
+            await fs.writeFile(path.join(smokeDir,'settings-layout.json'),JSON.stringify(layout,null,2));
+          }
+          if(page==='settings')await fs.writeFile(path.join(smokeDir,page+'.png'),(await window!.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
           if (page === 'augments') {
             const count = await window!.webContents.executeJavaScript(`document.querySelectorAll('[data-rating]').length`);
             if (count !== report.augments) throw new Error('海克斯评级页未加载');
@@ -342,16 +350,32 @@ async function start() {
           }
           await fs.writeFile(path.join(smokeDir,'shopping-tactics.json'),JSON.stringify(tactics,null,2));
           console.log('SHOPPING_TACTICS_SMOKE_PASS');
+          if(process.env.TFTBOT_TEST_HANDOFF==='1'){
+            const intent=JSON.parse(await fs.readFile(path.join(smokeDir,'handoff-intent.json'),'utf8'));
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-nav="advisor"]').click();window.tftDesktop.selectComp(${JSON.stringify(intent.key)},${JSON.stringify(intent.id)})`);
+            for(let i=0;i<100;i++){const value=battles.snapshot();if(value.direction?.ready&&!value.direction.updating&&value.direction.focusId===intent.id&&value.handoffs?.ready)break;await new Promise(resolve=>setTimeout(resolve,100));}
+            const handoffs=battles.snapshot().handoffs;
+            if(!handoffs?.ready||!handoffs.choices.length||handoffs.choices.some(c=>!c.moves.length||c.goldAfter!==reader.snapshot().cards.gold!+c.refund-c.spent))throw Error('原生装备未进入承接比较：'+JSON.stringify(handoffs));
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-advisor-workspace="tactics"]').click();document.querySelector('[data-handoff-details] summary').click();new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-equipment-handoffs]').scrollIntoView({block:'center'});new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+            await new Promise(resolve=>setTimeout(resolve,100));
+            const layout=await window!.webContents.executeJavaScript(`(()=>{const el=document.querySelector('[data-equipment-handoffs]'),r=el?.getBoundingClientRect();return {text:el?.textContent,top:r?.top,bottom:r?.bottom,height:innerHeight,overflow:document.documentElement.scrollWidth>innerWidth,buttons:el?.querySelectorAll('button').length};})()`);
+            if(layout.overflow||layout.top<80||layout.bottom>layout.height||layout.buttons||!layout.text?.includes('不出售参考')||!layout.text.includes('装备栏需空')||selectedComp?.directionId!==intent.id)throw Error('承接界面或手选主线保持失败：'+JSON.stringify(layout));
+            await fs.writeFile(path.join(smokeDir,'equipment-handoffs.json'),JSON.stringify(handoffs,null,2));
+            await fs.writeFile(path.join(smokeDir,'handoff-layout.json'),JSON.stringify(layout,null,2));
+            await fs.writeFile(path.join(smokeDir,'equipment-handoffs.png'),(await window!.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+            console.log('EQUIPMENT_HANDOFF_SMOKE_PASS');if(timeout)clearTimeout(timeout);app.quit();return;
+          }
           if(process.env.TFTBOT_TEST_LANDING==='1'){
             await window!.webContents.executeJavaScript(`document.querySelector('[data-nav="advisor"]').click()`);
             for(let i=0;i<30;i++){if(await window!.webContents.executeJavaScript(`!!document.querySelector('[data-route-filter="four-cost"]')`))break;await new Promise(resolve=>setTimeout(resolve,50));}
             await window!.webContents.executeJavaScript(`document.querySelector('[data-route-filter="four-cost"]').click()`);
-            await window!.webContents.executeJavaScript(`document.querySelector('[data-direction-pick]').click()`);
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-advisor-workspace="routes"]').click();document.querySelector('[data-direction-pick]').click()`);
             for(let i=0;i<100;i++){const value=battles.snapshot().landings;if(value?.ready&&value.plans[0].id===selectedComp?.directionId)break;await new Promise(resolve=>setTimeout(resolve,100));}
             const landings=battles.snapshot().landings;
             if(!landings?.ready||!landings.plans.length||landings.budget!==20||landings.plans[0].id!==selectedComp?.directionId)throw Error('原生输入未进入预算落点：'+JSON.stringify(landings));
             const mainlineBefore=selectedComp?.directionId;
-            await window!.webContents.executeJavaScript(`document.querySelector('[data-landing-slots="5"]').click();document.querySelector('[data-search-landings] summary').click();new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-advisor-workspace="outlook"]').click();document.querySelector('[data-landing-slots="5"]').click();document.querySelector('[data-search-landings] summary').click();new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
             await window!.webContents.executeJavaScript(`document.querySelector('[data-search-landings]').scrollIntoView({block:'center'});new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
             await new Promise(resolve=>setTimeout(resolve,100));
             const view=await window!.webContents.executeJavaScript(`(()=>{const el=document.querySelector('[data-search-landings]'),rect=el?.getBoundingClientRect();return {text:el?.textContent,overflow:document.documentElement.scrollWidth>innerWidth,top:rect?.top,bottom:rect?.bottom,height:innerHeight,five:document.querySelector('[data-landing-slots="5"]')?.classList.contains('active')};})()`);
@@ -367,7 +391,7 @@ async function start() {
             await window!.webContents.executeJavaScript(`document.querySelector('[data-nav="advisor"]').click()`);
             for(let i=0;i<30;i++){if(await window!.webContents.executeJavaScript(`!!document.querySelector('[data-purchase-highlight]:not(:disabled)')`))break;await new Promise(resolve=>setTimeout(resolve,50));}
             const mainlineBefore=JSON.stringify(selectedComp);
-            await window!.webContents.executeJavaScript(`document.querySelector('[data-purchase-highlight]').click()`);
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-advisor-workspace="tactics"]').click();document.querySelector('[data-purchase-highlight]').click()`);
             for(let i=0;i<30&&!advisorPreferences.purchase;i++)await new Promise(resolve=>setTimeout(resolve,50));
             const selected=selectedPurchase(reader.snapshot(),battles.snapshot(),advisorPreferences.purchase);
             if(!selected||JSON.stringify(selectedComp)!==mainlineBefore)throw Error('购买组合选择未同步或改变了玩家主线：'+JSON.stringify({selection:!!advisorPreferences.purchase,selected:!!selected,mainlineChanged:JSON.stringify(selectedComp)!==mainlineBefore,phase:battles.snapshot().phase,ui:await window!.webContents.executeJavaScript(`({buttons:Array.from(document.querySelectorAll('[data-purchase-highlight]')).map(e=>({text:e.textContent,pressed:e.getAttribute('aria-pressed')})),text:document.querySelector('[data-purchase-opportunities]')?.textContent})`)}));
@@ -417,11 +441,13 @@ async function start() {
           if(!tacticalPanel)throw new Error('商店战术方案未显示在阵容助手页面');
           const strategicPanel=await window!.webContents.executeJavaScript(`document.querySelector('[data-strategic-options]')?.dataset.ready==='true'&&document.querySelectorAll('[data-strategic-route]').length>0`);
           if(!strategicPanel)throw new Error('真实转型规划未显示在阵容助手页面');
-          await window!.webContents.executeJavaScript(`document.querySelector('[data-strategic-options]').scrollIntoView({block:'center'})`);
+          await window!.webContents.executeJavaScript(`document.querySelector('[data-advisor-workspace="outlook"]').click();new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
           await new Promise(resolve=>setTimeout(resolve,100));
+          await window!.webContents.executeJavaScript(`document.querySelector('[data-strategic-options]').scrollIntoView({block:'center'});new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
           await fs.writeFile(path.join(smokeDir,'strategic-options.png'),(await window!.webContents.capturePage()).toPNG());
-          await window!.webContents.executeJavaScript(`document.querySelector('[data-shopping-tactics]').scrollIntoView({block:'center'})`);
-          await window!.webContents.executeJavaScript(`document.querySelector('[data-tactical-details] summary').click()`);
+          await window!.webContents.executeJavaScript(`document.querySelector('[data-advisor-workspace="tactics"]').click();new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+          await window!.webContents.executeJavaScript(`document.querySelector('[data-tactical-details] summary').click();new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+          await window!.webContents.executeJavaScript(`document.querySelector('[data-shopping-tactics]').scrollIntoView({block:'center'});new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
           await new Promise(resolve=>setTimeout(resolve,100));
           const tacticalDetails=await window!.webContents.executeJavaScript(`({open:document.querySelector('[data-tactical-details]')?.open,text:document.querySelector('[data-tactical-details]')?.textContent,overflow:document.documentElement.scrollWidth>innerWidth})`);
           if(!tacticalDetails.open||!tacticalDetails.text.includes('换上')||!tacticalDetails.text.includes('换下')||tacticalDetails.overflow)throw new Error('换牌明细未渲染或出现横向溢出');
@@ -429,7 +455,7 @@ async function start() {
           await fs.writeFile(path.join(smokeDir,'shopping-tactics.png'),(await window!.webContents.capturePage()).toPNG());
           const firstDirection=battles.snapshot().direction;
           if(!firstDirection?.ready)throw new Error('定阵结果丢失');
-          await window!.webContents.executeJavaScript(`document.querySelector('[data-direction-pick]').click()`);
+          await window!.webContents.executeJavaScript(`document.querySelector('[data-advisor-workspace="routes"]').click();document.querySelector('[data-direction-pick]').click()`);
           await new Promise(resolve=>setTimeout(resolve,100));
           if(selectedComp?.directionId!==firstDirection.rows[0].id||!firstDirection.rows[0].units.every(id=>selectedComp!.units.includes(id)))throw new Error('选用核心变体未同步真实英雄名单');
           for(let i=0;i<40;i++){const d=battles.snapshot().direction;if(d?.ready&&!d.updating&&d.mode==='selected'&&d.focusId===selectedComp.directionId)break;await new Promise(resolve=>setTimeout(resolve,100));}

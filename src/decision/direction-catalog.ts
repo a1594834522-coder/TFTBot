@@ -5,7 +5,7 @@ export interface AugmentFact {
   reroll:boolean;scalingXp:boolean;grant:{cost:number;star:number;trigger:'instant'|'next-purchase'}|null;
   focusCosts:number[];offense:'physical'|'magic'|null;moveLocked:boolean;
 }
-export interface CorePair {id:string;profile:string;carry:string;tank:string;carryStar:number;tankStar:number;regime:StrategyRegime;support:number;templates:ProfileBoard[]}
+export interface CorePair {id:string;profile:string;carry:string;tank:string;carryStar:number;tankStar:number;regime:StrategyRegime;support:number;templates:ProfileBoard[];lateTemplates?:ProfileBoard[]}
 export interface DirectionProfile {key:string;name:string;count:number;avg:number;regime:CompProfile['regime'];early:ProfileEarly[];units:ProfileUnit[];pairs:CorePair[]}
 export interface DirectionCatalog {profiles:DirectionProfile[];roles:Record<string,UnitRole>;augments:Record<string,AugmentFact>;traitThresholds:Record<string,number>}
 const mode=(u:ProfileUnit)=>[...u.tiers].sort((a,b)=>b.count-a.count||a.star-b.star)[0]?.star??1;
@@ -30,7 +30,11 @@ export function compileDirectionProfiles(profiles:CompProfile[],roles:Record<str
       if(boards.reduce((sum,b)=>sum+b.count,0)<30)continue;
       const carryStar=mode(carry),tankStar=mode(tank),regime=profile.regime.primary;
       const targetLevel=regime==='reroll'?profile.regime.rollLevel:regime==='legendary'?9:8;
-      pairs.push({id:profile.key+'|'+carry.id+'|'+tank.id,profile:profile.key,carry:carry.id,tank:tank.id,carryStar,tankStar,regime,support:boards.reduce((sum,b)=>sum+b.count,0),templates:[...boards].sort((a,b)=>Math.abs(a.level-targetLevel)-Math.abs(b.level-targetLevel)||b.count-a.count).slice(0,3)});
+      const late=new Map<string,ProfileBoard>();
+      for(const board of [...boards].filter(b=>b.level>=9&&b.poolUnits.length>=8&&b.poolUnits.length<=b.level&&b.count>=30).sort((a,b)=>b.count-a.count)){
+        const key=board.level+':'+board.poolUnits.slice().sort().join('|');if(!late.has(key))late.set(key,board);
+      }
+      pairs.push({id:profile.key+'|'+carry.id+'|'+tank.id,profile:profile.key,carry:carry.id,tank:tank.id,carryStar,tankStar,regime,support:boards.reduce((sum,b)=>sum+b.count,0),templates:[...boards].sort((a,b)=>Math.abs(a.level-targetLevel)-Math.abs(b.level-targetLevel)||b.count-a.count).slice(0,3),lateTemplates:[...late.values()].slice(0,3)});
     }
     return {key:profile.key,name:profile.name,count:profile.count,avg:profile.avg,regime:profile.regime,early:profile.early,units:profile.units,pairs};
   });

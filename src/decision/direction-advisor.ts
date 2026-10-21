@@ -2,7 +2,7 @@ import type {AdvisorInput,EarlyHoldAdvice,EarlyBoardSuggestion} from '../game/co
 import type {DirectionCatalog,DirectionProfile,CorePair,AugmentFact} from './direction-catalog';
 import {gearOrientation,type GearModel,type GearAffinity} from './gear-affinity';
 import {pairGearAffinity,type PairGearAffinity} from './pair-gear-affinity';
-import type {StrategyRegime,ProfileEarly} from './comp-profiles';
+import type {StrategyRegime,ProfileEarly,ProfileBoard} from './comp-profiles';
 import type {EarlyStage} from '../game/metatft-early';
 import type {DirectionSearch} from './direction-search';
 
@@ -21,11 +21,13 @@ export interface DirectionRow {
   mechanismSupport:string[];
   tankCopies:number;readyCores:number;hitOdds:number|null;support:number;
   tankGear?:GearAffinity;gearAllocation?:PairGearAffinity;
+  rivalCopies?:number;tankRivalCopies?:number;poolComplete?:boolean;
+  lateBoards?:ProfileBoard[];
 }
 export type DirectionAdvice={ready:false;reason:string;unsupported?:boolean}|{
   ready:true;unsupported?:false;updating?:boolean;round:string|null;milestone:'opening'|'second-augment'|'roll-down'|'late';
-  mode:'flex'|'regime'|'carry'|'selected';regime:StrategyRegime|null;message:string;focusId?:string;
-  orientation:'physical'|'magic'|'flex';rows:DirectionRow[];holds:EarlyHoldAdvice;
+  mode:'flex'|'selected';regime:StrategyRegime|null;message:string;focusId?:string;
+  orientation:'physical'|'magic'|'flex';rows:DirectionRow[];comparisonRows?:DirectionRow[];holds:EarlyHoldAdvice;
   augments:string[];gaps:string[];candidates:number;
   owned:Record<string,number>;shop:Array<{id:string;slot:number}>;
   search?:DirectionSearch;
@@ -67,9 +69,9 @@ const augmentCount=(r:DirectionRow)=>new Set([...r.traitSupport,...r.mechanismSu
 const investment=(r:DirectionRow)=>r.copies>=3?Math.min(1,r.copies/(r.regime==='reroll'?9:3)):0;
 const dominates=(a:number[],b:number[])=>a.every((v,i)=>v>=b[i]-1e-10)&&a.some((v,i)=>v>b[i]+1e-10);
 
-/** A conservative evidence controller, not a trained action-value function.
- * Different evidence axes are kept on a Pareto frontier; no invented weighted
- * score or score-margin confidence. Commitment requires independent agreement. */
+/** Compare aggregate evidence without making a commitment for the player.
+ * Pareto layers and distinct recommendation reasons preserve alternatives.
+ * Only explicit user intent selects the route used by search/highlights. */
 export function directionAdvice(input:DirectionInput,catalog:DirectionCatalog,gearModel:GearModel,stages:EarlyStage[]=[]):DirectionAdvice{
   if(!input.assets.localComplete)return {ready:false,reason:'等待本方棋盘与备战席'};
   if(input.assets.items.length>128)return {ready:false,unsupported:true,reason:'装备实体数量异常，等待同步'};
@@ -78,7 +80,6 @@ export function directionAdvice(input:DirectionInput,catalog:DirectionCatalog,ge
   const startup=milestone==='roll-down'&&level>=7;
   const facts=input.augments.map(id=>catalog.augments[id]).filter((v):v is AugmentFact=>!!v);
   if(facts.some(a=>a.moveLocked))return {ready:false,unsupported:true,reason:'已上场英雄的锁定记录待核对，暂停自动换牌与变阵建议'};
-  const hasReroll=facts.some(a=>a.reroll),hasXp=facts.some(a=>a.scalingXp);
   const early=level<=6,rows:DirectionRow[]=[];
   const stocks=input.assets.poolComplete?Object.fromEntries(shopCatalog.map(h=>[h.character_id,poolSize(h.cost)-(input.assets.units[h.character_id]??0)-(input.assets.opponents[h.character_id]??0)])):null;
   const validStocks=stocks&&Object.values(stocks).every(n=>Number.isSafeInteger(n)&&n>=0);
@@ -106,8 +107,9 @@ export function directionAdvice(input:DirectionInput,catalog:DirectionCatalog,ge
         return stock>=0&&tierTotals[cost]>0?tierOdds(planningLevel,cost as 1|2|3|4|5)*stock/tierTotals[cost]:0;
       }):null;
       rows.push({id:pair.id,key:'metatft:'+profile.key,name:profile.name,regime:pair.regime,carry:pair.carry,tank:pair.tank,units,
-        gear,tankGear,gearAllocation,early:association?{units:association.board.poolUnits,retained:association.retained,missing:association.missing,count:association.board.count}:null,
+        gear,tankGear,gearAllocation,lateBoards:pair.lateTemplates??[],early:association?{units:association.board.poolUnits,retained:association.retained,missing:association.missing,count:association.board.count}:null,
         copies,traitSupport,mechanismSupport,blocked,front:0,labels:[],observedPlace:profile.avg,observations:profile.count,
+        rivalCopies:input.assets.opponents[pair.carry]??0,tankRivalCopies:input.assets.opponents[pair.tank]??0,poolComplete:input.assets.poolComplete,
         tankCopies:input.assets.units[pair.tank]??0,readyCores,hitOdds:odds?Math.min(...odds):null,support:pair.support});
     }
   }
@@ -128,26 +130,11 @@ export function directionAdvice(input:DirectionInput,catalog:DirectionCatalog,ge
   const gearOrder=(a:DirectionRow,b:DirectionRow)=>gearAxis(a,b)||pairOrder(a,b);
   const assetOrder=(a:DirectionRow,b:DirectionRow)=>assetAxis(a,b)||gearOrder(a,b);
   eligible.sort((a,b)=>a.front-b.front||gearOrder(a,b)||assetOrder(a,b));
-  const gearKnown=input.assets.inventoryComplete&&eligible.some(r=>r.gear.known),gearBest=[...eligible].filter(r=>r.gear.known).sort(gearOrder)[0];
-  const assetBest=[...eligible].sort(assetOrder)[0];
-  const gearRegimes=new Set(gearBest?eligible.filter(r=>r.gear.known&&Math.abs(gearAxis(r,gearBest))<1e-10).map(r=>r.regime):[]);
-  const assetRegimes=new Set(assetBest?eligible.filter(r=>assetAxis(r,assetBest)===0).map(r=>r.regime):[]);
-  let mode:Extract<DirectionAdvice,{ready:true}>['mode']='flex',regime:StrategyRegime|null=null,locked:DirectionRow|undefined;
-  const covered=(r:DirectionRow)=>!r.gearAllocation?.ambiguous.length&&!r.gearAllocation?.unassigned.length;
-  const earlyLock=eligible.filter(r=>r.regime==='reroll'&&(catalog.roles[r.carry]?.cost??5)<=2&&r.copies>=3&&r.gear.known&&r.gear.componentLift>=0&&r.gear.coreItemLift>=0&&covered(r)&&
-    (hasReroll||r.traitSupport.length>0||facts.some(a=>a.focusCosts.includes(catalog.roles[r.carry]?.cost)||a.grant?.cost===catalog.roles[r.carry]?.cost&&r.copies>=3**(a.grant.star-1)))).sort(assetOrder)[0];
-  const augmentsKnown=input.augmentsComplete&&facts.length===input.augments.length;
-  if(augmentsKnown&&facts.length&&gearKnown&&milestone==='opening'&&earlyLock){mode='carry';regime='reroll';locked=earlyLock;}
-  // Independent gear and current assets must agree on the strategy family.
-  // An XP augment alone is never enough to promise a legendary endgame.
+  const gearBest=[...eligible].filter(r=>r.gear.known).sort(gearOrder)[0];
   const traitMax=Math.max(0,...eligible.map(augmentCount));
-  const augmentRegimes=new Set(eligible.filter(r=>augmentCount(r)===traitMax).map(r=>r.regime));
-  if(augmentsKnown&&facts.length>=2&&gearKnown&&milestone!=='opening'&&gearBest&&assetBest&&gearRegimes.size===1&&assetRegimes.size===1&&gearBest.regime===assetBest.regime&&(!traitMax||augmentRegimes.has(gearBest.regime))){
-    const proposed=gearBest.regime;
-    const supported=proposed==='reroll'?hasReroll||assetBest.copies>=3||assetBest.traitSupport.length>0:
-      proposed==='legendary'?level>=9||hasXp&&input.health!==null&&input.health>=60&&input.combatWinRate!==null&&input.combatWinRate!==undefined&&input.combatWinRate>=.6:true;
-    if(supported&&(proposed!=='reroll'||!startup||assetBest.copies>=6)){regime=proposed;mode='regime';if(proposed==='reroll'&&assetBest.copies>=3&&gearBest.carry===assetBest.carry&&covered(assetBest)){mode='carry';locked=assetBest;}}
-  }
+  // Signals order recommendations; only an explicit user choice can establish
+  // a reference route. Agreement never removes other strategy families.
+  let mode:Extract<DirectionAdvice,{ready:true}>['mode']='flex',regime:StrategyRegime|null=null;
   // User intent is explicit, not statistical confidence. Keep an unavailable
   // chosen route visible with its pool warning, alongside feasible alternatives.
   const intent=input.intent,matching=[...dedup.values()].filter(r=>r.key===intent?.key&&(!intent.directionId||r.id===intent.directionId)&&(!intent.units?.length||[r.carry,r.tank].every(id=>intent.units!.includes(id))));
@@ -155,26 +142,35 @@ export function directionAdvice(input:DirectionInput,catalog:DirectionCatalog,ge
     const fits=(r:DirectionRow)=>Number(!intent?.units?.length||[r.carry,r.tank].every(id=>intent.units!.includes(id)));
     return fits(b)-fits(a)||a.front-b.front||gearOrder(a,b);
   })[0];
-  if(focused){mode='selected';regime=focused.regime;locked=undefined;}
+  if(focused){mode='selected';regime=focused.regime;}
   const selected:DirectionRow[]=[];
-  function pick(row:DirectionRow|undefined,label:string){if(!row)return;row.labels.push(label);if(!selected.some(r=>r.carry===row.carry&&(mode==='carry'?r.tank===row.tank:r.regime===row.regime)))selected.push(row);}
-  pick(focused,'已选方向');pick(locked, '来牌与装备一致');
-  const pool=(regime&&!focused?eligible.filter(r=>r.regime===regime):eligible).filter(r=>(!locked||r.carry===locked.carry)&&(!startup||r.regime!=='reroll'||r.copies>=6));
-  if(!locked&&traitMax)pick([...pool].sort((a,b)=>augmentCount(b)-augmentCount(a)||a.front-b.front||gearOrder(a,b))[0],'海克斯衔接');
-  if(selected.length<3)pick([...pool].sort(gearBest?.gear.known?gearOrder:assetOrder)[0],gearBest?.gear.known?'装备方向':'数据备选');
-  if(selected.length<3)pick([...pool].sort(assetOrder)[0],'过渡衔接');
+  function pick(row:DirectionRow|undefined,label:string){if(!row)return;row.labels.push(label);if(!selected.some(r=>r.carry===row.carry&&r.regime===row.regime))selected.push(row);}
+  pick(focused,'当前参考');
+  const pool=focused?eligible.filter(r=>r.carry!==focused.carry||r.regime!==focused.regime):eligible;
+  const preferMain=(a:DirectionRow,b:DirectionRow)=>focused?Number(b.regime===focused.regime)-Number(a.regime===focused.regime):0;
+  if(traitMax)pick([...pool].sort((a,b)=>preferMain(a,b)||augmentCount(b)-augmentCount(a)||a.front-b.front||gearOrder(a,b))[0],'海克斯衔接');
+  if(selected.length<3)pick([...pool].sort((a,b)=>preferMain(a,b)||(gearBest?.gear.known?gearOrder(a,b):assetOrder(a,b)))[0],gearBest?.gear.known?'装备方向':'数据备选');
+  if(selected.length<3)pick([...pool].sort((a,b)=>preferMain(a,b)||assetOrder(a,b))[0],'过渡衔接');
   if(selected.length<3){
     const compatible=pool.filter(r=>!gearBest?.gear.known||r.gear.known&&r.gear.componentLift>=0&&r.gear.coreItemLift>=0);
-    pick(compatible.sort((a,b)=>a.observedPlace-b.observedPlace||b.observations-a.observations||gearOrder(a,b))[0],'汇总表现');
+    pick(compatible.sort((a,b)=>preferMain(a,b)||a.observedPlace-b.observedPlace||b.observations-a.observations||gearOrder(a,b))[0],'汇总表现');
   }
-  if(!regime&&!startup)for(const kind of regimes)if(selected.length<3&&!selected.some(r=>r.regime===kind))pick(pool.filter(r=>r.regime===kind).sort(gearBest?.gear.known?gearOrder:assetOrder)[0],'保留路线');
-  for(const row of pool){if(selected.length>=3)break;pick(row,'备选');}
-  const chosen=selected.slice(0,3),holds=directionHolds(input,chosen,catalog,stages,mode==='carry'?locked:focused?.regime==='reroll'?focused:undefined);
+  if(!startup)for(const kind of regimes)if(selected.length<3&&!selected.some(r=>r.regime===kind))pick(pool.filter(r=>r.regime===kind).sort(gearBest?.gear.known?gearOrder:assetOrder)[0],'保留路线');
+  for(const row of [...pool].sort(preferMain)){if(selected.length>=3)break;pick(row,'备选');}
+  const chosen=selected.slice(0,3),comparisonRows:DirectionRow[]=[];
+  for(const kind of regimes){
+    const distinct:DirectionRow[]=[];
+    for(const row of [...(focused?.regime===kind?[focused]:[]),...eligible.filter(r=>r.regime===kind)]){
+      if(!distinct.some(r=>r.carry===row.carry))distinct.push(row);if(distinct.length===3)break;
+    }
+    comparisonRows.push(...distinct);
+  }
+  const holds=directionHolds(input,chosen,catalog,stages,focused?.regime==='reroll'?focused:undefined);
   return {ready:true,round:input.round,milestone,mode,regime,
     ...(focused?{focusId:focused.id}:{}),
-    message:focused?focused.blocked?'当前牌池不足，保留变阵路线':'围绕已选核心，保留变阵路线':mode==='carry'?'可围绕核心定阵':mode==='regime'?'先定玩法，保留主C选择':'继续过渡，保留多条路线',
-    orientation:gearOrientation(input.assets.items,gearModel),rows:chosen,holds,augments:input.augments,candidates:dedup.size,owned:{...input.assets.units},shop:input.shop.map(c=>({...c})),
-    gaps:[...(intent&&!focused?['已选阵容暂无适用的MetaTFT统计，下方为备选']:[]),...(!input.assets.inventoryComplete?['装备栏未齐，暂不据此锁阵']:[]),...(!input.augmentsComplete?['已选海克斯未齐']:[]),...(!input.assets.poolComplete?['同行牌池未齐']:[]),...(input.augments.some(id=>!catalog.augments[id])?['部分海克斯机制未覆盖']:[])]};
+    message:focused?focused.name:'候选阵容比较',
+    orientation:gearOrientation(input.assets.items,gearModel),rows:chosen,comparisonRows,holds,augments:input.augments,candidates:dedup.size,owned:{...input.assets.units},shop:input.shop.map(c=>({...c})),
+    gaps:[...(intent&&!focused?['已选阵容暂无适用的MetaTFT统计，下方为备选']:[]),...(!input.assets.inventoryComplete?['装备栏未齐，适配参考不完整']:[]),...(!input.augmentsComplete?['已选海克斯未齐']:[]),...(!input.assets.poolComplete?['同行牌池未齐']:[]),...(input.augments.some(id=>!catalog.augments[id])?['部分海克斯机制未覆盖']:[])]};
 }
 // Read from the verified current season pool instead of embedding patch values.
 import {currentPool,shopCatalog,tierOdds} from '../game/shop-mechanics';

@@ -34,7 +34,7 @@ export function directionSearch(advice:DirectionAdvice,input:StrategicInput,rule
   if(!input.ready)return {ready:false,reason:input.reason};
   if(budget!==null)input={...input,state:{...input.state,gold:Math.min(input.state.gold,budget)}};
   const {state,pool}=input,owned=unitCopyCounts(state.units),gaps=[...input.gaps,'概率仅指目标补齐，不是战斗胜率；按当前人口和现有金币，不含未来收入'];
-  if(advice.regime==='reroll'&&(advice.mode==='carry'||advice.mode==='selected')){
+  if(advice.regime==='reroll'&&advice.mode==='selected'){
     const row=advice.rows[0];if(!row)return {ready:false,reason:'等待赌狗核心'};
     if((owned[row.carry]??0)>=9){
       const goals=(owned[row.tank]??0)<3?[fixedGoal(row,[{id:row.tank,copies:3}],input,rules)]:[];
@@ -44,7 +44,7 @@ export function directionSearch(advice:DirectionAdvice,input:StrategicInput,rule
     if(row.tank!==row.carry)goals.push(fixedGoal(row,[{id:row.carry,copies:9},{id:row.tank,copies:3}],input,rules));
     return {ready:true,phase:'reroll',level:state.level,budget:state.gold,goals,gaps};
   }
-  if(input.stage<4||state.level<7)return {ready:false,reason:'定向后或启动阶段比较搜牌目标'};
+  if(input.stage<4||state.level<7)return {ready:false,reason:'选择参考阵容后查看追牌，启动阶段可比较多路线'};
   const rows=advice.rows.filter(r=>r.regime!=='reroll').slice(0,3);
   if(!rows.length)return {ready:false,reason:'等待可用启动路线'};
   if(advice.mode==='selected'){

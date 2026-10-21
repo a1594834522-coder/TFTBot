@@ -144,7 +144,7 @@ async function start() {
   ipcMain.handle('desktop:advisor:configure',(event,value:AdvisorPreferences)=>{
     trusted(event);
     const direction=battles.snapshot().direction;
-    if(!value || !Array.isArray(value.items)||value.items.length>30||value.items.some(id=>typeof id!=='string'||!dataset.item(id)) || value.stage!==null&&![2,3,4,5].includes(value.stage) || value.boardId!==null&&!earlyStages(18).some(s=>s.boards.some(b=>b.id===value.boardId))&&!directionBoardUnits(value.boardId)&&!(direction?.ready&&direction.holds.boards.some(b=>b.id===value.boardId)))throw new Error('智能定阵输入无效');
+    if(!value || !Array.isArray(value.items)||value.items.length>30||value.items.some(id=>typeof id!=='string'||!dataset.item(id)) || value.stage!==null&&![2,3,4,5].includes(value.stage) || value.boardId!==null&&!earlyStages(18).some(s=>s.boards.some(b=>b.id===value.boardId))&&!directionBoardUnits(value.boardId)&&!(direction?.ready&&direction.holds.boards.some(b=>b.id===value.boardId)))throw new Error('阵容助手输入无效');
     if(value.searchBudget!==undefined&&value.searchBudget!==null&&(!Number.isSafeInteger(value.searchBudget)||value.searchBudget<0||value.searchBudget>200))throw new Error('搜牌预算无效');
     advisorPreferences={items:[...value.items],stage:value.stage,boardId:value.boardId,searchBudget:value.searchBudget??null};publishAdvisorPreferences();battles.update(reader.snapshot(),advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp);syncAugmentLayer(reader.snapshot());return advisorPreferences;
   });
@@ -326,16 +326,16 @@ async function start() {
           await window!.webContents.executeJavaScript(`document.querySelector('[data-nav="advisor"]').click()`);
           await new Promise(resolve=>setTimeout(resolve,100));
           const ranked=await window!.webContents.executeJavaScript(`document.querySelector('[data-smart-advisor]')?.dataset.ready==='true'&&document.querySelectorAll('[data-suggestion]').length===3`);
-          if(!ranked)throw new Error('真实协议输入未进入智能定阵');
+          if(!ranked)throw new Error('真实协议输入未进入阵容助手');
           const directionPanel=await window!.webContents.executeJavaScript(`['flex','selected'].includes(document.querySelector('[data-direction-advisor]')?.dataset.mode)&&document.querySelectorAll('[data-direction-advisor] [data-advisor-pick]').length===3`);
           if(!directionPanel)throw new Error('关键节点定阵仍显示旧规则排序');
           await window!.webContents.executeJavaScript(`document.querySelector('[data-direction-advisor]').scrollIntoView({block:'center'})`);
           await new Promise(resolve=>setTimeout(resolve,100));
           await fs.writeFile(path.join(smokeDir,'direction-advisor.png'),(await window!.webContents.capturePage()).toPNG());
           const tacticalPanel=await window!.webContents.executeJavaScript(`document.querySelector('[data-shopping-tactics]')?.dataset.ready==='true'&&document.querySelectorAll('[data-tactical-choice]').length>0`);
-          if(!tacticalPanel)throw new Error('商店战术方案未显示在智能定阵页面');
+          if(!tacticalPanel)throw new Error('商店战术方案未显示在阵容助手页面');
           const strategicPanel=await window!.webContents.executeJavaScript(`document.querySelector('[data-strategic-options]')?.dataset.ready==='true'&&document.querySelectorAll('[data-strategic-route]').length>0`);
-          if(!strategicPanel)throw new Error('真实转型规划未显示在智能定阵页面');
+          if(!strategicPanel)throw new Error('真实转型规划未显示在阵容助手页面');
           await window!.webContents.executeJavaScript(`document.querySelector('[data-strategic-options]').scrollIntoView({block:'center'})`);
           await new Promise(resolve=>setTimeout(resolve,100));
           await fs.writeFile(path.join(smokeDir,'strategic-options.png'),(await window!.webContents.capturePage()).toPNG());

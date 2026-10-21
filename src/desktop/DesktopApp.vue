@@ -20,7 +20,7 @@ import { normalizeSettings, type Settings } from '../core/settings';
 
 type View = 'comps' | 'advisor' | 'augments' | 'champions' | 'board' | 'settings';
 const view = ref<View>('comps');
-const nav = [{ id: 'comps', name: '热门阵容', icon: '◈', desc: '阵容 · 站位 · 运营' }, { id: 'advisor', name: '智能定阵', icon: '◇', desc: '持牌 · 装备 · 转型' }, { id: 'augments', name: '海克斯评级', icon: '✦', desc: 'MetaTFT S–D 评级' }, { id: 'champions', name: '英雄资料', icon: '♙', desc: '属性 · 装备 · 羁绊' }, { id: 'board', name: '对局面板', icon: '▦', desc: '棋盘 · 记牌器 · 录像' }, { id: 'settings', name: '偏好设置', icon: '⚙', desc: '显示与数据源' }] as const;
+const nav = [{ id: 'comps', name: '热门阵容', icon: '◈', desc: '阵容 · 站位 · 运营' }, { id: 'advisor', name: '阵容助手', icon: '◇', desc: '持牌 · 装备 · 转型' }, { id: 'augments', name: '海克斯评级', icon: '✦', desc: 'MetaTFT S–D 评级' }, { id: 'champions', name: '英雄资料', icon: '♙', desc: '属性 · 装备 · 羁绊' }, { id: 'board', name: '对局面板', icon: '▦', desc: '棋盘 · 记牌器 · 录像' }, { id: 'settings', name: '偏好设置', icon: '⚙', desc: '显示与数据源' }] as const;
 const session = shallowRef<Awaited<ReturnType<typeof createDesktopSession>> | null>(null);
 const set = ref(CURRENT_SET);
 const settings = shallowRef(normalizeSettings({}));

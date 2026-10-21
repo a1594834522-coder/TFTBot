@@ -1,7 +1,7 @@
 {
   "set": "TFTSet18",
   "clusterId": 426,
-  "generatedAt": "2026-10-21T01:55:17.434Z",
+  "generatedAt": "2026-10-21T02:16:57.758Z",
   "sourceFetchedAt": "2026-10-20T15:47:28.877Z",
   "counts": {
     "families": 60,
@@ -14,7 +14,7 @@
   "files": {
     "metatft-comps.json": "a89f8a892f9d7381c8a7881964a3f8b19fae0d2cb39c002ac6fdc3b87a7ed022",
     "metatft-strategic-profiles.json": "00e10517dc8ba1e71e0f3e9ca519e08de6a0542fdfdac31611016825d6c06c70",
-    "metatft-direction-catalog.json": "73c22e6730019a6c36f149d3071679b05dee1f74dc6d8bf22d9e2ef0c4c6d815",
+    "metatft-direction-catalog.json": "db8ea188588d3efc9cc3d27b0c923d03c9331a7743b9a89b1fc845b826841ac0",
     "metatft-gear-model.json": "9a2a8d1aa568d33117e5e6c4db3fd121d4d11015412792579541729e4194b508",
     "metatft-transition-library.json": "2a72e2b6ccb23026254b48168b5cb017e780ca0da022d423ed2b47f40d0314cd",
     "current-shop-mechanics.json": "5d6a5fd683cd08a77d2efca2ef237e1cce0cd87cf6b76c6df413fcd68227de17",

@@ -16,7 +16,8 @@ for(const profile of catalog.profiles){
  if(!profile.pairs.length)fail('阵容没有可验证的核心变体：'+profile.key);
  for(const pair of profile.pairs){
   pairs++;if(pair.profile!==profile.key||!shop.has(pair.carry)||!shop.has(pair.tank)||!pair.templates.length)fail('核心身份不合法：'+pair.id);
-  for(const board of pair.templates)if(!observed.has(fingerprint(board))||!board.poolUnits.includes(pair.carry)||!board.poolUnits.includes(pair.tank)||board.poolUnits.some(id=>!shop.has(id)))fail('核心变体不是可购买的实际共同棋盘：'+pair.id);
+  for(const board of [...pair.templates,...pair.lateTemplates??[]])if(!observed.has(fingerprint(board))||!board.poolUnits.includes(pair.carry)||!board.poolUnits.includes(pair.tank)||board.poolUnits.some(id=>!shop.has(id)))fail('核心变体不是可购买的实际共同棋盘：'+pair.id);
+  if((pair.lateTemplates??[]).some(b=>b.level<9||b.count<30||b.poolUnits.length>b.level))fail('高人口参考超出可验证范围：'+pair.id);
  }
 }
 for(const model of gear.models){

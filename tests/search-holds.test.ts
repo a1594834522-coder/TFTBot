@@ -18,7 +18,7 @@ describe('compact search retention',()=>{
     const result=withSearchHolds(fixture());if(!result.ready)throw Error();expect(result.holds.ready).toBe(true);expect(result.search?.ready).toBe(false);
   });
   it('keeps a committed reroll goal when the lobby pool is incomplete',()=>{
-    const advice=fixture();advice.mode='carry';advice.regime='reroll';advice.rows=[{...advice.rows[0],regime:'reroll'}];
+    const advice=fixture();advice.mode='selected';advice.focusId=advice.rows[0].id;advice.regime='reroll';advice.rows=[{...advice.rows[0],regime:'reroll'}];
     const result=withSearchHolds(advice);if(!result.ready)throw Error();expect(result.holds.cards.find(c=>c.id==='A')).toMatchObject({reason:'核心追三',quantity:1});
   });
 });

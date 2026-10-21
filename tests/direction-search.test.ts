@@ -48,7 +48,7 @@ describe('personal search phases and declared wallets',()=>{
     expect(result.portfolio!.sell).not.toContain(ids[0]);expect(result.goals[0].targets[0].owned).toBe(1);
   });
   it('moves a finished three-star core to reinforcement instead of repeatedly recommending its completed chase',()=>{
-    const {advice,input}=fixture();advice.mode='carry';advice.regime='reroll';advice.rows=[{...advice.rows[0],regime:'reroll'}];
+    const {advice,input}=fixture();advice.mode='selected';advice.focusId=advice.rows[0].id;advice.regime='reroll';advice.rows=[{...advice.rows[0],regime:'reroll'}];
     input.state.units=[{key:'carry3',id:ids[0],star:3,area:'board',slot:0,items:[]}];
     const next=directionSearch(advice,input,tradingRules);if(!next.ready)throw Error();expect(next.phase).toBe('reinforce');expect(next.goals.flatMap(g=>g.targets.map(t=>t.id))).not.toContain(ids[0]);
     input.state.units.push({key:'tank2',id:ids[1],star:2,area:'board',slot:1,items:[]});

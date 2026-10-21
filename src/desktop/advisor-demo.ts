@@ -14,5 +14,5 @@ export function advisorDemo(scenario:AdvisorScenario):ReaderStatus {
   ];
   const players=roster.map((r,i)=>({summoner:r.summoner,tag_line:r.tag_line,is_locale:i===0,coverage:scenario==='partial'&&i===7?'partial' as const:'full' as const,champions:i===0?own:scenario==='contested'&&i===1?[{name:'DA_18_Rengar',level:3,items:[]},{name:'DA_18_Rengar',level:3,items:[]}]:[]}));
   const shop=['DA_18_Rakan','DA_18_Shen','DA_18_Xayah','DA_18_Varus','DA_18_LostTravelers'].map((id,i)=>({id,name:i===4?'迷路的游客':'示例英雄',known:true,...(i===4?{kind:'wisp' as const,rating:'S'}:{})}));
-  return {phase:'receiving',message:'智能定阵设计预览 · 示例数据',transport:'original-native',testMode:true,frames:1,lastFrameAt:Date.now(),cards:{shop,augments:[],pickedAugment:null,shopReady:true,augmentsReady:false,level:5,stage:2,round:'2-3'},tracker:{revision:1,snapshot:buildSnapshot(roster,players)}};
+  return {phase:'receiving',message:'阵容助手设计预览 · 示例数据',transport:'original-native',testMode:true,frames:1,lastFrameAt:Date.now(),cards:{shop,augments:[],pickedAugment:null,shopReady:true,augmentsReady:false,level:5,stage:2,round:'2-3'},tracker:{revision:1,snapshot:buildSnapshot(roster,players)}};
 }

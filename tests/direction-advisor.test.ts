@@ -22,13 +22,13 @@ describe('milestone direction evidence',()=>{
     const {catalog,gear,input}=fixture();input.intent={key:'metatft:four',directionId:'four',units:['four','tank']};
     const result=directionAdvice(input,catalog,gear);if(!result.ready)throw Error();
     expect(result).toMatchObject({mode:'selected',regime:'four-cost',focusId:'four'});expect(result.rows[0].id).toBe('four');
-    expect(result.rows.some(r=>r.regime==='reroll')).toBe(true);input.intent=null;
-    expect(directionAdvice(input,catalog,gear)).toMatchObject({mode:'carry',regime:'reroll'});
+    expect(result.comparisonRows?.some(r=>r.regime==='reroll')).toBe(true);expect(result.rows[0].regime).toBe('four-cost');input.intent=null;
+    expect(directionAdvice(input,catalog,gear)).toMatchObject({mode:'flex',regime:null});
   });
   it('keeps a blocked selected goal visible rather than silently substituting another carry',()=>{
     const {catalog,gear,input}=fixture();input.assets.opponents.cheap=100;input.intent={key:'metatft:cheap',directionId:'cheap'};
     const result=directionAdvice(input,catalog,gear);if(!result.ready)throw Error();
-    expect(result.rows[0]).toMatchObject({id:'cheap',blocked:true});expect(result.message).toContain('牌池不足');
+    expect(result.rows[0]).toMatchObject({id:'cheap',blocked:true});expect(result.rows[0].blocked).toBe(true);
     expect(result.rows.slice(1).some(r=>!r.blocked)).toBe(true);
   });
   it('does not claim a selected direction when its core is absent from the selected variant',()=>{
@@ -41,11 +41,22 @@ describe('milestone direction evidence',()=>{
     const result=directionAdvice(input,catalog,fixture().gear);if(!result.ready)throw Error();
     expect(result.holds.cards.map(c=>c.id)).toContain('worker');
   });
-  it('can commit a cheap reroll only when augment, natural copies and gear agree',()=>{
+  it('keeps alternatives and never starts a three-star chase merely because early signals agree',()=>{
     const {catalog,gear,input}=fixture(),result=directionAdvice(input,catalog,gear);if(!result.ready)throw Error();
-    expect(result.mode).toBe('carry');expect(result.regime).toBe('reroll');
-    expect(result.holds.cards.find(c=>c.id==='cheap')).toMatchObject({quantity:1,reason:'核心追三'});
+    expect(result.mode).toBe('flex');expect(result.regime).toBeNull();
+    expect(new Set(result.comparisonRows?.map(r=>r.regime))).toEqual(new Set(['reroll','four-cost','legendary']));
+    expect(result.holds.cards.some(c=>c.reason==='核心追三')).toBe(false);
+    expect(result.rows).toHaveLength(3);
     input.assets.items=[{id:sword}];expect(directionAdvice(input,catalog,gear)).toMatchObject({ready:true,mode:'flex'});
+  });
+  it('starts a reroll chase only after the player chooses that reference and preserves it as evidence changes',()=>{
+    const {catalog,gear,input}=fixture();input.intent={key:'metatft:cheap',directionId:'cheap'};
+    const selected=directionAdvice(input,catalog,gear);if(!selected.ready)throw Error();
+    expect(selected.holds.cards.find(c=>c.id==='cheap')).toMatchObject({quantity:1,reason:'核心追三'});
+    input.assets.items=[{id:sword}];input.augments=['xp','neutral'];input.round='3-2';input.assets.stage=3;
+    expect(directionAdvice(input,catalog,gear)).toMatchObject({mode:'selected',focusId:'cheap',regime:'reroll'});
+    input.intent=null;const cleared=directionAdvice(input,catalog,gear);if(!cleared.ready)throw Error();
+    expect(cleared).toMatchObject({mode:'flex',regime:null});expect(cleared.holds.cards.some(c=>c.reason==='核心追三')).toBe(false);
   });
   it('does not lock before picked augment or full inventory evidence arrives',()=>{
     const {catalog,gear,input}=fixture();input.augmentsComplete=false;
@@ -62,7 +73,7 @@ describe('milestone direction evidence',()=>{
     const {catalog,gear,input}=fixture();input.round='3-2';input.assets.stage=3;input.augments=['xp','neutral'];input.assets.units={five:1};input.assets.level=7;input.assets.items=[{id:sword}];
     catalog.profiles=catalog.profiles.filter(p=>p.key==='five');
     expect(directionAdvice(input,catalog,gear)).toMatchObject({mode:'flex'});
-    input.combatWinRate=.7;expect(directionAdvice(input,catalog,gear)).toMatchObject({mode:'regime',regime:'legendary'});
+    input.combatWinRate=.7;expect(directionAdvice(input,catalog,gear)).toMatchObject({mode:'flex',regime:null});
   });
   it('known blocked three-star pools cannot become a reroll commitment',()=>{
     const {catalog,gear,input}=fixture();input.assets.opponents.cheap=100;
@@ -71,7 +82,7 @@ describe('milestone direction evidence',()=>{
   it('does not let a two-star cheap transition lock a level-8 startup into reroll',()=>{
     const {catalog,gear,input}=fixture();input.round='4-2';input.assets.stage=4;input.assets.level=8;input.augments=['reroll','neutral'];
     const result=directionAdvice(input,catalog,gear);if(!result.ready)throw Error();
-    expect(result.mode).toBe('flex');expect(result.rows.length).toBeGreaterThan(0);expect(result.rows.every(r=>r.regime!=='reroll')).toBe(true);
+    expect(result.mode).toBe('flex');expect(result.rows.length).toBeGreaterThan(0);expect(result.comparisonRows?.some(r=>r.regime==='reroll')).toBe(true);
   });
   it('transition holders stop accumulating at two stars and manual selection is shared across surfaces',()=>{
     const {catalog,gear,input}=fixture();input.assets.units.worker=3;

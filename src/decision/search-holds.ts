@@ -17,7 +17,7 @@ export function withSearchHolds(advice:DirectionAdvice):DirectionAdvice{
       const names=routes.get(target.id)??new Set<string>();names.add(goal.name);routes.set(target.id,names);
     }
   }else for(const row of advice.rows){
-    if(row.regime==='reroll'&&advice.mode!=='carry'&&!(advice.mode==='selected'&&row.id===advice.focusId))continue;
+    if(row.regime==='reroll'&&!(advice.mode==='selected'&&row.id===advice.focusId))continue;
     for(const id of [row.carry,row.tank]){
       targets.set(id,row.regime==='reroll'&&id===row.carry?9:3);const names=routes.get(id)??new Set<string>();names.add(row.name);routes.set(id,names);
       const sources=support.get(id)??new Set<string>();sources.add(row.id);support.set(id,sources);

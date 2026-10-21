@@ -18,7 +18,14 @@ app.whenReady().then(async()=>{
   const wait=async code=>{for(let i=0;i<80;i++){if(await js(code))return;await new Promise(resolve=>setTimeout(resolve,50));}throw Error('Preview did not reach '+code);};
   await wait(`!!document.querySelector('[data-direction-advisor]')`);
   await js(`Array.from(document.querySelectorAll('.preview-toolbar button')).find(b=>b.textContent.includes('4-2')).click()`);
-  await wait(`document.querySelector('[data-direction-search]')?.dataset.phase==='flex'`);
+  await wait(`document.querySelector('[data-direction-advisor]')?.dataset.mode==='flex'`);
+  if(await js(`!!document.querySelector('[data-game-overlay]')`))throw Error('Recommendations silently selected a comp');
+  await fs.writeFile(path.join(out,'recommendations.png'),(await win.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+  await js(`document.querySelector('[data-route-filter="four-cost"]').click()`);
+  await wait(`document.querySelector('[data-route-filter="four-cost"]').classList.contains('active')`);
+  await js(`(document.querySelector('[data-direction-pick]:not([data-late-count="0"])')??document.querySelector('[data-direction-pick]')).click()`);
+  await wait(`document.querySelector('[data-direction-advisor]')?.dataset.mode==='selected'&&!!document.querySelector('[data-direction-search]')`);
+  await js(`document.querySelector('[data-route-filter="all"]').click()`);
   const report={};
   for(const budget of ['20','40','wallet']){
    await js(`document.querySelector('[data-search-budget="${budget}"]').click()`);
@@ -29,12 +36,24 @@ app.whenReady().then(async()=>{
   await fs.writeFile(path.join(out,'startup-desktop.png'),(await win.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
   if(report.wallet.overflow||report.wallet.rows<2||!report.wallet.text.includes('含买牌'))throw Error('Startup planning layout failed');
   if(report['20'].text===report['40'].text)throw Error('Budget controls did not change planning results');
+  report.filters={};
+  for(const [kind,label]of [['reroll','费赌狗'],['four-cost','84'],['legendary','95']]){
+   await js(`document.querySelector('[data-route-filter="${kind}"]').click()`);
+   await wait(`document.querySelector('[data-route-filter="${kind}"]').classList.contains('active')`);
+   const types=await js(`Array.from(document.querySelectorAll('.direction-cards .card-heading>span')).map(e=>e.textContent)`);
+   if(!types.length||types.some(t=>!t.includes(label)))throw Error('Strategy filter did not preserve '+kind+' choices');report.filters[kind]=types.length;
+  }
+  await js(`document.querySelector('[data-route-filter="all"]').click()`);
   await js(`document.querySelector('[data-direction-pick]').click()`);
   await wait(`!!document.querySelector('[data-game-overlay]')`);
   report.selected=await js(`({name:document.querySelector('.hud-header strong')?.textContent,units:document.querySelectorAll('[data-overlay-unit]').length,automaticEarly:document.querySelectorAll('[data-transition][aria-pressed="true"]').length})`);
   if(!report.selected.units)throw Error('Preview selection did not reach compact HUD');
   if(report.selected.automaticEarly)throw Error('Selecting a core variant silently highlighted an unchosen early transition');
   await wait(`document.querySelector('[data-direction-advisor]')?.dataset.mode==='selected'`);
+  if(await js(`!!document.querySelector('[data-late-variants]')`)){
+   await js(`document.querySelector('[data-late-variants]').scrollIntoView({block:'center'})`);
+   await fs.writeFile(path.join(out,'mainline-late-variants.png'),(await win.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+  }
   await js(`document.querySelector('[data-clear-direction]').click()`);
   await wait(`!document.querySelector('[data-game-overlay]')&&document.querySelector('[data-direction-advisor]')?.dataset.mode==='flex'`);
   await fs.writeFile(path.join(out,'checks.json'),JSON.stringify(report,null,2));

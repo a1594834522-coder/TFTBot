@@ -27,7 +27,14 @@ export function fixtures(){
  startup.direction.assets.units={};for(const u of startup.shopping.state.units)startup.direction.assets.units[u.id]=(startup.direction.assets.units[u.id]??0)+3**(u.star-1);
  startup.direction.intent={key:'metatft:'+pairProfile.key,directionId:pair.id,units:pair.templates[0].poolUnits};
  startup.strategy={ready:false,reason:'Isolated current-board test; no fabricated lobby pool updates'};
- return {full,single:make(single),startup};
+ const unencoded=structuredClone(startup);unencoded.request.local.units.unshift({id:'DA_Elderwood18_Lifeblossom',star:1,items:[]});
+ const tower=structuredClone(startup);tower.request.local.augments=['DA_TheTower'];tower.request.localGaps=[];tower.direction.augments=['DA_TheTower'];tower.direction.augmentsComplete=true;
+ tower.request.local.units.push({id:'DA_TheTower_TrainingDummy',star:1,items:['DA_WarmogsArmor']});
+ const form=structuredClone(startup),first=form.shopping.state.units.find(u=>u.area==='board');
+ first.id='DA_Lux18_Base';first.combatId='DA_18_Lux_Elderwood';form.request.local.units[0].id=first.combatId;
+ form.direction.assets.units={};for(const u of form.shopping.state.units)form.direction.assets.units[u.id]=(form.direction.assets.units[u.id]??0)+3**(u.star-1);
+ form.direction.board=form.shopping.state.units.filter(u=>u.area==='board').map(u=>u.id);
+ return {full,single:make(single),startup,unencoded,tower,form};
 }`},bundle:true,platform:'node',format:'cjs',outfile:path.join(out,'fixtures.cjs')});
 const require=createRequire(import.meta.url),env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
 const child=spawn(require('electron'),[path.resolve('scripts/direction-worker-smoke.cjs')],{env,windowsHide:true,stdio:'inherit'});

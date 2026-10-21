@@ -9,10 +9,11 @@ import { chineseName } from '../game/names';
 import type { RosterEntry, PlayerInfo } from '../core/events';
 import { buildSnapshot, type RosterSnapshot } from '../game/roster';
 import { normalizeShopHero, isGeneratedUnit } from '../game/shop-mechanics';
+import {combatHeroId} from '../game/combat-unit-identity';
 
 /** Contract recovered from the original GEP -> native IPC -> cube event chain. */
 export const ORIGINAL_TFT_CHANNEL = '{8732C1E2-A2FD-4FF6-8330-FB43A9ABA45C}-5426';
-export interface RecognitionCard { id: string; name: string; known: boolean; rating?: string;kind?:'hero'|'wisp' }
+export interface RecognitionCard { id: string; combatId?:string;name: string; known: boolean; rating?: string;kind?:'hero'|'wisp' }
 export interface RecognitionView {
   shop: Array<RecognitionCard | null>;
   augments: Array<RecognitionCard | null>;
@@ -83,9 +84,10 @@ const augmentRatings = new Map(bundledAugmentTiers.augments.map(a => [a.id, a]))
 function hero(id: string): RecognitionCard | null {
   if (!id || id === 'Sold') return null;
   const wisp=knownWisp(id);if(wisp)return {...wisp,known:true,kind:'wisp'};
+  const combatId=combatHeroId(id);
   id = normalizeShopHero(id);
   const entry = dataset.characterById(id);
-  return { id, known: !!entry, name: entry?.display_name ?? '未识别英雄' };
+  return { id,...(combatId!==id?{combatId}:{}), known: !!entry, name: entry?.display_name ?? '未识别英雄' };
 }
 function augment(id: string): RecognitionCard | null {
   if (!id) return null;

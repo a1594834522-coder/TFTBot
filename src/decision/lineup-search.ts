@@ -1,15 +1,15 @@
-import type {BattleBoard} from '../game/battle-model-encoding';
+import type {BattleBoard,BattleUnit} from '../game/battle-model-encoding';
 import type {ShopState,OwnedUnit} from './shop-ledger';
 
 export interface LineupCandidate {key:string;units:OwnedUnit[];board:BattleBoard;bench:OwnedUnit[]}
 export const battleBoardKey=(board:BattleBoard)=>JSON.stringify([board.units.map(u=>[u.id,u.star,[...u.items].sort()]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b))),[...board.augments].sort(),[...(board.charms??[])].sort()]);
 /** Exact within the declared number of original-board removals, then fill available slots.
  * Bench units never contribute to a fight unless explicitly selected for deployment. */
-export function lineupCandidates(state:ShopState,augments:string[],maxSwaps=1,charms:string[]=[]):LineupCandidate[]{
+export function lineupCandidates(state:ShopState,augments:string[],maxSwaps=1,charms:string[]=[],auxiliary:BattleUnit[]=[]):LineupCandidate[]{
   if(!Number.isInteger(maxSwaps)||maxSwaps<0||maxSwaps>2)throw new Error('Invalid tactical swap bound');
   const current=state.units.filter(u=>u.area==='board'),size=Math.min(state.boardCapacity,state.units.length),output=new Map<string,LineupCandidate>();
   function add(units:OwnedUnit[]){
-    const selected=new Set(units.map(u=>u.key)),board:BattleBoard={units:units.map(u=>({id:u.id,star:u.star,items:u.items.map(i=>i.id)})),augments,...(charms.length?{charms:[...charms]}:{})};
+    const selected=new Set(units.map(u=>u.key)),board:BattleBoard={units:[...units.map(u=>({id:u.combatId??u.id,star:u.star,items:u.items.map(i=>i.id)})),...auxiliary.map(u=>({...u,items:[...u.items]}))],augments,...(charms.length?{charms:[...charms]}:{})};
     const key=battleBoardKey(board);if(!output.has(key))output.set(key,{key,units,board,bench:state.units.filter(u=>!selected.has(u.key))});
   }
   // Retaining the actual board is always a valid counterfactual, even with empty

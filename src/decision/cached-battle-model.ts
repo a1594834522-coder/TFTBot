@@ -35,7 +35,7 @@ export function createCachedBattleModel(original:tf.LayersModel,lookup:BattleLoo
     }
     const missing=new Map<string,number[][]>();
     for(const {board,features}of wanted.values())for(let i=0;i<lookup.max_num_units;i++){
-      const key=unitKey(board.units[i]);
+      const key=unitKey(features.modeledUnits[i]);
       if(!units.has(key)&&!missing.has(key))missing.set(key,['unit','role','tier','cost','items'].map(type=>features.inputs[`player_unit_${i}_${type}`]));
     }
     const unitEntries=[...missing.entries()];
@@ -51,7 +51,7 @@ export function createCachedBattleModel(original:tf.LayersModel,lookup:BattleLoo
     for(let offset=0;offset<boardEntries.length;offset+=256){
       const chunk=boardEntries.slice(offset,offset+256),pools=chunk.map(([,v])=>{
         const sum=new Float32Array(256);
-        for(let i=0;i<lookup.max_num_units;i++){const vector=units.get(unitKey(v.board.units[i]))!;for(let j=0;j<256;j++)sum[j]+=vector[j];}
+        for(let i=0;i<lookup.max_num_units;i++){const vector=units.get(unitKey(v.features.modeledUnits[i]))!;for(let j=0;j<256;j++)sum[j]+=vector[j];}
         return Array.from(sum);
       });
       const results=tf.tidy(()=>{

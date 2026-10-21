@@ -23,6 +23,9 @@ app.whenReady().then(async()=>{
    check('without-opponents',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.single,f=>f.phase==='waiting'&&f.direction?.ready),
    check('startup-mainline',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.startup,f=>f.direction?.ready&&f.direction.mode==='selected'&&f.tactics?.ready&&f.tactics.maxSwaps===2&&f.tactics.choices.some(c=>c.mainlineCores?.length===2))
   ]);
+  results.push(await check('unencoded-summons',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.unencoded,f=>f.phase==='ready'&&f.tactics?.ready&&f.gaps.some(g=>g.includes('召唤单位'))));
+  results.push(await check('independent-tower',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.tower,f=>f.phase==='ready'&&f.tactics?.ready&&f.tactics.choices.every(c=>c.auxiliary?.some(u=>u.id==='DA_TheTower_TrainingDummy'&&u.items.includes('DA_WarmogsArmor')))));
+  results.push(await check('live-lux-form',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.form,f=>f.phase==='ready'&&f.tactics?.ready&&f.tactics.choices.every(c=>c.onBoardCombatIds?.length===c.onBoard.length)));
   console.log('DIRECTION_WORKER_INDEPENDENCE_PASS',JSON.stringify(results));app.exit(0);
  }catch(error){console.error(error);app.exit(1);}
 });

@@ -16,6 +16,7 @@ import {directionAdvice,type DirectionInput} from '../decision/direction-advisor
 import {earlyStages} from '../game/metatft-early';
 import {directionSearch} from '../decision/direction-search';
 import {withSearchHolds} from '../decision/search-holds';
+import {battleTacticalContext,modelBoardGaps} from '../decision/battle-tactical-context';
 const catalog=catalogFile as unknown as DirectionCatalog,gearModel=gearFile as unknown as GearModel;
 function searchAdvice(personal:ReturnType<typeof directionAdvice>,strategy:StrategicInput,budget:number|null){
   if(personal.ready){
@@ -37,9 +38,13 @@ async function run(){
     let request:BattleRequest|null=null,forecast=emptyBattleForecast();
     if(raw&&model){
       try{
-        request={...raw,targets:raw.targets.map(t=>t.board&&encodeBattleBoard(t.board,model.lookup,'opponent').unknown.length?{...t,board:null,gaps:[...t.gaps,'模型特征未覆盖']}:t)};
+        request={...raw,targets:raw.targets.map(t=>{
+          if(!t.board)return t;
+          return encodeBattleBoard(t.board,model.lookup,'opponent').unknown.length?{...t,board:null,gaps:[...t.gaps,'模型特征未覆盖']}:{...t,gaps:[...new Set([...t.gaps,...modelBoardGaps(t.board,model.lookup)])]};
+        })};
         const local=encodeBattleBoard(request.local,model.lookup,'player');
         if(local.unknown.length)throw new Error('本方模型特征未覆盖：'+local.unknown.join('、'));
+        request.localGaps=[...new Set([...request.localGaps,...modelBoardGaps(request.local,model.lookup)])];
         const valid=request.targets.filter(t=>t.weight>0&&t.board),result=model.predictCachedBatch(valid.map(t=>({player:request!.local,opponent:t.board!})));
         forecast=aggregateBattleForecast(request,Object.fromEntries(valid.map((t,i)=>[t.id,result[i].winRate])),model.version);
       }catch(error){request=null;forecast={...emptyBattleForecast((error as Error).message),phase:'error'};}
@@ -52,8 +57,9 @@ async function run(){
     forecast.strategy=strategy?.ready?{ready:false,reason:'正在比较后续路线'}:strategy??{ready:false,reason:'等待全场持牌'};
     process.parentPort?.postMessage({type:'result',id,forecast});
     if(shopping?.ready&&request&&model){
-      try{const tactics=await shoppingTactics(shopping.state,tradingRules,request,model.predictCachedBatch,{cancelled:()=>id!==latestId,yield:()=>new Promise(resolve=>setImmediate(resolve)),reference:mainlineTacticalReference(forecast.direction),supportsBoard:board=>encodeBattleBoard(board,model.lookup,'player').unknown.length===0});
-        if(id===latestId){forecast={...forecast,tactics:tactics.ready?{...tactics,gaps:[...new Set([...tactics.gaps,...shopping.gaps])]}:tactics};process.parentPort?.postMessage({type:'result',id,forecast});}
+      try{const context=battleTacticalContext(request,shopping.state,model.lookup);
+        const tactics=context.ready?await shoppingTactics(shopping.state,tradingRules,context.request,model.predictCachedBatch,{cancelled:()=>id!==latestId,yield:()=>new Promise(resolve=>setImmediate(resolve)),reference:mainlineTacticalReference(forecast.direction),supportsBoard:board=>encodeBattleBoard(board,model.lookup,'player').unknown.length===0,auxiliary:context.auxiliary,acceptsLineup:context.accepts}):context;
+        if(id===latestId){forecast={...forecast,tactics:tactics.ready?{...tactics,gaps:[...new Set([...tactics.gaps,...shopping.gaps,...(context.ready?context.gaps:[])])]}:tactics};process.parentPort?.postMessage({type:'result',id,forecast});}
       }catch(error){if(id===latestId){forecast={...forecast,tactics:{ready:false,reason:'商店方案暂不可用：'+(error as Error).message}};process.parentPort?.postMessage({type:'result',id,forecast});}}
     }
     if(strategy?.ready&&id===latestId){

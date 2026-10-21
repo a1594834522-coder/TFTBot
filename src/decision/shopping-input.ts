@@ -1,6 +1,7 @@
 import type {ReaderStatus} from '../recognition/status';
 import type {ChampionPlacement} from '../core/events';
 import {normalizeShopHero} from '../game/shop-mechanics';
+import {combatHeroId} from '../game/combat-unit-identity';
 import rulesFile from '../../data/decision-trading-rules.json';
 import {validateShopState,type EquipmentToken,type OwnedUnit,type ShopState,type TradingRules} from './shop-ledger';
 
@@ -22,7 +23,8 @@ export function shoppingInput(status:ReaderStatus|null,now=Date.now()):ShoppingI
     const known=Array.isArray(unit.items)||[unit.item_1,unit.item_2,unit.item_3].every(i=>typeof i==='string');
     if(!known)gaps.add('装备明细未齐');
     const raw=unit.items??[unit.item_1,unit.item_2,unit.item_3].filter((i):i is string=>!!i);
-    return {key,id:normalizeShopHero(unit.name),star:Number(unit.level),area,slot,items:raw.map((id,index)=>({id,key:`${key}:item:${index}`})),equipmentKnown:known};
+    const id=normalizeShopHero(unit.name),combatId=combatHeroId(unit.name);
+    return {key,id,...(combatId!==id?{combatId}:{}),star:Number(unit.level),area,slot,items:raw.map((id,index)=>({id,key:`${key}:item:${index}`})),equipmentKnown:known};
   };
   const benches=cards.itemBenches?.filter(b=>b.summoner===local.summoner&&b.tag_line===local.tagLine);
   const rack:EquipmentToken[]=[];
@@ -32,7 +34,8 @@ export function shoppingInput(status:ReaderStatus|null,now=Date.now()):ShoppingI
   const offers=cards.shop.map((c,slot)=>{
     if(!c||c.kind==='wisp')return null;
     const hero=tradingRules.heroes[normalizeShopHero(c.id)];
-    return {slot,id:normalizeShopHero(c.id),price:hero.cost};
+    const id=normalizeShopHero(c.id),combatId=combatHeroId(c.combatId??c.id);
+    return {slot,id,...(combatId!==id?{combatId}:{}),price:hero.cost};
   });
   try{
     const state:ShopState={gold:cards.gold,level:cards.level,boardCapacity:cards.level,units:[...holdings.board.map(u=>convert(u,'board')),...holdings.bench.map(u=>convert(u,'bench'))],offers,itemRack:rack};

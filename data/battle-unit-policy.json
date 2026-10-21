@@ -1,0 +1,168 @@
+{
+  "set": 18,
+  "evidence": {
+    "mainSha256": "0608cb910fd2e872756daaef214c4a0a5276863bafe92a5aa7eb43c71d96c2cc",
+    "lookupSha256": "5801cf016925fb9500682c2de0dbf6922f9cee6ae32fa3dc4ab56748d5a0f1d7",
+    "nonPoolSha256": "166f7e45e3a2dff22837bd180cf0e4ebbdedf5566f07ed7c2afcf1ed1ff8c70b",
+    "seasonSha256": "2b7d15ea589eaf45db193d2cea85b7bdd29c666533afa9f6c0c79ebc06577dce",
+    "encoder": "ONt live-board path: unencoded units skip embeddings; traits processed separately",
+    "auxiliaryFacts": [
+      {
+        "id": "DA_Dummify",
+        "description": "Lose all champions on your board and bench. Gain a Training Dummy with <TFTCurveTable row=\"CombinedHealthPercentage\" format=\"percent\"/> of their combined health. The dummy gains <TFTCurveTable row=\"HealthGainPerStage\"/> Health per stage. Gain a random non-tank 2-star 2 cost champion."
+      },
+      {
+        "id": "DA_TheTower",
+        "description": "Gain a giant Training Dummy. Every <TFTCurveTable row=\"TowerAttackInterval\"/> seconds, it zaps the <TFTCurveTable row=\"TowerNumTargets\"/> nearest enemies dealing <TFTCurveTable format=\"percent\" row=\"MaxHealthDamageMultiplier\"/> max Health true damage."
+      },
+      {
+        "id": "DA_18_SprykinAugment",
+        "description": "While Sprykin is active, gain a second BFF summon that is <TFTCurveTable row=\"Effectiveness_DoesntIncludeSummonSpell\" format=\"percent\"/> as powerful. Gain a Teemo, a Veigar, and a Kobuko."
+      }
+    ]
+  },
+  "forms": {
+    "DA_Lux18_Blackthorn": {
+      "poolId": "DA_Lux18_Base",
+      "traits": [
+        "Blackthorn"
+      ],
+      "name": "黑荆棘"
+    },
+    "DA_Lux18_Blossom": {
+      "poolId": "DA_Lux18_Base",
+      "traits": [
+        "Blossom"
+      ],
+      "name": "灵魂莲华"
+    },
+    "DA_18_Lux_Coven": {
+      "poolId": "DA_Lux18_Base",
+      "traits": [
+        "Coven"
+      ],
+      "name": "魔女"
+    },
+    "DA_18_Lux_Elderwood": {
+      "poolId": "DA_Lux18_Base",
+      "traits": [
+        "Elderwood"
+      ],
+      "name": "永恒之森"
+    },
+    "DA_18_Lux_Fae": {
+      "poolId": "DA_Lux18_Base",
+      "traits": [
+        "Fae"
+      ],
+      "name": "花仙子"
+    },
+    "DA_18_Lux_Inferno": {
+      "poolId": "DA_Lux18_Base",
+      "traits": [
+        "Inferno"
+      ],
+      "name": "地狱火"
+    },
+    "DA_18_Lux_Moonbeam": {
+      "poolId": "DA_Lux18_Base",
+      "traits": [
+        "Lunar"
+      ],
+      "name": "月蚀骑士"
+    },
+    "DA_18_Lux_Primal": {
+      "poolId": "DA_Lux18_Base",
+      "traits": [
+        "Primal"
+      ],
+      "name": "野兽之灵"
+    },
+    "DA_18_Lux_Sunbeam": {
+      "poolId": "DA_Lux18_Base",
+      "traits": [
+        "Solar"
+      ],
+      "name": "日蚀骑士"
+    }
+  },
+  "excluded": [
+    "DA_18_AzirSoldier",
+    "DA_18_CrimsonRaptor_Mini",
+    "DA_18_Maokai_BigSapling",
+    "DA_18_Maokai_Sapling",
+    "DA_18_NunuWillump",
+    "DA_18_SprykinAugmentSummonRanged",
+    "DA_18_SprykinSummonMelee",
+    "DA_18_SprykinSummonRanged",
+    "DA_18_Yorick_Spirit",
+    "DA_18_Zyra_ThornSpitter",
+    "DA_Elderwood18_Lifeblossom",
+    "DA_Elderwood18_Protector",
+    "DA_Elderwood18_StonebarkTree",
+    "DA_GoldenEggCharacter",
+    "DA_Krug18_MiniKrug",
+    "DA_MagicEggCharacter",
+    "TFT18_AzirSoldier",
+    "TFT18_CrimsonRaptor_Mini",
+    "TFT18_Elderwood_GolemSummon",
+    "TFT18_Elderwood_TreeSummon",
+    "TFT18_KrugMini",
+    "TFT18_Maokai_BigSapling",
+    "TFT18_Maokai_Sapling",
+    "TFT18_NunuWillump",
+    "TFT18_SprykinSummonRanged",
+    "TFT18_Yorick_Spirit",
+    "TFT18_Zyra_ThornSpitter",
+    "TFT_GoldenEgg"
+  ],
+  "auxiliaries": {
+    "DA_TheTower_TrainingDummy": {
+      "name": "巨塔假人",
+      "augments": [
+        "DA_TheTower"
+      ],
+      "contextTraits": []
+    },
+    "DA_TrainingDummy": {
+      "name": "训练假人",
+      "augments": [
+        "DA_Dummify",
+        "DA_TheTower"
+      ],
+      "contextTraits": []
+    },
+    "TFT_TrainingDummy": {
+      "name": "训练假人",
+      "augments": [
+        "DA_Dummify",
+        "DA_TheTower"
+      ],
+      "contextTraits": []
+    },
+    "DA_18_SprykinAugmentSummonMelee": {
+      "name": "伙伴召唤物",
+      "augments": [
+        "DA_18_SprykinAugment"
+      ],
+      "contextTraits": [
+        "Sprykin"
+      ],
+      "minimumTraits": {
+        "Sprykin": 3
+      }
+    },
+    "TFT18_SprykinSummonMelee": {
+      "name": "伙伴召唤物",
+      "augments": [
+        "DA_18_SprykinAugment"
+      ],
+      "contextTraits": [
+        "Sprykin"
+      ],
+      "minimumTraits": {
+        "Sprykin": 3
+      }
+    }
+  }
+}

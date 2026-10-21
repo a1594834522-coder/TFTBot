@@ -55,4 +55,25 @@ describe('MetaTFT original model and encoding',()=>{
     await fs.writeFile(path.join(directory,'manifest.json'),JSON.stringify({set:17}));
     await expect(loadBattleModel(directory)).rejects.toThrow(/season/);
   });
+  it('compacts known unencoded summons exactly like the original source without rejecting a valid board',()=>{
+    const original=board(2),withSummons={...original,units:[{id:'DA_Elderwood18_StonebarkTree',star:0,items:[]},original.units[0],{id:'DA_18_AzirSoldier',star:0,items:[]},original.units[1]]};
+    const encoded=encodeBattleBoard(withSummons,lookup,'player');
+    expect(encoded.unknown).toEqual([]);expect(encoded.modeledUnits).toEqual(original.units);expect(encoded.excludedUnits).toHaveLength(2);
+    expect(encoded.inputs).toEqual(encodeBattleBoard(original,lookup,'player').inputs);
+    expect(runtime.predict(withSummons,original).winRate).toBeCloseTo(runtime.predict(original,original).winRate,6);
+    expect(()=>runtime.predict({...original,units:[{id:'FUTURE_UNKNOWN_HERO',star:1,items:[]},...original.units]},original)).toThrow(/Unsupported/);
+  });
+  it('keeps cached unit keys aligned to the compacted slots, even with interleaved and many summons',()=>{
+    const pairs=Array.from({length:12},(_,i)=>({player:{units:[...Array.from({length:18},()=>({id:'DA_Elderwood18_Lifeblossom',star:0,items:[]})),...board(i%3+1).units].reverse(),augments:[]},opponent:board((i+1)%3+1)}));
+    const before=runtime.tensorCount(),full=runtime.predictBatch(pairs),cached=runtime.predictCachedBatch(pairs);
+    cached.forEach((p,i)=>expect(p.winRate).toBeCloseTo(full[i].winRate,5));expect(runtime.tensorCount()).toBe(before);
+    const modified={...lookup,unit_traits:{...lookup.unit_traits,DA_Elderwood18_Lifeblossom:['Sprykin']}};
+    expect(encodeBattleBoard(pairs[0].player,modified,'player').traitCounts.Sprykin).toBe(1);
+  });
+  it('preserves a Lux form trait even when its embedding and shared-pool identity match base Lux',()=>{
+    const form=encodeBattleBoard({units:[{id:'DA_18_Lux_Elderwood',star:2,items:[]}],augments:[]},lookup,'player');
+    const base=encodeBattleBoard({units:[{id:'DA_Lux18_Base',star:2,items:[]}],augments:[]},lookup,'player');
+    expect(form.inputs.player_unit_0_unit).toEqual(base.inputs.player_unit_0_unit);
+    expect(form.traitCounts.Elderwood).toBe(1);expect(base.traitCounts.Elderwood).toBeUndefined();
+  });
 });

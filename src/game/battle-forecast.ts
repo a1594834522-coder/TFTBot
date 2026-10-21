@@ -2,6 +2,8 @@ import type {BattleBoard} from './battle-model-encoding';
 import type {ReaderStatus} from '../recognition/status';
 import type {ChampionPlacement} from '../core/events';
 import {normalizeShopHero} from './shop-mechanics';
+import {isGeneratedUnit} from './shop-mechanics';
+import {combatHeroId} from './combat-unit-identity';
 import type {ShoppingTactics} from '../decision/shopping-tactics';
 import type {StrategicAdvice} from '../decision/strategic-advisor';
 import type {DirectionAdvice} from '../decision/direction-advisor';
@@ -40,9 +42,9 @@ function unitItems(c:ChampionPlacement):{items:string[];known:boolean}{
 function boardFromUnits(units:ChampionPlacement[],augments:string[]|undefined):{board:BattleBoard;gaps:string[]}|null{
   const gaps=new Set<string>();
   const mapped=units.map(c=>{
-    const star=Number(c.level),gear=unitItems(c);
+    const star=isGeneratedUnit(c.name)?Number(c.level)||1:Number(c.level),gear=unitItems(c);
     if(!gear.known)gaps.add('装备未齐');
-    return {id:normalizeShopHero(c.name),star,items:gear.items};
+    return {id:combatHeroId(c.name),star,items:gear.items};
   });
   if(mapped.some(u=>!Number.isInteger(u.star)||u.star<1||u.star>4||u.items.length>3))return null;
   if(augments===undefined)gaps.add('海克斯未齐');
@@ -53,6 +55,15 @@ function boardOnly(units:ChampionPlacement[]|undefined):ChampionPlacement[]|null
   return units.filter(c=>c.area==='board'||c.area!=='bench'&&c.position!==undefined&&c.position>=0&&c.position<28);
 }
 const signature=(units:ChampionPlacement[])=>units.map(c=>`${normalizeShopHero(c.name)}:${Number(c.level)}`).sort().join('|');
+function compatibleObservedForms(current:ChampionPlacement[],observed:ChampionPlacement[]):boolean{
+  const available=observed.map(c=>`${combatHeroId(c.name)}:${Number(c.level)}`);
+  for(const unit of current){
+    if(combatHeroId(unit.name)===normalizeShopHero(unit.name))continue;
+    const index=available.indexOf(`${combatHeroId(unit.name)}:${Number(unit.level)}`);
+    if(index<0)return false;available.splice(index,1);
+  }
+  return true;
+}
 
 /** Build a bounded, personal-data-minimal worker request. Player names never leave this machine. */
 export function battleRequest(status:ReaderStatus|null,now=Date.now(),prior?:OpponentPrior):BattleRequest|null{
@@ -71,7 +82,7 @@ export function battleRequest(status:ReaderStatus|null,now=Date.now(),prior?:Opp
     const current=boardOnly(p.placements);
     const age=observed?now-observed.at:Infinity;
     // Observed equipment is never transferred to a changed native board. Scouting ages are explicit.
-    const usable=observed&&age>=0&&age<=60000&&(!current||signature(current)===signature(observed.units));
+    const usable=observed&&age>=0&&age<=60000&&(!current||signature(current)===signature(observed.units)&&compatibleObservedForms(current,observed.units));
     const units=usable?observed.units:current;
     const parsed=units?boardFromUnits(units,undefined):null;
     const gaps=parsed?.gaps??['场上棋盘未齐'];

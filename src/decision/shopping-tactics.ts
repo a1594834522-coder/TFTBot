@@ -1,4 +1,4 @@
-import type {BattleBoard} from '../game/battle-model-encoding';
+import type {BattleBoard,BattleUnit} from '../game/battle-model-encoding';
 import type {BattleRequest} from '../game/battle-forecast';
 import {enumerateShoppingPlans,interest,type ShopState,type TradingRules,type TradeAction,type OwnedUnit} from './shop-ledger';
 import {lineupCandidates,battleBoardKey,type LineupCandidate} from './lineup-search';
@@ -12,13 +12,15 @@ export interface TacticalChoice {
   winRate:number|null;knownWin:number;coverage:number;delta:number|null;
   incoming:TacticalUnit[];outgoing:TacticalUnit[];upgraded:Array<{id:string;before:number;after:number}>;
   onBoardItems:string[][];mainlineCores:string[];
+  onBoardCombatIds:string[];auxiliary:BattleUnit[];
   lowerDelta:number;upperDelta:number;
 }
-export interface TacticalUnit {key:string;id:string;star:number;items:string[]}
+export interface TacticalUnit {key:string;id:string;combatId?:string;star:number;items:string[]}
 export interface TacticalReference {cores:string[]}
 export interface TacticalOptions {
   cancelled?:()=>boolean;yield?:()=>Promise<void>;maxSwaps?:number;
   reference?:TacticalReference;supportsBoard?:(board:BattleBoard)=>boolean;
+  auxiliary?:BattleUnit[];acceptsLineup?:(candidate:LineupCandidate)=>boolean;
 }
 export type ShoppingTactics={ready:false;reason:string}|{
   ready:true;choices:TacticalChoice[];baseline:number|null;coverage:number;
@@ -39,7 +41,8 @@ export function mainlineTacticalReference(advice:DirectionAdvice|undefined):Tact
 export async function shoppingTactics(state:ShopState,rules:TradingRules,request:BattleRequest,predict:BatchPredictor,options:TacticalOptions={}):Promise<ShoppingTactics>{
   const maxSwaps=options.maxSwaps??2;
   if(options.cancelled?.())return {ready:false,reason:'局面已变化'};
-  const physical:BattleBoard={units:state.units.filter(u=>u.area==='board').map(u=>({id:u.id,star:u.star,items:u.items.map(i=>i.id)})),augments:request.local.augments,charms:request.local.charms};
+  const auxiliary=options.auxiliary??[];
+  const physical:BattleBoard={units:[...state.units.filter(u=>u.area==='board').map(u=>({id:u.combatId??u.id,star:u.star,items:u.items.map(i=>i.id)})),...auxiliary],augments:request.local.augments,charms:request.local.charms};
   if(battleBoardKey(physical)!==battleBoardKey(request.local))return {ready:false,reason:request.local.units.some(u=>!rules.heroes[u.id])?'非商店单位的换牌联动待覆盖，暂不比较上场':'等待本方场上棋盘与装备帧同步'};
   if(state.units.some(u=>u.area==='board'&&u.equipmentKnown===false))return {ready:false,reason:'等待本方场上英雄装备明细'};
   const total=request.targets.reduce((n,t)=>n+t.weight,0);
@@ -50,7 +53,8 @@ export async function shoppingTactics(state:ShopState,rules:TradingRules,request
   const byPlan:Array<{plan:typeof search.plans[number];lineups:LineupCandidate[]}>=[];
   for(const plan of search.plans){
     if(options.cancelled?.())return {ready:false,reason:'局面已变化'};
-    const lineups=lineupCandidates(plan.state,request.local.augments,maxSwaps,request.local.charms).filter(candidate=>{
+    const lineups=lineupCandidates(plan.state,request.local.augments,maxSwaps,request.local.charms,auxiliary).filter(candidate=>{
+      if(options.acceptsLineup&&!options.acceptsLineup(candidate))return false;
       if(candidate.units.some(u=>u.equipmentKnown===false)){incompleteEquipment=true;return false;}
       let valid=supported.get(candidate.key);
       if(valid===undefined){valid=options.supportsBoard?.(candidate.board)??true;supported.set(candidate.key,valid);if(!valid)unsupported++;}
@@ -99,11 +103,12 @@ export async function shoppingTactics(state:ShopState,rules:TradingRules,request
     const buy=new Map<string,{id:string;slots:number[];quantity:number}>();
     for(const slot of row.plan.buySlots){const offer=state.offers[slot]!;const group=buy.get(offer.id)??{id:offer.id,slots:[],quantity:0};group.slots.push(slot);group.quantity++;buy.set(offer.id,group);}
     const original=state.units.filter(u=>u.area==='board'),current=new Set(original.map(u=>u.key)),selected=new Set(row.lineup.units.map(u=>u.key));
-    const view=(u:OwnedUnit):TacticalUnit=>({key:u.key,id:u.id,star:u.star,items:u.items.map(i=>i.id)});
+    const view=(u:OwnedUnit):TacticalUnit=>({key:u.key,id:u.id,...(u.combatId?{combatId:u.combatId}:{}),star:u.star,items:u.items.map(i=>i.id)});
     const consumed=new Set(row.plan.merges.flatMap(m=>m.consumed).filter(key=>!row.plan.state.units.some(u=>u.key===key)));
     const delta=Math.abs(row.win-baseline)<1e-6?0:row.win-baseline,missing=Math.max(0,1-coverage);
     return {id,title:id==='economy'?'保经济':id==='tempo'?'提战力':present(row.lineup).length>originalPresent?'主线接入':'主线保留',buy:[...buy.values()],actions:row.plan.actions,onBoard:row.lineup.units.map(u=>u.id),onBoardKeys:row.lineup.units.map(u=>u.key),onBoardStars:row.lineup.units.map(u=>u.star),onBoardItems:row.lineup.units.map(u=>u.items.map(i=>i.id)),goldAfter:row.plan.state.gold,interestIfLose:row.plan.interestIfLose,interestIfWin:row.plan.interestIfWin,knownWin:row.win,winRate:coverage>=1-1e-7?row.win:null,coverage,delta:coverage>=1-1e-7?delta:null,
       lowerDelta:Math.max(-1,delta-missing),upperDelta:Math.min(1,delta+missing),mainlineCores:present(row.lineup),
+      onBoardCombatIds:row.lineup.units.map(u=>u.combatId??u.id),auxiliary:auxiliary.map(u=>({...u,items:[...u.items]})),
       incoming:row.lineup.units.filter(u=>!current.has(u.key)).map(view),outgoing:original.filter(u=>!selected.has(u.key)&&!consumed.has(u.key)).map(view),
       upgraded:row.lineup.units.flatMap(u=>{const old=original.find(p=>p.key===u.key);return old&&u.star>old.star?[{id:u.id,before:old.star,after:u.star}]:[]})};
   }

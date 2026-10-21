@@ -4,6 +4,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {encodeBattleBoard,type BattleBoard,type BattleLookups} from '../game/battle-model-encoding';
 import {createCachedBattleModel} from './cached-battle-model';
+import unitPolicy from '../../data/battle-unit-policy.json';
 
 export interface BattlePrediction {winRate:number;strength:number[];modelVersion:string}
 /** Offline runtime. Intended for the decision worker, never the UI or game reader thread. */
@@ -17,6 +18,7 @@ export async function loadBattleModel(directory:string){
     files[name]=value;
   }
   const raw=JSON.parse(files['model.json'].toString()),lookup=JSON.parse(files['lookups.json'].toString()) as BattleLookups;
+  if(createHash('sha256').update(files['lookups.json']).digest('hex')!==unitPolicy.evidence.lookupSha256)throw Error('Battle unit policy/lookup mismatch');
   const inputLayers=raw.modelTopology?.model_config?.config?.layers?.filter((l:any)=>l.class_name==='InputLayer');
   if(!Array.isArray(inputLayers)||inputLayers.length!==2*(lookup.max_num_units*5+3))throw new Error('Model/lookup input contract mismatch');
   await tf.setBackend('cpu');await tf.ready();

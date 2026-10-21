@@ -1,7 +1,7 @@
 {
   "set": "TFTSet18",
   "clusterId": 426,
-  "generatedAt": "2026-10-21T03:18:38.987Z",
+  "generatedAt": "2026-10-21T03:57:28.963Z",
   "sourceFetchedAt": "2026-10-20T15:47:28.877Z",
   "counts": {
     "families": 60,
@@ -18,6 +18,8 @@
     "metatft-gear-model.json": "9a2a8d1aa568d33117e5e6c4db3fd121d4d11015412792579541729e4194b508",
     "metatft-transition-library.json": "2a72e2b6ccb23026254b48168b5cb017e780ca0da022d423ed2b47f40d0314cd",
     "current-shop-mechanics.json": "5d6a5fd683cd08a77d2efca2ef237e1cce0cd87cf6b76c6df413fcd68227de17",
-    "decision-trading-rules.json": "3e20276b83e4b3551a6f2eb896ca2f5c5ae89cc53f5cd9b8978017fc14093ed2"
+    "decision-trading-rules.json": "3e20276b83e4b3551a6f2eb896ca2f5c5ae89cc53f5cd9b8978017fc14093ed2",
+    "battle-unit-policy.json": "92169b6b3ff2269238fc6688fdcfa742b3154b48d010b63b86e8851915bae469",
+    "current-non-pool-units.json": "166f7e45e3a2dff22837bd180cf0e4ebbdedf5566f07ed7c2afcf1ed1ff8c70b"
   }
 }

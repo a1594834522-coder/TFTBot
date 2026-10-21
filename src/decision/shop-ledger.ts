@@ -1,8 +1,8 @@
 /** A physical, deterministic trading ledger. Rule values are injected and versioned;
  * this module never invents gold, discounts, unit copies or equipment. */
 export interface EquipmentToken {key:string;id:string}
-export interface OwnedUnit {key:string;id:string;star:number;area:'board'|'bench';slot:number;items:EquipmentToken[];equipmentKnown?:boolean}
-export interface HeroOffer {slot:number;id:string;price:number}
+export interface OwnedUnit {key:string;id:string;combatId?:string;star:number;area:'board'|'bench';slot:number;items:EquipmentToken[];equipmentKnown?:boolean}
+export interface HeroOffer {slot:number;id:string;combatId?:string;price:number}
 export interface TradingRules {
   version:string;provisional:boolean;
   heroes:Record<string,{cost:number;maxStar:number;sellValues:Record<number,number>}>;
@@ -15,7 +15,7 @@ export interface ShopState {
 }
 export type TradeAction={type:'buy';slot:number}|{type:'sell';key:string}|{type:'stage';key:string;slot:number};
 export interface MergeEffect {id:string;star:number;consumed:string[];result:string}
-export type TradeFailure='invalid-action'|'gold'|'bench-full'|'board-full'|'unsupported-merge-equipment'|'unsupported-item-overflow';
+export type TradeFailure='invalid-action'|'gold'|'bench-full'|'board-full'|'unsupported-merge-equipment'|'unsupported-merge-form'|'unsupported-item-overflow';
 export type TradeResult={ok:true;state:ShopState;merges:MergeEffect[]}|{ok:false;reason:TradeFailure};
 const integer=(v:number,min=0)=>Number.isSafeInteger(v)&&v>=min;
 export const copies=(star:number)=>3**(star-1);
@@ -50,6 +50,8 @@ function combine(s:ShopState,id:string,r:TradingRules):MergeEffect[]|TradeFailur
       // Board position has priority; a single equipped source transfers without ambiguity.
       group.sort((a,b)=>Number(b.area==='board')-Number(a.area==='board')||a.slot-b.slot||a.key.localeCompare(b.key));
       const merging=group.slice(0,3),equipped=merging.filter(u=>u.items.length);
+      const forms=new Set(merging.map(u=>u.combatId).filter((id):id is string=>!!id));
+      if(forms.size>1||forms.size===1&&!forms.has(merging[0].combatId??''))return 'unsupported-merge-form';
       // Multiple equipped holders can trigger auto-crafting/overflow/unique-item rules.
       // The common single-holder upgrade is exact; unsupported cases are explicit.
       if(equipped.length>1||merging.some(u=>u.equipmentKnown===false))return 'unsupported-merge-equipment';
@@ -85,7 +87,7 @@ export function trade(s:ShopState,action:TradeAction,r:TradingRules):TradeResult
   next.gold-=offer.price;next.offers[action.slot]=null;
   const taken=new Set(next.units.filter(u=>u.area==='bench').map(u=>u.slot));
   const slot=Array.from({length:r.benchCapacity},(_,i)=>i).find(i=>!taken.has(i))??r.benchCapacity;
-  next.units.push({key:`shop:${action.slot}`,id:offer.id,star:1,area:'bench',slot,items:[]});
+  next.units.push({key:`shop:${action.slot}`,id:offer.id,...(offer.combatId?{combatId:offer.combatId}:{}),star:1,area:'bench',slot,items:[]});
   const effects=combine(next,offer.id,r);
   if(typeof effects==='string')return {ok:false,reason:effects};
   if(next.units.filter(u=>u.area==='bench').length>r.benchCapacity)return {ok:false,reason:'bench-full'};
@@ -105,7 +107,7 @@ export interface ShoppingSearch {
   /** All buy/sell subsets, with the first legal execution order for each asset combination. */
   scope:{sellCandidates:string[];offers:number[];exhaustiveSubsets:true;limitations:string[]};
 }
-const signature=(s:ShopState)=>JSON.stringify([s.gold,s.units.map(u=>[u.id,u.star,u.area,u.items.map(i=>i.key).sort()]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b))),s.itemRack.map(t=>t.key).sort()]);
+const signature=(s:ShopState)=>JSON.stringify([s.gold,s.units.map(u=>[u.id,u.combatId??u.id,u.star,u.area,u.items.map(i=>i.key).sort()]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b))),s.itemRack.map(t=>t.key).sort()]);
 export function enumerateShoppingPlans(initial:ShopState,r:TradingRules,options:{sellCandidates?:string[];stageToFreeBench?:boolean}={}):ShoppingSearch {
   validateShopState(initial,r);
   const sellKeys=options.sellCandidates??initial.units.filter(u=>u.area==='bench'&&!u.items.length&&u.equipmentKnown!==false).map(u=>u.key);

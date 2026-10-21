@@ -1,3 +1,4 @@
+import policy from '../../data/battle-unit-policy.json';
 /** MetaTFT's shipped calculate_winrate encoder, expressed as pure numeric features.
  * Slots, .333 item scaling, unique-unit traits and empty tier/cost sentinels follow
  * WinRateModelImproved_BoardStrengthEA. No inference or browser dependency here. */
@@ -11,14 +12,19 @@ export interface BattleLookups {
   augment_traits:Record<string,string[]>;augment_tag_encodings:Record<string,number>;rarity_values:Record<string,number>;max_rarity_value:number;
   charm_encodings:Record<string,number>;board_strength_parameters?:{m:number;c:number};
 }
-export interface EncodedBattleBoard {inputs:Record<string,number[]>;unknown:string[];traitCounts:Record<string,number>}
+export interface EncodedBattleBoard {inputs:Record<string,number[]>;unknown:string[];traitCounts:Record<string,number>;modeledUnits:BattleUnit[];excludedUnits:string[]}
+const exclusions=new Set<string>(policy.excluded);
 function oneHot(index:number|undefined,length:number,value=1):number[]{
   const out=Array<number>(length).fill(0);
   if(index!==undefined&&Number.isInteger(index)&&index>=0&&index<length)out[index]=value;
   return out;
 }
 export function encodeBattleBoard(board:BattleBoard,lookup:BattleLookups,prefix:'player'|'opponent'):EncodedBattleBoard {
-  if(!Array.isArray(board.units)||!Array.isArray(board.augments)||board.units.length>lookup.max_num_units)throw new Error('Invalid board or model unit capacity exceeded');
+  if(!Array.isArray(board.units)||!Array.isArray(board.augments)||board.units.length>64)throw new Error('Invalid board or model unit capacity exceeded');
+  const excludedUnits:string[]=[],modeledUnits=board.units.filter(unit=>{
+    if(lookup.unit_encodings[unit.id]===undefined&&exclusions.has(unit.id)){excludedUnits.push(unit.id);return false;}return true;
+  });
+  if(modeledUnits.length>lookup.max_num_units)throw new Error('Model unit capacity exceeded');
   const inputs:Record<string,number[]>={},unknown:string[]=[],traitCounts:Record<string,number>={},uniqueTraits=new Set<string>();
   const addTrait=(unit:string,trait:string)=>{const key=unit+'|'+trait;if(!uniqueTraits.has(key)){uniqueTraits.add(key);traitCounts[trait]=(traitCounts[trait]??0)+1;}};
   const augments=Array<number>(lookup.augment_len).fill(0);
@@ -31,7 +37,7 @@ export function encodeBattleBoard(board:BattleBoard,lookup:BattleLookups,prefix:
     for(const trait of lookup.augment_traits[id]??[])traitCounts[trait]=(traitCounts[trait]??0)+1;
   }
   for(let slot=0;slot<lookup.max_num_units;slot++){
-    const unit=board.units[slot],base=`${prefix}_unit_${slot}_`;
+    const unit=modeledUnits[slot],base=`${prefix}_unit_${slot}_`;
     if(!unit){inputs[base+'unit']=oneHot(undefined,lookup.unit_len);inputs[base+'role']=oneHot(undefined,lookup.role_len);inputs[base+'tier']=[-1];inputs[base+'cost']=[-1];inputs[base+'items']=oneHot(undefined,lookup.item_len);continue;}
     if(!Number.isInteger(unit.star)||unit.star<1||unit.star>4||unit.items.length>3)throw new Error('Invalid star/item count');
     const encoding=lookup.unit_encodings[unit.id];
@@ -46,12 +52,14 @@ export function encodeBattleBoard(board:BattleBoard,lookup:BattleLookups,prefix:
       const trait=lookup.emblems[item];if(trait)addTrait(unit.id,trait);
     }
     inputs[base+'items']=items;
-    for(const trait of lookup.unit_traits[unit.id]??[])addTrait(unit.id,trait);
   }
+  // The original source processes unit traits even outside its embedding branch.
+  // Known exclusions must not suppress a future lookup's explicit trait entry.
+  for(const unit of board.units)for(const trait of lookup.unit_traits[unit.id]??[])addTrait(unit.id,trait);
   const traits=Array<number>(lookup.trait_len).fill(0);
   for(const [trait,count]of Object.entries(traitCounts)){const t=lookup.trait_mapping[`${trait}_${count}`];if(t)traits[t.encoding]+=1;}
   const charms=Array<number>(lookup.charm_len).fill(0);
   for(const id of board.charms??[]){const index=lookup.charm_encodings[id];if(index===undefined){unknown.push('charm:'+id);continue;}charms[index]+=1;}
   inputs[prefix+'_augments']=augments;inputs[prefix+'_traits']=traits;inputs[prefix+'_charms']=charms;
-  return {inputs,unknown:[...new Set(unknown)],traitCounts};
+  return {inputs,unknown:[...new Set(unknown)],traitCounts,modeledUnits,excludedUnits};
 }

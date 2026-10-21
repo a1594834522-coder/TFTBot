@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import {computed,ref,watch,onMounted,onUnmounted} from 'vue';
 import EarlyHoldPanel from './EarlyHoldPanel.vue';
+import MainlineTransitionsPanel from './MainlineTransitionsPanel.vue';
+import type {SelectedComp} from '../game/selected-comp';
+import {normalizeShopHero} from '../game/shop-mechanics';
 import type {ReaderStatus} from '../recognition/status';
 import type {CompSuggestion} from '../game/comp-advisor';
 import {createCompAdvisor} from '../game/comp-advisor';
@@ -12,10 +15,10 @@ import StrategicOptionsPanel from './StrategicOptionsPanel.vue';
 import type {BattleForecast} from '../game/battle-forecast';
 import DirectionPanel from './DirectionPanel.vue';
 import {resolveHoldAdvice} from '../game/resolve-hold-advice';
-const props=defineProps<{status:ReaderStatus|null;selectedKey?:string|null;selectedDirectionId?:string;previewForecast?:BattleForecast}>();
+const props=defineProps<{status:ReaderStatus|null;selectedKey?:string|null;selectedDirectionId?:string;previewForecast?:BattleForecast;mainline?:SelectedComp|null}>();
 const battle=ref<BattleForecast|null>(props.previewForecast??null);
 watch(()=>props.previewForecast,value=>{if(value)battle.value=value;});
-const emit=defineEmits<{selectComp:[key:string|null,directionId?:string];start:[];previewBudget:[number|null]}>();
+const emit=defineEmits<{selectComp:[key:string|null,directionId?:string];start:[];previewBudget:[number|null];selectTransition:[id:string|null]}>();
 const preferences=ref(defaultAdvisorPreferences());
 const manual=computed({get:()=>preferences.value.items,set:items=>{preferences.value={...preferences.value,items};}});
 const editItems=ref(false),detail=ref<string|null>(null);
@@ -57,6 +60,7 @@ const stamp=String(metatftMeta().fetchedAt??'').slice(0,10);
       <div class="extra-items"><select v-model="extraItem" aria-label="补充成装"><option value="">补充成装 / 特殊装备</option><option v-for="i in completed" :key="i.item_id" :value="i.item_id">{{ i.display_name }}</option></select><button :disabled="!extraItem" @click="add(extraItem)">添加</button><span>只添加装备栏内未识别的物品</span></div>
       <div v-if="manual.length" class="manual-tokens"><button v-for="(id,i) in manual" :key="i" :title="'移除 '+itemName(id)" :aria-label="'移除补充装备'+itemName(id)" @click="manual.splice(i,1)"><img :src="dataset.item(id)?.image_path" :alt="itemName(id)"/><span>×</span></button></div>
     </div>
+    <MainlineTransitionsPanel v-if="mainline" :comp="mainline" :level="input.level" :owned="input.units" :known="input.localComplete" :shop="status?.cards.shopReady?status.cards.shop.flatMap(c=>c?.known&&c.kind!=='wisp'?[normalizeShopHero(c.id)]:[]):[]" @select="emit('selectTransition',$event)"/>
     <div v-if="!result.ready" class="smart-empty"><span>◈</span><h2>{{ result.message }}</h2><button v-if="!status||['stopped','error'].includes(status.phase)" class="primary" data-advisor-start @click="emit('start')">连接对局</button></div>
     <template v-else>
       <DirectionPanel :advice="battle?.direction" :selected-key="selectedKey" :selected-direction-id="selectedDirectionId" :budget="preferences.searchBudget" @select-comp="(key,id)=>emit('selectComp',key,id)" @budget="preferences={...preferences,searchBudget:$event}"/>

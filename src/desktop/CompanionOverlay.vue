@@ -18,7 +18,7 @@ const card=computed(()=>active.value?model.value.card(active.value):null);
 const info=computed(()=>!model.value.complete?'等待全场持牌数据':!model.value.level?'等待等级数据':'S18 PBE 牌池参数 · 理论刷新费');
 const gold=(value:number|null)=>value===null?'不可达':`${Number(value.toFixed(1))}`;
 function reveal(id:string,event:Event){hover.value=id;const el=event.currentTarget as HTMLElement;anchor.value=Math.min(352,Math.max(12,el.offsetLeft-45));}
-watch(()=>[props.comp?.key,props.comp?.transitionId,props.state.collapsed],()=>{pinned.value=null;hover.value=null;});
+watch([()=>props.comp?.key,()=>props.comp?.transitionId,()=>props.state.collapsed],()=>{pinned.value=null;hover.value=null;});
 </script>
 <template>
   <section class="companion" data-game-overlay :data-ready="model.complete" :data-collapsed="state.collapsed" :data-locked="state.locked" @keydown.esc="pinned=null;hover=null">
@@ -35,7 +35,7 @@ watch(()=>[props.comp?.key,props.comp?.transitionId,props.state.collapsed],()=>{
     <main v-if="!state.collapsed && (comp||flexible)" class="hud-content">
       <template v-for="row in rows" :key="row.key">
         <nav v-if="row.key==='early' && comp?.transitions?.length" class="hud-routes" aria-label="过渡阵容">
-          <span>过渡</span><button v-for="(t,i) in comp.transitions" :key="t.id" :class="{selected:comp.transitionId===t.id}" :aria-pressed="comp.transitionId===t.id" :title="t.name" :data-transition="t.id" @click="emit('transition',t.id)"><small>0{{ i+1 }}</small>{{ t.name }}</button>
+          <span>过渡</span><button v-for="(t,i) in comp.transitions" :key="t.id" :class="{selected:comp.transitionId===t.id}" :aria-pressed="comp.transitionId===t.id" :title="t.name+(t.heldCount===undefined?'':' · 已持 '+t.heldCount+'/'+t.units.length)" :data-transition="t.id" @click="emit('transition',t.id)"><small>0{{ i+1 }}</small>{{ t.name }}</button>
           <button class="route-off" :class="{selected:!route}" title="仅高亮成型阵容" aria-label="不选择过渡阵容" @click="emit('transition',null)">−</button>
         </nav>
         <nav v-if="row.key==='early' && flexible" class="hud-routes" aria-label="前期过渡"><span>过渡</span><button v-for="(b,i) in holds?.boards" :key="b.id" :class="{selected:focused===b.id}" :aria-pressed="focused===b.id" :title="b.units.map(id=>model.card(id).name).join(' / ')" :data-early-choice="b.id" @click="emit('focus',focused===b.id?null:b.id)"><small>0{{ i+1 }}</small>{{ b.units.length }}人口 · 已齐 {{ b.held.length }}</button></nav>

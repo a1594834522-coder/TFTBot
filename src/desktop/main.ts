@@ -11,7 +11,8 @@ import { requireCurrentSeason } from '../game/current-season';
 import { createNativeReader } from './native-reader';
 import { createLiveMonitor } from './live-monitor';
 import { resolveSelectedComp, highlightedCompUnits } from '../game/selected-comp';
-import {createCompAdvisor} from '../game/comp-advisor';
+import {createCompAdvisor,advisorInput} from '../game/comp-advisor';
+import {withMainlineTransitions} from '../game/mainline-transitions';
 import {metatftComps} from '../game/comps-sources';
 import {earlyStages} from '../game/metatft-early';
 import {dataset} from '../game/tft-data';
@@ -56,11 +57,17 @@ async function start() {
     advisorLobby=lobby;
     return advisor.evaluate(status,advisorPreferences.items,Date.now(),advisorPreferences.stage,advisorPreferences.boardId);
   }
+  function refreshTransitions(status:ReturnType<typeof reader.snapshot>){
+    const next=withMainlineTransitions(selectedComp,advisorInput(status,advisorPreferences.items));
+    if(JSON.stringify(next)===JSON.stringify(selectedComp))return;
+    selectedComp=next;
+    for(const target of [window,overlayWindow,augmentWindow])if(target&&!target.isDestroyed())target.webContents.send('desktop:comp:update',selectedComp);
+  }
   const nativeSmoke = process.argv.includes('--native-smoke');
   const monitor = process.env.TFTBOT_MONITOR_DIR && !smoke ? createLiveMonitor(path.resolve(process.env.TFTBOT_MONITOR_DIR)) : null;
   const battles=createBattleService(value=>{for(const target of [window,overlayWindow,augmentWindow])if(target&&!target.isDestroyed())target.webContents.send('desktop:battle:update',value);syncAugmentLayer(reader.snapshot());monitor?.note('battle-forecast',value);});
-  const reader = createNativeReader(status => { advice(status);battles.update(status,advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp); for (const target of [window, overlayWindow, augmentWindow]) if (target && !target.isDestroyed()) target.webContents.send('desktop:reader:update', status); syncAugmentLayer(status); monitor?.status(status); }, { onNativeLog: message=>monitor?.note('native-overlay',message), onPacket: (payload, accepted) => monitor?.packet(payload,accepted), cacheRoot: path.join(path.dirname(app.getPath('exe')), 'resources', 'tftbot-native'), ...(nativeSmoke ? { testMode: true, channel: process.env.TFTBOT_TEST_CHANNEL } : {}) });
-  const battleFreshnessTimer=setInterval(()=>battles.update(reader.snapshot(),advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp),1000);
+  const reader = createNativeReader(status => { advice(status);refreshTransitions(status);battles.update(status,advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp); for (const target of [window, overlayWindow, augmentWindow]) if (target && !target.isDestroyed()) target.webContents.send('desktop:reader:update', status); syncAugmentLayer(status); monitor?.status(status); }, { onNativeLog: message=>monitor?.note('native-overlay',message), onPacket: (payload, accepted) => monitor?.packet(payload,accepted), cacheRoot: path.join(path.dirname(app.getPath('exe')), 'resources', 'tftbot-native'), ...(nativeSmoke ? { testMode: true, channel: process.env.TFTBOT_TEST_CHANNEL } : {}) });
+  const battleFreshnessTimer=setInterval(()=>{const status=reader.snapshot();refreshTransitions(status);battles.update(status,advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp);},1000);
   let capturedLiveView = false;
   const monitorTimer = monitor ? setInterval(async () => {
     monitor.status(reader.snapshot(),true);
@@ -137,8 +144,9 @@ async function start() {
   const storage = createFileStorage(path.join(app.getPath('userData'), 'preferences.json'));
   if(process.argv.includes('--clear-selection'))await storage.removeItem('tftbot:desktop:selected-comp');
   try { selectedComp = resolveSelectedComp(await storage.getItem('tftbot:desktop:selected-comp')); } catch { /* stale season selection */ }
-  try {const saved=JSON.parse(await storage.getItem('tftbot:desktop:selected-transition'));if(selectedComp && saved?.key===selectedComp.key)selectedComp=resolveSelectedComp(selectedComp.key,saved.id);}catch{}
   try {const saved=JSON.parse(await storage.getItem('tftbot:desktop:selected-direction'));if(selectedComp&&saved?.key===selectedComp.key)selectedComp=applyDirectionSelection(selectedComp,saved.id);}catch{}
+  try {const saved=JSON.parse(await storage.getItem('tftbot:desktop:selected-transition'));if(selectedComp&&saved?.key===selectedComp.key)selectedComp=withMainlineTransitions(selectedComp,advisorInput(reader.snapshot()),saved.id??null);}catch{}
+  selectedComp=withMainlineTransitions(selectedComp,advisorInput(reader.snapshot()));
   const publishSelectedComp=()=>{battles.update(reader.snapshot(),advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp);if(overlayWindow&&!overlayWindow.isDestroyed()&&!collapsed)overlayWindow.setSize(584,selectedComp?248:192);for(const target of [window,overlayWindow,augmentWindow])if(target && !target.isDestroyed())target.webContents.send('desktop:comp:update',selectedComp);syncAugmentLayer(reader.snapshot());};
   ipcMain.handle('desktop:advisor:get',event=>{trusted(event);return advisorPreferences;});
   ipcMain.handle('desktop:advisor:configure',(event,value:AdvisorPreferences)=>{
@@ -153,7 +161,7 @@ async function start() {
     trusted(event);
     if(key!==null && (typeof key!=='string' || key.length>256))throw new Error('阵容参数无效');
     if(directionId!==undefined&&(typeof directionId!=='string'||directionId.length>600))throw new Error('核心变体参数无效');
-    const next=applyDirectionSelection(resolveSelectedComp(key,directionId?null:undefined),directionId);
+    const next=withMainlineTransitions(applyDirectionSelection(resolveSelectedComp(key,null),directionId),advisorInput(reader.snapshot(),advisorPreferences.items));
     await storage.setItem('tftbot:desktop:selected-comp',next?.key??'');selectedComp=next;
     await storage.setItem('tftbot:desktop:selected-transition',JSON.stringify({key:next?.key,id:next?.transitionId}));
     await storage.setItem('tftbot:desktop:selected-direction',JSON.stringify({key:next?.key,id:next?.directionId}));
@@ -165,7 +173,7 @@ async function start() {
   ipcMain.handle('desktop:comp:transition',async(event,id)=>{
     trusted(event);if(id!==null && (typeof id!=='string'||id.length>100))throw new Error('过渡路线参数无效');
     if(!selectedComp)throw new Error('请先在软件中选择阵容');
-    const next=applyDirectionSelection(resolveSelectedComp(selectedComp.key,id),selectedComp.directionId);
+    const next=withMainlineTransitions(applyDirectionSelection(resolveSelectedComp(selectedComp.key,null),selectedComp.directionId),advisorInput(reader.snapshot(),advisorPreferences.items),id);
     await storage.setItem('tftbot:desktop:selected-transition',JSON.stringify({key:next!.key,id:next!.transitionId}));
     selectedComp=next;publishSelectedComp();monitor?.note('selected-transition',id);return selectedComp;
   });
@@ -350,6 +358,23 @@ async function start() {
           for(let i=0;i<40;i++){const d=battles.snapshot().direction;if(d?.ready&&!d.updating&&d.mode==='selected'&&d.focusId===selectedComp.directionId)break;await new Promise(resolve=>setTimeout(resolve,100));}
           const selectedAdvice=battles.snapshot().direction;
           if(!selectedAdvice?.ready||selectedAdvice.updating||selectedAdvice.mode!=='selected'||selectedAdvice.focusId!==selectedComp.directionId)throw new Error('手选阵容未进入后台规划');
+          if(selectedComp.transitionId)throw new Error('选择主线时不应自动勾选过渡');
+          if(!await window!.webContents.executeJavaScript(`!!document.querySelector('[data-mainline-transition]')`))await window!.webContents.executeJavaScript(`document.querySelector('[data-toggle-transitions]')?.click()`);
+          const chosenTransition=await window!.webContents.executeJavaScript(`document.querySelector('[data-mainline-transition]')?.dataset.mainlineTransition`);
+          if(!chosenTransition)throw new Error('已选主线缺少桌面过渡选择');
+          await window!.webContents.executeJavaScript(`document.querySelector('[data-mainline-transition]').click()`);
+          for(let i=0;i<30&&selectedComp?.transitionId!==chosenTransition;i++)await new Promise(resolve=>setTimeout(resolve,50));
+          const hudTransition=await overlayWindow!.webContents.executeJavaScript(`document.querySelector('[data-transition][aria-pressed="true"]')?.dataset.transition`);
+          if(selectedComp?.transitionId!==chosenTransition||hudTransition!==chosenTransition)throw new Error('桌面选择过渡未同步局内浮窗');
+          const otherTransition=await overlayWindow!.webContents.executeJavaScript(`Array.from(document.querySelectorAll('[data-transition]')).find(e=>e.dataset.transition!==${JSON.stringify(chosenTransition)})?.dataset.transition`);
+          if(!otherTransition)throw new Error('缺少可切换的第二条过渡');
+          await overlayWindow!.webContents.executeJavaScript(`Array.from(document.querySelectorAll('[data-transition]')).find(e=>e.dataset.transition===${JSON.stringify(otherTransition)}).click()`);
+          for(let i=0;i<30&&selectedComp?.transitionId!==otherTransition;i++)await new Promise(resolve=>setTimeout(resolve,50));
+          const desktopTransition=await window!.webContents.executeJavaScript(`document.querySelector('[data-mainline-transition][aria-pressed="true"]')?.dataset.mainlineTransition`);
+          if(desktopTransition!==otherTransition||selectedComp?.transitionId!==otherTransition)throw new Error('局内切换过渡未同步桌面');
+          const transitionHudIds=await overlayWindow!.webContents.executeJavaScript(`Array.from(new Set(Array.from(document.querySelectorAll('[data-overlay-unit]')).map(e=>e.dataset.overlayUnit))).sort()`);
+          if(JSON.stringify(transitionHudIds)!==JSON.stringify(highlightedCompUnits(selectedComp).slice().sort()))throw new Error('主线与过渡的浮窗名单不一致');
+          console.log('MAINLINE_TRANSITION_SYNC_PASS');
           await window!.webContents.executeJavaScript(`window.tftDesktop.selectComp(null)`);
           for(let i=0;i<40;i++){const d=battles.snapshot().direction;if(d?.ready&&!d.updating&&d.mode!=='selected')break;await new Promise(resolve=>setTimeout(resolve,100));}
           const early=await overlayWindow!.webContents.executeJavaScript(`document.querySelector('.hud-header strong')?.textContent==='灵活留牌'&&document.querySelectorAll('[data-early-choice]').length>0`);

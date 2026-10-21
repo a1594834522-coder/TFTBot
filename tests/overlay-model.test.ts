@@ -18,9 +18,12 @@ it('明细不完整和未知单位时不显示精确剩余数或金币',()=>{
   s.tracker!.snapshot!.players[0].coverage='full';s.tracker!.snapshot!.players[0].champions[0].name='unknown';
   expect(overlayModel(s).complete).toBe(false);expect(overlayModel(null).complete).toBe(false);
 });
-it('默认浮窗只有选定阵容和过渡卡，不重复商店，不常驻金币说明',async()=>{
+it('默认浮窗只有主线，主动选择后才增加过渡，不重复商店或常驻金币说明',async()=>{
   const comp=resolveSelectedComp('metatft:metatft:426:426021')!;
   const html=await renderToString(createSSRApp({render:()=>h(CompanionOverlay,{comp,status:status(),state:{visible:true,collapsed:false,locked:false}})}));
-  expect((html.match(/data-overlay-unit=/g)??[]).length).toBe(comp.units.length+comp.transitions![0].units.length);
+  expect((html.match(/data-overlay-unit=/g)??[]).length).toBe(comp.units.length);
+  const chosen=resolveSelectedComp(comp.key,comp.transitions![0].id)!;
+  const selectedHtml=await renderToString(createSSRApp({render:()=>h(CompanionOverlay,{comp:chosen,status:status(),state:{visible:true,collapsed:false,locked:false}})}));
+  expect((selectedHtml.match(/data-overlay-unit=/g)??[]).length).toBe(chosen.units.length+chosen.transitions![0].units.length);
   expect(html).not.toContain('data-mini-shop');expect(html).not.toContain('data-overlay-budget');expect(html).not.toContain('<footer');
 });

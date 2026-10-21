@@ -12,6 +12,7 @@ it('选定当前 MetaTFT 阵容，去重共享形态并拒绝过期键',()=>{
   const c=allComps({set:CURRENT_SET,source:'metatft'})[0];
   const selected=resolveSelectedComp(`${sourceOfComp(c)}:${c.id}`)!;
   expect(selected.name).toBe(c.name);expect(selected.units.length).toBeGreaterThan(0);expect(new Set(selected.units).size).toBe(selected.units.length);
+  expect(selected.transitionId).toBeNull();expect(highlightedCompUnits(selected)).toEqual(selected.units);
   expect(resolveSelectedComp(null)).toBeNull();expect(()=>resolveSelectedComp('metatft:old-season')).toThrow();
 });
 it('选用真实核心变体，不会退回遗漏该主C的默认英雄名单',()=>{

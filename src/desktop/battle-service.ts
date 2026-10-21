@@ -58,7 +58,7 @@ export function createBattleService(publish:(forecast:BattleForecast)=>void){
       shopping=shoppingInput(status);
       strategy=strategicInput(status,shopping);
       direction=directionInput(status,manualItems);
-      direction.intent=intent;
+      direction.intent=intent?{key:intent.key,directionId:intent.directionId,units:intent.units?[...intent.units]:undefined}:null;
       searchBudget=budget;
       const nextKey=next||direction.assets.localComplete?JSON.stringify([next,shopping,strategy,direction,searchBudget]):'';
       if(nextKey===key)return;

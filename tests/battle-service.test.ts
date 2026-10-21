@@ -20,6 +20,12 @@ function reply(child:any){
 beforeEach(()=>{vi.useFakeTimers();state.children=[];});
 afterEach(()=>{vi.clearAllTimers();vi.useRealTimers();});
 describe('latest-state decision service',()=>{
+  it('does not reschedule inference for presentation-only mainline transition updates',()=>{
+    const status=advisorDemo('ap'),service=createBattleService(()=>{}),intent={key:'metatft:demo',units:['DA_18_Kayle'],directionId:'core',transitions:[{heldCount:0}]} as any;
+    service.update(status,[],null,intent);vi.advanceTimersByTime(120);const child=state.children[0];
+    expect(child.postMessage.mock.calls[0][0].direction.intent).toEqual({key:intent.key,units:intent.units,directionId:'core'});
+    service.update(status,[],null,{...intent,transitions:[{heldCount:3}]});vi.advanceTimersByTime(120);expect(child.postMessage).toHaveBeenCalledTimes(1);service.dispose();
+  });
   it('keeps planning visible during updates while invalidating automatic shop highlights',()=>{
     const status=advisorDemo('ap'),service=createBattleService(()=>{});service.update(status);vi.advanceTimersByTime(120);reply(state.children[0]);
     const before=service.snapshot().direction;if(!before?.ready)throw Error();

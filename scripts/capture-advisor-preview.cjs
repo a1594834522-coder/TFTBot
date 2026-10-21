@@ -50,6 +50,28 @@ app.whenReady().then(async()=>{
   if(!report.selected.units)throw Error('Preview selection did not reach compact HUD');
   if(report.selected.automaticEarly)throw Error('Selecting a core variant silently highlighted an unchosen early transition');
   await wait(`document.querySelector('[data-direction-advisor]')?.dataset.mode==='selected'`);
+  await wait(`!!document.querySelector('[data-mainline-transitions]')`);
+  if(!await js(`!!document.querySelector('[data-mainline-transition]')`))await js(`document.querySelector('[data-toggle-transitions]').click()`);
+  await wait(`document.querySelectorAll('[data-mainline-transition]').length===3`);
+  const chosenTransition=await js(`document.querySelector('[data-mainline-transition]').dataset.mainlineTransition`);
+  await js(`document.querySelector('[data-mainline-transition]').click()`);
+  await wait(`document.querySelector('[data-transition][aria-pressed="true"]')?.dataset.transition===${JSON.stringify(chosenTransition)}`);
+  const anotherTransition=await js(`Array.from(document.querySelectorAll('[data-transition]')).find(e=>e.dataset.transition!==${JSON.stringify(chosenTransition)}).dataset.transition`);
+  await js(`Array.from(document.querySelectorAll('[data-transition]')).find(e=>e.dataset.transition===${JSON.stringify(anotherTransition)}).click()`);
+  await wait(`document.querySelector('[data-mainline-transition][aria-pressed="true"]')?.dataset.mainlineTransition===${JSON.stringify(anotherTransition)}`);
+  await js(`document.querySelector('[data-mainline-transitions]').scrollIntoView({block:'center'})`);
+  await js(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+  await new Promise(resolve=>setTimeout(resolve,100));
+  report.transitionPanel=await js(`({expanded:document.querySelector('[data-toggle-transitions]')?.getAttribute('aria-expanded'),choices:document.querySelectorAll('[data-mainline-transition]').length,chosen:document.querySelector('[data-mainline-transition][aria-pressed="true"]')?.dataset.mainlineTransition})`);
+  if(report.transitionPanel.expanded!=='true'||report.transitionPanel.choices!==3||report.transitionPanel.chosen!==anotherTransition)throw Error('Mainline transition choice was lost after rendering');
+  await fs.writeFile(path.join(out,'mainline-transitions.png'),(await win.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+  await js(`document.querySelector('[data-overlay-unit]').click()`);
+  await wait(`!!document.querySelector('[data-overlay-budget]')`);
+  await new Promise(resolve=>setTimeout(resolve,1300));
+  if(!await js(`!!document.querySelector('[data-overlay-budget]')`))throw Error('Live refresh closed the pinned hero detail');
+  await js(`document.querySelector('[data-clear-transition]').click()`);
+  await wait(`!document.querySelector('[data-transition][aria-pressed="true"]')`);
+  report.transitionSync={desktopToHud:true,hudToDesktop:true,pinnedDetailSurvivesRefresh:true};
   if(await js(`!!document.querySelector('[data-late-variants]')`)){
    await js(`document.querySelector('[data-late-variants]').scrollIntoView({block:'center'})`);
    await fs.writeFile(path.join(out,'mainline-late-variants.png'),(await win.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());

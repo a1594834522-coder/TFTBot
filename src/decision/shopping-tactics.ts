@@ -32,6 +32,7 @@ export interface TacticalOptions {
   /** Raw input context, before the model filters non-modeled entities. */
   purchaseContext?:string;
   observedLineups?:ObservedLineupOptions;
+  scoreCache?:TacticalScoreCache;
 }
 export type ShoppingTactics={ready:false;reason:string}|{
   ready:true;choices:TacticalChoice[];baseline:number|null;coverage:number;
@@ -42,6 +43,23 @@ export type ShoppingTactics={ready:false;reason:string}|{
   deploymentSearch?:{exactMaxSwaps:number;observedMaxSwaps:number;templates:number;observedBoards:number;limited:boolean};
 };
 export type BatchPredictor=(pairs:Array<{player:BattleBoard;opponent:BattleBoard}>)=>Array<{winRate:number}>;
+/** Scalar scores only, scoped to one immutable predictor and the EXACT observed
+ * opponent boards/weights. Legal deployment and source checks still run anew. */
+export class TacticalScoreCache {
+  private scopes=new WeakMap<BatchPredictor,Map<string,Map<string,number>>>();
+  private supported=new WeakMap<(board:BattleBoard)=>boolean,Map<string,boolean>>();
+  supports(key:string,board:BattleBoard,check:((board:BattleBoard)=>boolean)|undefined){
+    if(!check)return true;
+    let values=this.supported.get(check);if(!values){values=new Map();this.supported.set(check,values);}
+    let value=values.get(key);if(value===undefined){value=check(board);values.set(key,value);if(values.size>16384)values.delete(values.keys().next().value!);}return value;
+  }
+  bind(request:BattleRequest,predict:BatchPredictor){
+    let contexts=this.scopes.get(predict);if(!contexts){contexts=new Map();this.scopes.set(predict,contexts);}
+    const context=JSON.stringify(request.targets.map(t=>[t.id,t.weight,t.board?battleBoardKey(t.board):null]));
+    let values=contexts.get(context);if(!values){values=new Map();contexts.set(context,values);if(contexts.size>4)contexts.delete(contexts.keys().next().value!);}
+    return {get:(key:string)=>values.get(key),remember:(key:string,value:number)=>{values.delete(key);values.set(key,value);if(values.size>16384)values.delete(values.keys().next().value!);}};
+  }
+}
 export function mainlineTacticalReference(advice:DirectionAdvice|undefined):TacticalReference|undefined{
   if(!advice?.ready||advice.updating||advice.mode!=='selected'||!['roll-down','late'].includes(advice.milestone))return undefined;
   const row=advice.rows.find(r=>r.id===advice.focusId);
@@ -77,18 +95,20 @@ export async function shoppingTactics(state:ShopState,rules:TradingRules,request
       if(options.acceptsLineup&&!options.acceptsLineup(candidate))return false;
       if(candidate.units.some(u=>u.equipmentKnown===false)){incompleteEquipment=true;return false;}
       let valid=supported.get(candidate.key);
-      if(valid===undefined){valid=options.supportsBoard?.(candidate.board)??true;supported.set(candidate.key,valid);if(!valid)unsupported++;}
+      if(valid===undefined){valid=options.scoreCache?options.scoreCache.supports(candidate.key,candidate.board,options.supportsBoard):options.supportsBoard?.(candidate.board)??true;supported.set(candidate.key,valid);if(!valid)unsupported++;}
       if(valid){candidates.set(candidate.key,candidate);if(candidate.observedSources?.length)observedKeys.add(candidate.key);}return valid;
     });
     byPlan.push({plan,lineups});await options.yield?.();
   }
+  if(options.cancelled?.())return {ready:false,reason:'局面已变化'};
   const baselineKey=battleBoardKey(request.local);
   const boards=new Map<string,BattleBoard>([...candidates].map(([key,c])=>[key,c.board]));boards.set(baselineKey,request.local);
   const targets=request.targets.filter(t=>t.weight>0&&t.board);
   const coverage=targets.reduce((n,t)=>n+t.weight,0);
   if(!coverage)return {ready:false,reason:'等待对手场上棋盘'};
-  const scores=new Map<string,number>();
-  const jobs=[...boards].flatMap(([key,board])=>targets.map(target=>({key,weight:target.weight,player:board,opponent:target.board!})));
+  const scores=new Map<string,number>(),cached=options.scoreCache?.bind(request,predict);
+  const pending=[...boards].filter(([key])=>{const value=cached?.get(key);if(value===undefined)return true;scores.set(key,value);return false;});
+  const jobs=pending.flatMap(([key,board])=>targets.map(target=>({key,weight:target.weight,player:board,opponent:target.board!})));
   for(let offset=0;offset<jobs.length;offset+=128){
     if(options.cancelled?.())return {ready:false,reason:'局面已变化'};
     const batch=jobs.slice(offset,offset+128),results=predict(batch);
@@ -96,6 +116,8 @@ export async function shoppingTactics(state:ShopState,rules:TradingRules,request
     batch.forEach((job,i)=>scores.set(job.key,(scores.get(job.key)??0)+job.weight*results[i].winRate));
     await options.yield?.();
   }
+  if(options.cancelled?.())return {ready:false,reason:'局面已变化'};
+  for(const [key]of pending)cached?.remember(key,scores.get(key)!);
   const originalKeys=new Set(state.units.filter(u=>u.area==='board').map(u=>u.key));
   const changes=(lineup:LineupCandidate)=>{
     const selected=new Set(lineup.units.map(u=>u.key));

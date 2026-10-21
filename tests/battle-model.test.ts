@@ -76,4 +76,36 @@ describe('MetaTFT original model and encoding',()=>{
     expect(form.inputs.player_unit_0_unit).toEqual(base.inputs.player_unit_0_unit);
     expect(form.traitCounts.Elderwood).toBe(1);expect(base.traitCounts.Elderwood).toBeUndefined();
   });
+  it('reuses ordered whole-pair results including batch duplicates, while preserving original outputs and caller isolation',()=>{
+    const a={...board(3,['DA_InfinityEdge','DA_LastWhisper']),augments:[Object.keys(lookup.augment_lookup)[0]],charms:Object.keys(lookup.charm_encodings).slice(0,1)},b=board(2,['DA_WarmogsArmor']);
+    const pairs=[{player:a,opponent:b},{player:b,opponent:a},{player:a,opponent:b}],before=runtime.cacheMetrics(),full=runtime.predictBatch(pairs),cached=runtime.predictCachedBatch(pairs);
+    cached.forEach((p,i)=>expect(p.winRate).toBeCloseTo(full[i].winRate,5));
+    expect(runtime.cacheMetrics().inferredPairs-before.inferredPairs).toBe(2);
+    const count=runtime.cacheMetrics().inferredPairs,original=cached[0].winRate,originalStrength=cached[0].strength[0];cached[0].winRate=0;cached[0].strength[0]=-999;
+    const again=runtime.predictCachedBatch([{player:{...a,units:[...a.units].reverse().map(u=>({...u,items:[...u.items].reverse()}))},opponent:b}]);
+    expect(again[0].winRate).toBe(original);expect(again[0].strength[0]).toBe(originalStrength);expect(runtime.cacheMetrics().inferredPairs).toBe(count);
+    expect(()=>runtime.predictCachedBatch([{player:board(1,['NOT_AN_ITEM']),opponent:b}])).toThrow(/Unsupported/);
+  });
+  it('keeps current batch data pinned even when unit, board and pair caches evict most of that batch',async()=>{
+    const before=runtime.tensorCount(),small=await loadBattleModel(path.resolve('data/metatft-model'),{unitCacheLimit:2,boardCacheLimit:2,pairCacheLimit:1});
+    try{
+      small.predictCachedBatch([{player:board(1),opponent:board(2)}]);
+      const pairs=[{player:board(1),opponent:board(2)},{player:board(3,['DA_InfinityEdge']),opponent:board(2)},{player:board(1),opponent:board(3,['DA_WarmogsArmor'])}];
+      const full=small.predictBatch(pairs),tensors=small.tensorCount();
+      for(let n=0;n<4;n++){
+        const actual=small.predictCachedBatch(pairs);actual.forEach((p,i)=>expect(p.winRate).toBeCloseTo(full[i].winRate,5));
+        expect(small.cacheMetrics().unitCache).toBeLessThanOrEqual(2);expect(small.cacheMetrics().boardCache).toBeLessThanOrEqual(2);expect(small.cacheMetrics().pairCache).toBeLessThanOrEqual(1);expect(small.tensorCount()).toBe(tensors);
+      }
+    }finally{small.dispose();small.dispose();expect(small.cacheMetrics().pairCache).toBe(0);}
+    expect(runtime.tensorCount()).toBe(before);
+  });
+  it('separates form-specific results and rejects invalid cache settings before loading tensors',async()=>{
+    const before=runtime.tensorCount();
+    for(const options of [{pairCacheLimit:-1},{boardCacheLimit:0},{unitCacheLimit:1.5}])await expect(loadBattleModel(path.resolve('data/metatft-model'),options)).rejects.toThrow(/cache limits/);
+    expect(runtime.tensorCount()).toBe(before);
+    const partner=Object.keys(lookup.unit_traits).find(id=>!id.includes('Lux')&&lookup.unit_encodings[id]!==undefined&&lookup.unit_traits[id].includes('Elderwood'))!;
+    const base={units:[{id:'DA_Lux18_Base',star:2,items:[]},{id:partner,star:2,items:[]}],augments:[]},form={...base,units:[{...base.units[0],id:'DA_18_Lux_Elderwood'},base.units[1]]},pairs=[{player:base,opponent:board(2)},{player:form,opponent:board(2)}];
+    const full=runtime.predictBatch(pairs),cached=runtime.predictCachedBatch(pairs);cached.forEach((p,i)=>expect(p.winRate).toBeCloseTo(full[i].winRate,5));
+    expect(runtime.predictCachedBatch(pairs)).toEqual(cached);
+  });
 });

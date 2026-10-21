@@ -20,6 +20,13 @@ function fixture(){
 }
 const choose=(n:number,k:number)=>{let r=1;for(let i=1;i<=k;i++)r=r*(n-i+1)/i;return r;};
 describe('current-shop core purchases and their full future distribution',()=>{
+  it('reuses scalar scores and model-support checks without changing any purchase distribution or physical guards',async()=>{
+    const {advice,input,request,model}=fixture();let calls=0,checks=0;
+    const predict:typeof model=pairs=>{calls+=pairs.length;return model(pairs);},supports=()=>{checks++;return true;};
+    const reference=await currentPursuit(advice,input,rules,request,predict,{scoreReuse:false,supportsBoard:supports}),oldCalls=calls,oldChecks=checks;
+    calls=0;checks=0;const cached=await currentPursuit(advice,input,rules,request,predict,{supportsBoard:supports});
+    expect(cached).toEqual(reference);expect(calls).toBeLessThan(oldCalls);expect(checks).toBeLessThan(oldChecks);
+  });
   it('compares every legal current subset against skip, with an independent physical-card oracle and real opportunity cost',async()=>{
     const {advice,input,request,model}=fixture(),before=JSON.stringify({advice,input,request});
     const r=await currentPursuit(advice,input,rules,request,model);if(!r.ready)throw Error(r.reason);

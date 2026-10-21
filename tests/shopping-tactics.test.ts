@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {shoppingTactics,mainlineTacticalReference} from '../src/decision/shopping-tactics';
+import {shoppingTactics,mainlineTacticalReference,TacticalScoreCache} from '../src/decision/shopping-tactics';
 import {lineupCandidates} from '../src/decision/lineup-search';
 import type {TradingRules,ShopState,OwnedUnit} from '../src/decision/shop-ledger';
 import type {BattleRequest} from '../src/game/battle-forecast';
@@ -10,6 +10,26 @@ const state=():ShopState=>({gold:30,level:1,boardCapacity:1,units:[unit('a'),uni
 const request=():BattleRequest=>({round:'2-2',weightSource:'native',local:{units:[{id:'A',star:1,items:[]}],augments:[]},localGaps:[],targets:[{id:'opp',name:'对手',weight:1,board:{units:[{id:'B',star:1,items:[]}],augments:[]},gaps:[]}]});
 const predict=(pairs:Parameters<Parameters<typeof shoppingTactics>[3]>[0])=>pairs.map(({player})=>({winRate:player.units.some(u=>u.id==='A'&&u.star>=2)?.8:player.units.some(u=>u.id==='B')?.9:.3}));
 describe('current-shop constrained tactical decisions',()=>{
+  it('reuses scores only under the same predictor and exact opponent boards and weights',async()=>{
+    const scoreCache=new TacticalScoreCache();let calls=0;
+    const model:Parameters<typeof shoppingTactics>[3]=pairs=>{calls+=pairs.length;return pairs.map(p=>({winRate:(p.player.units.some(u=>u.star===2)?.6:.2)+(p.opponent.units[0].star===2?.1:0)}));};
+    const s=state(),r=request(),first=await shoppingTactics(s,rules,r,model,{scoreCache}),n=calls;
+    expect(await shoppingTactics(s,rules,r,model,{scoreCache})).toEqual(first);expect(calls).toBe(n);
+    const changed=structuredClone(r);changed.targets[0].board!.units[0].star=2;
+    const enemy=await shoppingTactics(s,rules,changed,model,{scoreCache});expect(calls).toBeGreaterThan(n);expect(enemy).toEqual(await shoppingTactics(s,rules,changed,model));
+    changed.targets[0].weight=.75;changed.targets.push({id:'missing',name:'未知',weight:.25,board:null,gaps:[]});
+    const partial=await shoppingTactics(s,rules,changed,model,{scoreCache});expect(partial).toEqual(await shoppingTactics(s,rules,changed,model));if(!partial.ready)throw Error();expect(partial.coverage).toBe(.75);expect(partial.baseline).toBeNull();
+    const other=await shoppingTactics(s,rules,r,pairs=>pairs.map(()=>({winRate:.1})),{scoreCache});if(!other.ready)throw Error();expect(other.choices[0].knownWin).toBe(.1);
+  });
+  it('still checks physical source, equipment and model support when a stronger numeric score is already cached',async()=>{
+    const scoreCache=new TacticalScoreCache(),s=state(),r=request();s.offers=[];s.units[1].id='B';let checks=0;
+    const supports=()=>{checks++;return true;};
+    const first=await shoppingTactics(s,rules,r,predict,{scoreCache,supportsBoard:supports}),n=checks;
+    expect(await shoppingTactics(s,rules,r,predict,{scoreCache,supportsBoard:supports})).toEqual(first);expect(checks).toBe(n);
+    const restricted=await shoppingTactics(s,rules,r,predict,{scoreCache,supportsBoard:supports,acceptsLineup:c=>!c.units.some(u=>u.key==='b')});if(!restricted.ready)throw Error();expect(restricted.choices[0].knownWin).toBe(.3);
+    const unsupported=await shoppingTactics(s,rules,r,predict,{scoreCache,supportsBoard:b=>!b.units.some(u=>u.id==='B')});if(!unsupported.ready)throw Error();expect(unsupported.choices[0].knownWin).toBe(.3);
+    s.units[1].equipmentKnown=false;const incomplete=await shoppingTactics(s,rules,r,predict,{scoreCache,supportsBoard:supports});if(!incomplete.ready)throw Error();expect(incomplete.choices[0].knownWin).toBe(.3);
+  });
   it('exposes the real interest/upgrade tradeoff without inventing an exchange rate',async()=>{
     const result=await shoppingTactics(state(),rules,request(),predict);expect(result.ready).toBe(true);if(!result.ready)return;
     expect(result.baseline).toBe(.3);expect(result.choices).toHaveLength(2);

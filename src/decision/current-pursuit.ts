@@ -2,7 +2,7 @@ import type {BattleRequest} from '../game/battle-forecast';
 import type {DirectionAdvice} from './direction-advisor';
 import type {StrategicInput} from './strategic-input';
 import {enumerateShoppingPlans,materializeAcquisitions,unitCopyCounts,type TradingRules,type ShoppingPlan} from './shop-ledger';
-import {shoppingTactics,type BatchPredictor,type TacticalOptions} from './shopping-tactics';
+import {shoppingTactics,TacticalScoreCache,type BatchPredictor,type TacticalOptions} from './shopping-tactics';
 import {SearchDistributionCache,searchDistribution,type SearchDistribution,type SearchDistributionInput} from './search-distribution';
 import {tacticalLineupTemplates} from './observed-lineups';
 import policy from '../../data/battle-unit-policy.json';
@@ -31,7 +31,7 @@ interface Scenario {path:CurrentPursuitPath;plan:ShoppingPlan;slots:4|5;distribu
  * This is a controlled buy/skip comparison, not an adaptive optimal policy.
  * Combat, completion and saved gold remain separate; no invented exchange rate. */
 export async function currentPursuit(advice:DirectionAdvice,input:StrategicInput,rules:TradingRules,request:BattleRequest,predict:BatchPredictor,
-  options:TacticalOptions&{budget?:number|null;maxStates?:number;maxBoards?:number;trace?:(phase:string,milliseconds:number)=>void}={}):Promise<CurrentPursuit>{
+  options:TacticalOptions&{budget?:number|null;maxStates?:number;maxBoards?:number;scoreReuse?:boolean;trace?:(phase:string,milliseconds:number)=>void}={}):Promise<CurrentPursuit>{
   if(!input.ready)return input;
   const physical=input.state;
   if(!advice.ready||advice.updating||advice.mode!=='selected')return {ready:false,reason:'选择主线后比较当前留牌'};
@@ -59,7 +59,7 @@ export async function currentPursuit(advice:DirectionAdvice,input:StrategicInput
     return targets.every(t=>(count[t.id]??0)-(owned[t.id]??0)<=t.needed);
   }).sort((a,b)=>a.spent-b.spent||a.buySlots.join('.').localeCompare(b.buySlots.join('.')));
   if(!plans.some(p=>p.buySlots.length))return {ready:false,reason:'当前预算或实体规则下无法保留核心牌'};
-  const templates=tacticalLineupTemplates(advice,input.state.boardCapacity),deployment={...options,observedLineups:options.observedLineups??(templates.length?{templates}:undefined)};
+  const templates=tacticalLineupTemplates(advice,input.state.boardCapacity),deployment={...options,scoreCache:options.scoreCache??(options.scoreReuse===false?undefined:new TacticalScoreCache()),observedLineups:options.observedLineups??(templates.length?{templates}:undefined)};
   const original=await shoppingTactics({...input.state,offers:[]},rules,request,predict,deployment);
   if(!original.ready)return original;
   const coverage=original.coverage,baseline=Math.max(...original.choices.map(c=>c.knownWin)),missing=1-coverage;
@@ -75,7 +75,7 @@ export async function currentPursuit(advice:DirectionAdvice,input:StrategicInput
       const units=reference.entities.map(e=>state.units.find(u=>u.key===e.key&&signature(u)===e.signature));
       if(units.some(u=>!u)||units.length>state.boardCapacity)continue;
       const lineup=materializeLineup(state,units as OwnedUnit[],request.local.augments,request.local.charms,options.auxiliary);
-      if(options.acceptsLineup&&!options.acceptsLineup(lineup)||options.supportsBoard&&!options.supportsBoard(lineup.board))continue;
+      if(options.acceptsLineup&&!options.acceptsLineup(lineup)||!(deployment.scoreCache?deployment.scoreCache.supports(lineup.key,lineup.board,options.supportsBoard):options.supportsBoard?.(lineup.board)??true))continue;
       floor=Math.max(floor??0,reference.win);
     }
     return floor;
@@ -113,7 +113,7 @@ export async function currentPursuit(advice:DirectionAdvice,input:StrategicInput
   }
   // Equal turns across roots and shop scenarios avoid spending all model work on
   // the first option. No root's known mass is renormalized after the quota.
-  const quota=options.maxBoards??192;
+  const quota=options.maxBoards??384;
   if(!Number.isSafeInteger(quota)||quota<0)throw Error('Invalid current-pursuit model limit');
   const fair=scenarios.slice().sort((a,b)=>a.slots-b.slots||paths.indexOf(a.path)-paths.indexOf(b.path));
   for(let rank=0;fair.some(s=>rank<s.landings.length)&&evaluations<quota;rank++)for(const scenario of fair){

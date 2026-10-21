@@ -3,12 +3,13 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {encodeBattleBoard,type BattleBoard,type BattleLookups} from '../game/battle-model-encoding';
-import {createCachedBattleModel} from './cached-battle-model';
+import {battleCacheLimits,createCachedBattleModel,type BattleCacheOptions} from './cached-battle-model';
 import unitPolicy from '../../data/battle-unit-policy.json';
 
 export interface BattlePrediction {winRate:number;strength:number[];modelVersion:string}
 /** Offline runtime. Intended for the decision worker, never the UI or game reader thread. */
-export async function loadBattleModel(directory:string){
+export async function loadBattleModel(directory:string,cacheOptions:BattleCacheOptions={}){
+  battleCacheLimits(cacheOptions);
   const manifest=JSON.parse(await fs.readFile(path.join(directory,'manifest.json'),'utf8'));
   if(manifest.set!==18)throw new Error('Battle model season mismatch');
   const files:Record<string,Buffer>={};
@@ -21,6 +22,9 @@ export async function loadBattleModel(directory:string){
   if(createHash('sha256').update(files['lookups.json']).digest('hex')!==unitPolicy.evidence.lookupSha256)throw Error('Battle unit policy/lookup mismatch');
   const inputLayers=raw.modelTopology?.model_config?.config?.layers?.filter((l:any)=>l.class_name==='InputLayer');
   if(!Array.isArray(inputLayers)||inputLayers.length!==2*(lookup.max_num_units*5+3))throw new Error('Model/lookup input contract mismatch');
+  const bindings=raw.modelTopology.model_config.config.input_layers;
+  if(!Array.isArray(bindings)||bindings.length!==inputLayers.length||bindings.some((b:any)=>!Array.isArray(b)||typeof b[0]!=='string'))throw Error('Invalid model input bindings');
+  const inputNames=bindings.map((b:any)=>b[0] as string);
   await tf.setBackend('cpu');await tf.ready();
   const specs=raw.weightsManifest.flatMap((group:any)=>group.weights);
   if(raw.weightsManifest.length!==1||raw.weightsManifest[0].paths.join()!=='group1-shard1of1.bin')throw new Error('Unsupported model shard layout');
@@ -33,7 +37,7 @@ export async function loadBattleModel(directory:string){
   finally{tf.engine().endScope();}
   if(model.inputs.length!==inputLayers.length||model.outputs.length!==5){model.dispose();throw new Error('Unexpected battle model outputs');}
   const version=manifest.files['model.json'].sha256.slice(0,12)+':'+manifest.files['lookups.json'].sha256.slice(0,12);
-  const cached=createCachedBattleModel(model,lookup);
+  const cached=createCachedBattleModel(model,lookup,cacheOptions);
   function predictBatch(pairs:Array<{player:BattleBoard;opponent:BattleBoard}>):BattlePrediction[]{
     if(!pairs.length)return [];
     if(pairs.length>256)throw new Error('Battle inference batch limit exceeded');
@@ -43,8 +47,10 @@ export async function loadBattleModel(directory:string){
       return {...a.inputs,...b.inputs};
     });
     return tf.tidy(()=>{
-      const tensors=model.inputs.map(input=>{
-        const name=input.name.replace(/:\d+$/,''),rows=features.map(f=>f[name]);
+      const tensors=model.inputs.map((input,index)=>{
+        // TensorFlow may append a global suffix when a second independent
+        // runtime is loaded. Bind by the checksummed source graph's input order.
+        const name=inputNames[index],rows=features.map(f=>f[name]);
         const width=input.shape[1];
         if(width===null||rows.some(r=>!r||r.length!==width))throw new Error('Model feature shape mismatch: '+name);
         return tf.tensor2d(rows,[pairs.length,width]);

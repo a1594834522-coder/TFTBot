@@ -5,7 +5,6 @@ import type { ReaderStatus } from '../recognition/status';
 import { overlayModel } from '../game/overlay-model';
 import type {EarlyHoldAdvice} from '../game/comp-advisor';
 import type {BattleForecast} from '../game/battle-forecast';
-import WinChanceBadge from './WinChanceBadge.vue';
 const props=defineProps<{comp:SelectedComp|null;status:ReaderStatus|null;state:{collapsed:boolean;locked:boolean;visible:boolean};holds?:EarlyHoldAdvice;focused?:string|null;battle?:BattleForecast|null}>();
 const emit=defineEmits<{action:[action:'collapse'|'expand'|'lock'|'unlock'|'hide'];transition:[id:string|null];focus:[id:string|null]}>();
 const model=computed(()=>overlayModel(props.status));
@@ -26,7 +25,6 @@ watch([()=>props.comp?.key,()=>props.comp?.transitionId,()=>props.state.collapse
     <header class="hud-header">
       <span class="hud-mark" aria-hidden="true">◈</span><strong>{{ comp?.name??(flexible?'灵活留牌':'记牌器') }}</strong>
       <i class="hud-status" :class="{live:model.complete}" :title="info" :aria-label="info"/>
-      <WinChanceBadge :forecast="battle" :collapsed="state.collapsed" :style="{'--win-detail-height':comp?'194px':'138px'}"/>
       <div class="hud-actions">
         <button :aria-label="state.collapsed?'展开':'收起'" :title="state.collapsed?'展开':'收起'" @click="emit('action',state.collapsed?'expand':'collapse')"><svg viewBox="0 0 16 16"><path :d="state.collapsed?'m4 6 4 4 4-4':'m4 10 4-4 4 4'"/></svg></button>
         <button :aria-label="state.locked?'关闭鼠标穿透':'鼠标穿透'" title="鼠标穿透 · Ctrl+Shift+F8" :class="{on:state.locked}" @click="emit('action',state.locked?'unlock':'lock')"><svg viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></button>

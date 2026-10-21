@@ -10,4 +10,5 @@ export interface ReaderStatus {
   cards: RecognitionView;
   tracker?: { revision: number; snapshot: import('../game/roster').RosterSnapshot | null };
   gameBounds?: { x: number; y: number; width: number; height: number } | null;
+  opponentVision?:{round:string|null;at:number;rows:Array<{id:string;y:number}>;candidates:string[];message:string};
 }

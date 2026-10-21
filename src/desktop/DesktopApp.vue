@@ -3,7 +3,6 @@ import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef } from 'vue
 import CompBrowser from './CompBrowser.vue';
 import DesktopSidebar from './DesktopSidebar.vue';
 import NavigationIcon from './NavigationIcon.vue';
-import SmartCompPanel from './SmartCompPanel.vue';
 import ReaderPanel from './ReaderPanel.vue';
 import TrackerPanel from './TrackerPanel.vue';
 import {highlightedCompUnits} from '../game/selected-comp';
@@ -98,7 +97,6 @@ async function togglePin() { await window.tftDesktop.setAlwaysOnTop(!pinned.valu
       <div v-if="error" class="error">{{ error }}</div>
       <CompBrowser v-if="view === 'comps'" :comps="comps" :set="set" :source="settings.compsSource" :snapshot-date="snapshotDate" :selected-key="selectedComp?.key" @select-comp="pickComp" @update:source="updateSetting('compsSource', $event)" />
       <AugmentsPage v-else-if="view === 'augments'" :snapshot="augments" :set="set" :loading="refreshing" :error="augmentError" @refresh="refreshAugments" />
-      <SmartCompPanel v-else-if="view === 'advisor'" :status="readerStatus" :selected-key="selectedComp?.key" :selected-direction-id="selectedComp?.directionId" :mainline="selectedComp" @select-transition="pickTransition" @select-comp="pickComp" @start="startReader"/>
 
       <template v-else-if="view === 'board'"><div class="page-heading"><div><h1>对局面板</h1><p>{{ recordStatus }}</p></div><div><button data-show-overlay class="primary" @click="showOverlay">打开记牌浮窗</button> <button @click="importRecording">导入 JSONL 录像</button></div></div><ReaderPanel :status="readerStatus" :selected-ids="highlightedCompUnits(selectedComp)" @start="startReader" @stop="stopReader" /><div class="notice">商店、海克斯与全场持牌通过原版原生组件接收。全场数据以同一记分板快照统计；未齐或过期时暂停金币估算。</div><TrackerPanel v-if="session" :controller="session.controller" :status="readerStatus" /><TrickPage v-if="session" :controller="session.controller" :set="set" :settings="settings" /></template>
       <template v-else-if="view === 'settings'"><div class="page-heading"><div><h1>功能设置</h1><p>设置自动保存 · 仅使用最新赛季 S{{ set }}</p></div></div><div class="notice">独立版已接入原版只读采集链路；真实对局待验证，当前不执行游戏操作。</div><SettingsPage :settings="settings" @update:setting="updateSetting" /></template>

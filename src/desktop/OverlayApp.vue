@@ -3,17 +3,15 @@ import { onMounted,onUnmounted,shallowRef,ref } from 'vue';
 import type {SelectedComp} from '../game/selected-comp';
 import type {ReaderStatus} from '../recognition/status';
 import CompanionOverlay from './CompanionOverlay.vue';
-import {createCompAdvisor} from '../game/comp-advisor';
-import {metatftComps} from '../game/comps-sources';
 import {defaultAdvisorPreferences} from '../game/advisor-preferences';
 import {computed} from 'vue';
 import type {BattleForecast} from '../game/battle-forecast';
-import {resolveHoldAdvice} from '../game/resolve-hold-advice';
+import {inactiveEarlyHolds} from '../game/active-product-scope';
 const battle=shallowRef<BattleForecast|null>(null);
 const comp=shallowRef<SelectedComp|null>(null),status=shallowRef<ReaderStatus|null>(null);
 const state=ref({visible:true,locked:false,collapsed:false});
-const preferences=ref(defaultAdvisorPreferences()),advisor=createCompAdvisor(metatftComps(18));
-const holds=computed(()=>resolveHoldAdvice(battle.value?.direction,advisor.evaluate(status.value,preferences.value.items,Date.now(),preferences.value.stage,preferences.value.boardId).holds,preferences.value));
+const preferences=ref(defaultAdvisorPreferences());
+const holds=computed(()=>inactiveEarlyHolds());
 const error=ref('');const off:Array<()=>void>=[];
 async function action(a:Parameters<typeof window.tftDesktop.overlay>[0]){state.value=await window.tftDesktop.overlay(a);}
 async function transition(id:string|null){try{comp.value=await window.tftDesktop.selectTransition(id);error.value='';}catch(e){error.value=String(e);}}

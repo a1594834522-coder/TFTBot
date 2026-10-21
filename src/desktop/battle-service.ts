@@ -1,7 +1,7 @@
 import {utilityProcess,type UtilityProcess} from 'electron';
 import path from 'node:path';
 import type {ReaderStatus} from '../recognition/status';
-import {battleRequest,emptyBattleForecast,type BattleForecast,type BattleRequest} from '../game/battle-forecast';
+import {battleRequest,emptyBattleForecast,type BattleForecast,type BattleRequest,type OpponentPrior} from '../game/battle-forecast';
 import {shoppingInput,type ShoppingInput} from '../decision/shopping-input';
 import {strategicInput,type StrategicInput} from '../decision/strategic-input';
 import {directionInput} from '../decision/direction-input';
@@ -62,10 +62,10 @@ export function createBattleService(publish:(forecast:BattleForecast)=>void,diag
   }
   return {
     snapshot:()=>structuredClone(current),
-    update(status:ReaderStatus,manualItems:string[]=[],budget:number|null=null,intent:DirectionIntent|null=null,mode:PursuitMode='upgrade-first'){
+    update(status:ReaderStatus,manualItems:string[]=[],budget:number|null=null,intent:DirectionIntent|null=null,mode:PursuitMode='upgrade-first',prior?:OpponentPrior){
       if(disposed)return;
       let next:BattleRequest|null;
-      try{next=battleRequest(status);}catch{next=null;}
+      try{next=battleRequest(status,Date.now(),prior);}catch{next=null;}
       shopping=shoppingInput(status);
       strategy=strategicInput(status,shopping);
       direction=directionInput(status,manualItems);

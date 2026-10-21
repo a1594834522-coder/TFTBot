@@ -11,9 +11,8 @@ import { requireCurrentSeason } from '../game/current-season';
 import { createNativeReader } from './native-reader';
 import { createLiveMonitor } from './live-monitor';
 import { resolveSelectedComp, highlightedCompUnits } from '../game/selected-comp';
-import {createCompAdvisor,advisorInput} from '../game/comp-advisor';
-import {withMainlineTransitions} from '../game/mainline-transitions';
-import {metatftComps} from '../game/comps-sources';
+import {advisorInput} from '../game/comp-advisor';
+import {selectedMainlineOnly as withMainlineTransitions,inactiveEarlyHolds} from '../game/active-product-scope';
 import {earlyStages} from '../game/metatft-early';
 import {dataset} from '../game/tft-data';
 import {defaultAdvisorPreferences,type AdvisorPreferences} from '../game/advisor-preferences';
@@ -23,6 +22,7 @@ import {applyDirectionSelection} from '../game/direction-selection';
 import {purchaseHighlightSlots,selectedPurchase} from '../game/purchase-selection';
 import {version as applicationVersion} from '../../package.json';
 import {createHash} from 'node:crypto';
+import {createOpponentVisionPilot} from './opponent-vision-pilot';
 
 const smoke = process.argv.includes('--smoke');
 const developmentMonitor=process.argv.includes('--dev-monitor');
@@ -55,7 +55,6 @@ function trusted(event: IpcMainEvent | IpcMainInvokeEvent) {
 }
 
 async function start() {
-  const advisor=createCompAdvisor(metatftComps(18));
   let advisorPreferences=defaultAdvisorPreferences(),advisorLobby='';
   let selectedComp: ReturnType<typeof resolveSelectedComp> = null;
   function publishAdvisorPreferences(){for(const target of [window,overlayWindow,augmentWindow])if(target&&!target.isDestroyed())target.webContents.send('desktop:advisor:preferences',advisorPreferences);}
@@ -63,7 +62,7 @@ async function start() {
     const lobby=status.tracker?.snapshot?.players.map(p=>p.name).sort().join('|')??'';
     if(advisorLobby && lobby!==advisorLobby){advisorPreferences=defaultAdvisorPreferences();publishAdvisorPreferences();}
     advisorLobby=lobby;
-    return advisor.evaluate(status,advisorPreferences.items,Date.now(),advisorPreferences.stage,advisorPreferences.boardId);
+    return {holds:inactiveEarlyHolds()};
   }
   function refreshTransitions(status:ReturnType<typeof reader.snapshot>){
     const next=withMainlineTransitions(selectedComp,advisorInput(status,advisorPreferences.items));
@@ -72,13 +71,19 @@ async function start() {
     for(const target of [window,overlayWindow,augmentWindow])if(target&&!target.isDestroyed())target.webContents.send('desktop:comp:update',selectedComp);
   }
   const nativeSmoke = process.argv.includes('--native-smoke');
+  let vision:ReturnType<typeof createOpponentVisionPilot>|null=null;
   const monitorDirectory=path.resolve(process.env.TFTBOT_MONITOR_DIR||path.join(app.getPath('userData'),'live-monitor'));
   const monitor = !smoke ? createLiveMonitor(monitorDirectory,{detailed:developmentMonitor}) : null;
   monitor?.note('app-runtime',{development:developmentMonitor,version:applicationVersion,pid:process.pid,executable:app.getPath('exe'),appPath:app.getAppPath(),userData:app.getPath('userData'),
     ...(developmentMonitor?{mainSha256:createHash('sha256').update(await fs.readFile(__filename)).digest('hex')}:{}),versions:{electron:process.versions.electron,node:process.versions.node,chrome:process.versions.chrome}});
   const battles=createBattleService(value=>{for(const target of [window,overlayWindow,augmentWindow])if(target&&!target.isDestroyed())target.webContents.send('desktop:battle:update',value);syncAugmentLayer(reader.snapshot());monitor?.note('battle-forecast',value);},developmentMonitor?event=>monitor?.note('decision-diagnostic',event):undefined);
-  const reader = createNativeReader(status => { advice(status);refreshTransitions(status);battles.update(status,advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp,advisorPreferences.pursuitMode??'upgrade-first'); for (const target of [window, overlayWindow, augmentWindow]) if (target && !target.isDestroyed()) target.webContents.send('desktop:reader:update', status); syncAugmentLayer(status); monitor?.status(status); }, { onNativeLog: message=>monitor?.note('native-overlay',message), onPacket: (payload, accepted) => monitor?.packet(payload,accepted), cacheRoot: path.join(path.dirname(app.getPath('exe')), 'resources', 'tftbot-native'), ...(nativeSmoke ? { testMode: true, channel: process.env.TFTBOT_TEST_CHANNEL } : {}) });
-  const battleFreshnessTimer=setInterval(()=>{const status=reader.snapshot();refreshTransitions(status);battles.update(status,advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp,advisorPreferences.pursuitMode??'upgrade-first');},1000);
+  const reader = createNativeReader(status => { advice(status);refreshTransitions(status);updateBattles(status); for (const target of [window, overlayWindow, augmentWindow]) if (target && !target.isDestroyed()) target.webContents.send('desktop:reader:update', status); syncAugmentLayer(status); monitor?.status(status); }, { onNativeLog: message=>monitor?.note('native-overlay',message), onPacket: (payload, accepted) => {monitor?.packet(payload,accepted);vision?.packet(payload);}, cacheRoot: path.join(path.dirname(app.getPath('exe')), 'resources', 'tftbot-native'), ...(nativeSmoke ? { testMode: true, channel: process.env.TFTBOT_TEST_CHANNEL } : {}) });
+  function runtimeStatus(){const status=reader.snapshot();if(vision)status.opponentVision=vision.state();return status;}
+  function updateBattles(status:ReturnType<typeof reader.snapshot>){if(vision)status.opponentVision=vision.state();battles.update(status,advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp,advisorPreferences.pursuitMode??'upgrade-first',vision?.prior(status));}
+  if(developmentMonitor&&process.env.TFTBOT_VISION_CALIBRATION&&!smoke)vision=createOpponentVisionPilot(process.env.TFTBOT_VISION_CALIBRATION,()=>reader.snapshot(),()=>{
+    const status=runtimeStatus();updateBattles(status);for(const target of [window,overlayWindow,augmentWindow])if(target&&!target.isDestroyed())target.webContents.send('desktop:reader:update',status);syncAugmentLayer(status);
+  },data=>monitor?.note('opponent-vision',data));
+  const battleFreshnessTimer=setInterval(()=>{const status=runtimeStatus();refreshTransitions(status);updateBattles(status);syncAugmentLayer(status);},1000);
   let capturedLiveView = false;
   const monitorTimer = monitor ? setInterval(async () => {
     monitor.status(reader.snapshot(),true);
@@ -94,11 +99,11 @@ async function start() {
       }catch(error){monitor.note('renderer-health-error',String(error));}
     }
   }, 5000) : null;
-  app.once('before-quit', event => { event.preventDefault();clearInterval(battleFreshnessTimer);battles.dispose(); if(monitorTimer) clearInterval(monitorTimer); reader.dispose().then(()=>monitor?.flush()).finally(() => app.quit()); });
+  app.once('before-quit', event => { event.preventDefault();vision?.dispose();clearInterval(battleFreshnessTimer);battles.dispose(); if(monitorTimer) clearInterval(monitorTimer); reader.dispose().then(()=>monitor?.flush()).finally(() => app.quit()); });
   ipcMain.handle('desktop:battle:snapshot',event=>{trusted(event);return battles.snapshot();});
   ipcMain.handle('desktop:reader:start', async event => { trusted(event); return reader.start(); });
   ipcMain.handle('desktop:reader:stop', event => { trusted(event); reader.stop(); });
-  ipcMain.handle('desktop:reader:snapshot', event => { trusted(event); return reader.snapshot(); });
+  ipcMain.handle('desktop:reader:snapshot', event => { trusted(event); return runtimeStatus(); });
   let locked = false, collapsed = false;
   const overlayState = () => ({ visible: !!overlayWindow?.isVisible(), locked, collapsed });
   const publishOverlay = () => { for (const target of [window, overlayWindow]) if (target && !target.isDestroyed()) target.webContents.send('desktop:overlay:state', overlayState()); };
@@ -137,7 +142,7 @@ async function start() {
     const bounds = nativeSmoke ? screen.getPrimaryDisplay().bounds : status.gameBounds ? screen.screenToDipRect(null, status.gameBounds) : null;
     const shopVisible=status.cards.shopVisible!==false;
     const holds=selectedComp?null:resolveHoldAdvice(battles.snapshot().direction,advice(status).holds,advisorPreferences);
-    const hasContent = status.cards.augments.some(Boolean) || shopVisible && (status.cards.shop[4]?.kind==='wisp' || !!selectedComp && status.cards.shop.some(c=>c && highlightedCompUnits(selectedComp).includes(c.id)) || !!holds?.cards.some(c=>c.quantity>0) || purchaseHighlightSlots(status,battles.snapshot(),advisorPreferences.purchase).length>0);
+    const hasContent = !!status.opponentVision?.rows.length || battles.snapshot().weightSource!=='uniform' || status.cards.augments.some(Boolean) || shopVisible && (status.cards.shop[4]?.kind==='wisp' || !!selectedComp && status.cards.shop.some(c=>c && highlightedCompUnits(selectedComp).includes(c.id)) || !!holds?.cards.some(c=>c.quantity>0) || purchaseHighlightSlots(status,battles.snapshot(),advisorPreferences.purchase).length>0);
     if (!bounds || !hasContent || ['error','stopped','waiting'].includes(status.phase)) { augmentWindow.hide(); return; }
     const prev = augmentWindow.getBounds();
     if (['x','y','width','height'].some(k => prev[k as keyof typeof prev] !== bounds[k as keyof typeof bounds])) augmentWindow.setBounds(bounds);
@@ -158,7 +163,7 @@ async function start() {
   try {const saved=JSON.parse(await storage.getItem('tftbot:desktop:selected-direction'));if(selectedComp&&saved?.key===selectedComp.key)selectedComp=applyDirectionSelection(selectedComp,saved.id);}catch{}
   try {const saved=JSON.parse(await storage.getItem('tftbot:desktop:selected-transition'));if(selectedComp&&saved?.key===selectedComp.key)selectedComp=withMainlineTransitions(selectedComp,advisorInput(reader.snapshot()),saved.id??null);}catch{}
   selectedComp=withMainlineTransitions(selectedComp,advisorInput(reader.snapshot()));
-  const publishSelectedComp=()=>{battles.update(reader.snapshot(),advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp,advisorPreferences.pursuitMode??'upgrade-first');if(overlayWindow&&!overlayWindow.isDestroyed()&&!collapsed)overlayWindow.setSize(584,selectedComp?248:192);for(const target of [window,overlayWindow,augmentWindow])if(target && !target.isDestroyed())target.webContents.send('desktop:comp:update',selectedComp);syncAugmentLayer(reader.snapshot());};
+  const publishSelectedComp=()=>{updateBattles(runtimeStatus());if(overlayWindow&&!overlayWindow.isDestroyed()&&!collapsed)overlayWindow.setSize(584,selectedComp?248:192);for(const target of [window,overlayWindow,augmentWindow])if(target && !target.isDestroyed())target.webContents.send('desktop:comp:update',selectedComp);syncAugmentLayer(runtimeStatus());};
   ipcMain.handle('desktop:advisor:get',event=>{trusted(event);return advisorPreferences;});
   ipcMain.handle('desktop:advisor:configure',(event,value:AdvisorPreferences)=>{
     trusted(event);
@@ -167,7 +172,7 @@ async function start() {
     if(value.searchBudget!==undefined&&value.searchBudget!==null&&(!Number.isSafeInteger(value.searchBudget)||value.searchBudget<0||value.searchBudget>200))throw new Error('搜牌预算无效');
     if(value.pursuitMode!==undefined&&!['upgrade-first','completion-first','key-upgrade'].includes(value.pursuitMode))throw new Error('留牌策略无效');
     const purchase=selectedPurchase(reader.snapshot(),battles.snapshot(),value.purchase)?{context:value.purchase!.context,id:value.purchase!.id}:null;
-    advisorPreferences={items:[...value.items],stage:value.stage,boardId:value.boardId,searchBudget:value.searchBudget??null,pursuitMode:value.pursuitMode??'upgrade-first',purchase};publishAdvisorPreferences();battles.update(reader.snapshot(),advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp,advisorPreferences.pursuitMode??'upgrade-first');syncAugmentLayer(reader.snapshot());return advisorPreferences;
+    advisorPreferences={items:[...value.items],stage:value.stage,boardId:value.boardId,searchBudget:value.searchBudget??null,pursuitMode:value.pursuitMode??'upgrade-first',purchase};publishAdvisorPreferences();updateBattles(runtimeStatus());syncAugmentLayer(runtimeStatus());return advisorPreferences;
   });
   ipcMain.handle('desktop:comp:get', event => { trusted(event); return selectedComp; });
   ipcMain.handle('desktop:comp:select', async (event,key,directionId?:string) => {

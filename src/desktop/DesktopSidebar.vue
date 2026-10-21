@@ -3,7 +3,7 @@ import NavigationIcon from './NavigationIcon.vue';
 import {version} from '../../package.json';
 defineProps<{view:string;set:number;preview?:boolean}>();
 defineEmits<{navigate:[view:'comps'|'advisor'|'augments'|'board'|'settings']}>();
-const items=[{id:'comps',name:'热门阵容'},{id:'advisor',name:'阵容助手'},{id:'augments',name:'海克斯评级'},{id:'board',name:'对局面板'},{id:'settings',name:'偏好设置'}] as const;
+const items=[{id:'comps',name:'热门阵容'},{id:'augments',name:'海克斯评级'},{id:'board',name:'对局面板'},{id:'settings',name:'偏好设置'}] as const;
 </script>
 <template><aside class="desktop-sidebar">
   <div class="app-brand"><strong>TFTBot<small>云顶助手</small></strong></div>

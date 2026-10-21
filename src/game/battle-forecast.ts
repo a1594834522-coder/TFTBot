@@ -11,12 +11,12 @@ import type {SearchLandings} from '../decision/search-landings';
 import type {EquipmentHandoffs} from '../decision/equipment-handoffs';
 import type {CurrentPursuit} from '../decision/current-pursuit';
 
-export interface OpponentPrior {round:string;source:'native'|'manual';weights:Record<string,number>}
+export interface OpponentPrior {round:string;source:'native'|'manual'|'vision';weights:Record<string,number>}
 export interface BattleTarget {id:string;name:string;weight:number;board:BattleBoard|null;gaps:string[]}
-export interface BattleRequest {round:string|null;local:BattleBoard;localGaps:string[];targets:BattleTarget[];weightSource:'uniform'|'native'|'manual'}
+export interface BattleRequest {round:string|null;local:BattleBoard;localGaps:string[];targets:BattleTarget[];weightSource:'uniform'|'native'|'manual'|'vision'}
 export interface BattleForecast {
   phase:'waiting'|'loading'|'ready'|'error';message:string;at:number;round:string|null;
-  weightSource:'uniform'|'native'|'manual';winRate:number|null;lower:number;upper:number;coverage:number;
+  weightSource:'uniform'|'native'|'manual'|'vision';winRate:number|null;lower:number;upper:number;coverage:number;
   approximate:boolean;gaps:string[];modelVersion?:string;
   opponents:Array<{id:string;name:string;weight:number;winRate:number|null;gaps:string[]}>;
   tactics?:ShoppingTactics;

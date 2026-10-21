@@ -24,6 +24,7 @@ import {currentPursuit,CurrentPursuitWorkspace} from '../decision/current-pursui
 import type {PursuitMode} from '../decision/pursuit-policy';
 import type {EquipmentRules} from '../decision/equipment-ledger';
 import equipmentFile from '../../data/equipment-rules.json';
+import {automaticAdviceEnabled} from '../game/active-product-scope';
 const equipmentRules=equipmentFile as unknown as EquipmentRules;
 const catalog=catalogFile as unknown as DirectionCatalog,gearModel=gearFile as unknown as GearModel;
 function searchAdvice(personal:ReturnType<typeof directionAdvice>,strategy:StrategicInput,budget:number|null){
@@ -54,10 +55,11 @@ async function run(){
         const local=encodeBattleBoard(request.local,model.lookup,'player');
         if(local.unknown.length)throw new Error('本方模型特征未覆盖：'+local.unknown.join('、'));
         request.localGaps=[...new Set([...request.localGaps,...modelBoardGaps(request.local,model.lookup)])];
-        const valid=request.targets.filter(t=>t.weight>0&&t.board),result=model.predictCachedBatch(valid.map(t=>({player:request!.local,opponent:t.board!})));
+        const valid=request.targets.filter(t=>t.board),result=model.predictCachedBatch(valid.map(t=>({player:request!.local,opponent:t.board!})));
         forecast=aggregateBattleForecast(request,Object.fromEntries(valid.map((t,i)=>[t.id,result[i].winRate])),model.version);
       }catch(error){request=null;forecast={...emptyBattleForecast((error as Error).message),phase:'error'};}
     }else if(raw){forecast={...emptyBattleForecast(loadError?'胜率模型加载失败：'+loadError:'胜率模型加载中'),phase:loadError?'error':'loading',round:raw.round,weightSource:raw.weightSource};}
+    if(!automaticAdviceEnabled){process.parentPort?.postMessage({type:'result',id,forecast});continue;}
     // A full weighted combat estimate can support an XP path. Missing opponent
     // mass never becomes an optimistic reason to commit to a legendary endgame.
     try{forecast.direction=searchAdvice(directionAdvice({...direction,combatWinRate:forecast.winRate},catalog,gearModel,earlyStages(18)),strategy,searchBudget);}

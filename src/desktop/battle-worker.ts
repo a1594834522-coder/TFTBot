@@ -2,7 +2,7 @@ import path from 'node:path';
 import {loadBattleModel} from '../decision/battle-model';
 import {encodeBattleBoard} from '../game/battle-model-encoding';
 import {aggregateBattleForecast,emptyBattleForecast,type BattleRequest} from '../game/battle-forecast';
-import {shoppingTactics,mainlineTacticalReference} from '../decision/shopping-tactics';
+import {shoppingTactics,mainlineTacticalReference,shoppingContextKey} from '../decision/shopping-tactics';
 import {tradingRules,type ShoppingInput} from '../decision/shopping-input';
 import {strategicAdvice} from '../decision/strategic-advisor';
 import type {StrategicInput} from '../decision/strategic-input';
@@ -58,7 +58,7 @@ async function run(){
     process.parentPort?.postMessage({type:'result',id,forecast});
     if(shopping?.ready&&request&&model){
       try{const context=battleTacticalContext(request,shopping.state,model.lookup);
-        const tactics=context.ready?await shoppingTactics(shopping.state,tradingRules,context.request,model.predictCachedBatch,{cancelled:()=>id!==latestId,yield:()=>new Promise(resolve=>setImmediate(resolve)),reference:mainlineTacticalReference(forecast.direction),supportsBoard:board=>encodeBattleBoard(board,model.lookup,'player').unknown.length===0,auxiliary:context.auxiliary,acceptsLineup:context.accepts}):context;
+        const tactics=context.ready?await shoppingTactics(shopping.state,tradingRules,context.request,model.predictCachedBatch,{cancelled:()=>id!==latestId,yield:()=>new Promise(resolve=>setImmediate(resolve)),reference:mainlineTacticalReference(forecast.direction),supportsBoard:board=>encodeBattleBoard(board,model.lookup,'player').unknown.length===0,auxiliary:context.auxiliary,acceptsLineup:context.accepts,purchaseContext:shoppingContextKey(shopping.state,raw!)}):context;
         if(id===latestId){forecast={...forecast,tactics:tactics.ready?{...tactics,gaps:[...new Set([...tactics.gaps,...shopping.gaps,...(context.ready?context.gaps:[])])]}:tactics};process.parentPort?.postMessage({type:'result',id,forecast});}
       }catch(error){if(id===latestId){forecast={...forecast,tactics:{ready:false,reason:'商店方案暂不可用：'+(error as Error).message}};process.parentPort?.postMessage({type:'result',id,forecast});}}
     }

@@ -140,4 +140,36 @@ describe('current-shop constrained tactical decisions',()=>{
     expect(mainlineTacticalReference({...base,updating:true})).toBeUndefined();
     expect(mainlineTacticalReference({ready:false,reason:'未同步'})).toBeUndefined();
   });
+  it('measures a purchase against the best free deployment and excludes redundant bought cards',async()=>{
+    const s=state();s.gold=15;s.units[1].id='B';s.offers=[{slot:0,id:'C',price:3}];
+    const result=await shoppingTactics(s,rules,request(),predict);if(!result.ready)throw Error(result.reason);
+    expect(result.baseline).toBe(.3);expect(result.purchaseBaseline).toBe(.9);
+    expect(result.choices[0].delta).toBeCloseTo(.6);expect(result.purchases).toEqual([]);
+  });
+  it('retains affordable cost/strength alternatives and requires both members of a synergy bundle',async()=>{
+    const s=state();s.gold=20;s.boardCapacity=2;s.units=[unit('a','A','board',0),unit('b','B','board',1)];
+    s.offers=[{slot:0,id:'C',price:3},{slot:1,id:'D',price:4},{slot:2,id:'A',price:1}];
+    const r=request();r.local.units=s.units.map(u=>({id:u.id,star:1,items:[]}));
+    const value=(ids:string[])=>ids.includes('C')&&ids.includes('D')?.9:ids.includes('C')?.6:.4;
+    const result=await shoppingTactics(s,rules,r,pairs=>pairs.map(p=>({winRate:value(p.player.units.map(u=>u.id))})));
+    if(!result.ready)throw Error(result.reason);
+    expect(result.purchaseBaseline).toBe(.4);
+    expect(result.purchases.map(p=>({slots:p.choice.buy.flatMap(b=>b.slots),spend:p.spend,gain:p.gain}))).toEqual([
+      {slots:[0],spend:3,gain:expect.closeTo(.2)},{slots:[0,1],spend:7,gain:.5}]);
+    expect(result.purchases[1].choice.incoming.map(u=>u.id)).toEqual(['C','D']);
+    expect(result.purchases.some(p=>p.choice.buy.some(b=>b.id==='A'))).toBe(false);
+    // Independent all-pairs oracle over every affordable shop subset.
+    const oracle:Array<{spent:number;win:number}>=[];
+    for(let mask=0;mask<8;mask++){
+      const bought=s.offers.filter((_,i)=>mask&(1<<i)),ids=[...s.units.map(u=>u.id),...bought.map(o=>o!.id)];
+      let win=0;for(let a=0;a<ids.length;a++)for(let b=a+1;b<ids.length;b++)win=Math.max(win,value([ids[a],ids[b]]));
+      oracle.push({spent:bought.reduce((n,o)=>n+o!.price,0),win});
+    }
+    for(const p of result.purchases){expect(p.choice.knownWin).toBe(Math.max(...oracle.filter(o=>o.spent<=p.spend).map(o=>o.win)));}
+  });
+  it('keeps incomplete opponent mass uncertain relative to the free board too',async()=>{
+    const r=request();r.targets[0].weight=.75;r.targets.push({id:'missing',name:'未知',weight:.25,board:null,gaps:[]});
+    const result=await shoppingTactics(state(),rules,r,predict);if(!result.ready)throw Error(result.reason);
+    expect(result.purchaseBaseline).toBeNull();expect(result.purchases[0]).toMatchObject({gain:null,lowerGain:expect.closeTo(.125),upperGain:expect.closeTo(.625)});
+  });
 });

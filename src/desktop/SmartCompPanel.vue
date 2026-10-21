@@ -11,6 +11,7 @@ import {defaultAdvisorPreferences} from '../game/advisor-preferences';
 import {metatftComps,metatftMeta} from '../game/comps-sources';
 import {dataset} from '../game/tft-data';
 import ShoppingTacticsPanel from './ShoppingTacticsPanel.vue';
+import PurchaseOpportunities from './PurchaseOpportunities.vue';
 import StrategicOptionsPanel from './StrategicOptionsPanel.vue';
 import type {BattleForecast} from '../game/battle-forecast';
 import DirectionPanel from './DirectionPanel.vue';
@@ -29,13 +30,13 @@ const input=computed(()=>evaluation.value.result.input);
 const holds=computed(()=>resolveHoldAdvice(battle.value?.direction,evaluation.value.holds,preferences.value));
 watch(()=>input.value.inventorySource,source=>{if(source==='native')editItems.value=false;});
 const result=computed(()=>evaluation.value.result);
-let offPreferences:(()=>void)|undefined,hydrating=true;
+let offPreferences:(()=>void)|undefined;const hydrating=ref(true);
 let offBattle:(()=>void)|undefined;
 onMounted(async()=>{if(window.tftDesktop?.onBattle){offBattle=window.tftDesktop.onBattle(value=>battle.value=value);battle.value=await window.tftDesktop.battleSnapshot();}});
 onUnmounted(()=>offBattle?.());
-onMounted(async()=>{if(window.tftDesktop?.advisorPreferences){offPreferences=window.tftDesktop.onAdvisorPreferences(p=>{if(JSON.stringify(p)!==JSON.stringify(preferences.value))preferences.value=p;});preferences.value=await window.tftDesktop.advisorPreferences();}hydrating=false;});
+onMounted(async()=>{if(window.tftDesktop?.advisorPreferences){offPreferences=window.tftDesktop.onAdvisorPreferences(p=>{if(JSON.stringify(p)!==JSON.stringify(preferences.value))preferences.value=p;});preferences.value=await window.tftDesktop.advisorPreferences();}hydrating.value=false;});
 onUnmounted(()=>offPreferences?.());
-watch(preferences,async p=>{if(!hydrating && window.tftDesktop?.configureAdvisor)try{await window.tftDesktop.configureAdvisor({...p,items:[...p.items]});}catch{}},{deep:true});
+watch(preferences,async p=>{if(!hydrating.value && window.tftDesktop?.configureAdvisor)try{await window.tftDesktop.configureAdvisor({...p,items:[...p.items],purchase:p.purchase?{...p.purchase}:null});}catch{}},{deep:true});
 watch(()=>preferences.value.searchBudget,value=>{if(props.previewForecast)emit('previewBudget',value??null);});
 const top=computed(()=>result.value.rows.slice(0,3));
 const inspected=computed(()=>result.value.rows.find(r=>r.key===detail.value));
@@ -66,6 +67,7 @@ const stamp=String(metatftMeta().fetchedAt??'').slice(0,10);
       <DirectionPanel :advice="battle?.direction" :selected-key="selectedKey" :selected-direction-id="selectedDirectionId" :budget="preferences.searchBudget" @select-comp="(key,id)=>emit('selectComp',key,id)" @budget="preferences={...preferences,searchBudget:$event}"/>
       <div v-if="battle?.direction&&!battle.direction.ready&&battle.direction.unsupported" class="notice">{{ battle.direction.reason }}</div>
       <EarlyHoldPanel v-if="!selectedKey&&holds.ready" :advice="holds" :focused="preferences.boardId" @stage="preferences={...preferences,stage:$event,boardId:null}" @focus="preferences={...preferences,boardId:$event}"/>
+      <PurchaseOpportunities :status="status" :forecast="battle" :selection="preferences.purchase" :disabled="hydrating" @select="preferences={...preferences,purchase:$event}"/>
       <ShoppingTacticsPanel :advice="battle?.tactics"/>
       <StrategicOptionsPanel :advice="battle?.strategy"/>
       <div v-if="!battle?.direction?.ready&&!battle?.direction?.unsupported" class="smart-summary"><span><i/>基础候选参考</span><small>适配度 ≠ 胜率</small></div>

@@ -6,6 +6,8 @@ TypeScript / Vue 重构的独立 Windows 云顶助手，直接打开桌面窗口
 
 双击 [启动TFTBot.cmd](启动TFTBot.cmd)，或运行已打包的 `desktop-release/TFTBot-win32-x64/TFTBot.exe`。请保留整个发布文件夹。
 
+1.6.0 增加“商店补强”：相对免费换牌比较实际购买组合，手选高亮，不改变主线；商店已有目标直接显示“无需刷新”，未来刷牌费展示4至5英雄槽范围。本地监控默认开启并轮转保留128MB。详见 [版本说明](docs/RELEASE-1.6.0.md) 与 [本地诊断](docs/LIVE-DIAGNOSTICS.md)。
+
 ```bash
 npm start              # 构建并打开独立桌面窗口
 npm run pack:desktop   # 生成独立 staging 便携包，不覆盖正在运行的版本

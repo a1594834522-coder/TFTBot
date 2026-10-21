@@ -27,6 +27,9 @@ await fs.writeFile(path.join(output,'使用说明.txt'),[
   '原生采集仍需本机 E:\\amumu 组件，无需打开原版前端。对局面板点击连接；全场持牌需建立索引。',
   '下一战模型缺少实际匹配候选时显示全场等权参考。刷牌参数仍为标明的 S18 PBE 参考。',
   '补齐概率包含买牌费用，按当前人口和钱包；不是战斗胜率，不含未来收入。',
+  '商店补强比较买牌相对免费换牌的额外模型收益，点击后才高亮整组；实时局面变化后失效。',
+  '当前商店已有目标显示无需刷新；未来刷牌费用展示4至5英雄格范围，购买费另计。',
+  '直接启动默认在用户数据目录/live-monitor保留128MB轮转日志；工作区启动脚本另自动连接只读采集。',
   '工程测试通过，真实排位收益待校准。当前不执行自动买牌、刷新、摆位或其它游戏输入。',
 ].join('\r\n')+'\r\n','utf8');
 await fs.writeFile('dist/desktop-package.json',JSON.stringify({output,executable:path.join(output,'TFTBot.exe'),version:pkg.version},null,2));

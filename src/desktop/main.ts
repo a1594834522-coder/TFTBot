@@ -20,6 +20,7 @@ import {defaultAdvisorPreferences,type AdvisorPreferences} from '../game/advisor
 import {createBattleService} from './battle-service';
 import {resolveHoldAdvice,directionBoardUnits} from '../game/resolve-hold-advice';
 import {applyDirectionSelection} from '../game/direction-selection';
+import {purchaseHighlightSlots,selectedPurchase} from '../game/purchase-selection';
 
 const smoke = process.argv.includes('--smoke');
 const headlessSmoke=smoke&&process.argv.includes('--headless');
@@ -64,7 +65,8 @@ async function start() {
     for(const target of [window,overlayWindow,augmentWindow])if(target&&!target.isDestroyed())target.webContents.send('desktop:comp:update',selectedComp);
   }
   const nativeSmoke = process.argv.includes('--native-smoke');
-  const monitor = process.env.TFTBOT_MONITOR_DIR && !smoke ? createLiveMonitor(path.resolve(process.env.TFTBOT_MONITOR_DIR)) : null;
+  const monitorDirectory=path.resolve(process.env.TFTBOT_MONITOR_DIR||path.join(app.getPath('userData'),'live-monitor'));
+  const monitor = !smoke ? createLiveMonitor(monitorDirectory) : null;
   const battles=createBattleService(value=>{for(const target of [window,overlayWindow,augmentWindow])if(target&&!target.isDestroyed())target.webContents.send('desktop:battle:update',value);syncAugmentLayer(reader.snapshot());monitor?.note('battle-forecast',value);});
   const reader = createNativeReader(status => { advice(status);refreshTransitions(status);battles.update(status,advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp); for (const target of [window, overlayWindow, augmentWindow]) if (target && !target.isDestroyed()) target.webContents.send('desktop:reader:update', status); syncAugmentLayer(status); monitor?.status(status); }, { onNativeLog: message=>monitor?.note('native-overlay',message), onPacket: (payload, accepted) => monitor?.packet(payload,accepted), cacheRoot: path.join(path.dirname(app.getPath('exe')), 'resources', 'tftbot-native'), ...(nativeSmoke ? { testMode: true, channel: process.env.TFTBOT_TEST_CHANNEL } : {}) });
   const battleFreshnessTimer=setInterval(()=>{const status=reader.snapshot();refreshTransitions(status);battles.update(status,advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp);},1000);
@@ -79,7 +81,7 @@ async function start() {
           const overlay=await overlayWindow.webContents.executeJavaScript(`({ready:document.querySelector('[data-game-overlay]')?.getAttribute('data-ready'),slots:Array.from(document.querySelectorAll('[data-overlay-unit]')).map(e=>e.textContent),budget:document.querySelector('[data-overlay-budget]')?.textContent,visible:document.visibilityState})`);
           monitor.note('overlay-health',overlay);
         }
-        if(!capturedLiveView && view.shop.length){capturedLiveView=true;await fs.writeFile(path.join(process.env.TFTBOT_MONITOR_DIR!,'latest-ui.png'),(await window.webContents.capturePage()).toPNG());}
+        if(!capturedLiveView && view.shop.length){capturedLiveView=true;await fs.writeFile(path.join(monitorDirectory,'latest-ui.png'),(await window.webContents.capturePage()).toPNG());}
       }catch(error){monitor.note('renderer-health-error',String(error));}
     }
   }, 5000) : null;
@@ -126,7 +128,7 @@ async function start() {
     const bounds = nativeSmoke ? screen.getPrimaryDisplay().bounds : status.gameBounds ? screen.screenToDipRect(null, status.gameBounds) : null;
     const shopVisible=status.cards.shopVisible!==false;
     const holds=selectedComp?null:resolveHoldAdvice(battles.snapshot().direction,advice(status).holds,advisorPreferences);
-    const hasContent = status.cards.augments.some(Boolean) || shopVisible && (status.cards.shop[4]?.kind==='wisp' || !!selectedComp && status.cards.shop.some(c=>c && highlightedCompUnits(selectedComp).includes(c.id)) || !!holds?.cards.some(c=>c.quantity>0));
+    const hasContent = status.cards.augments.some(Boolean) || shopVisible && (status.cards.shop[4]?.kind==='wisp' || !!selectedComp && status.cards.shop.some(c=>c && highlightedCompUnits(selectedComp).includes(c.id)) || !!holds?.cards.some(c=>c.quantity>0) || purchaseHighlightSlots(status,battles.snapshot(),advisorPreferences.purchase).length>0);
     if (!bounds || !hasContent || ['error','stopped','waiting'].includes(status.phase)) { augmentWindow.hide(); return; }
     const prev = augmentWindow.getBounds();
     if (['x','y','width','height'].some(k => prev[k as keyof typeof prev] !== bounds[k as keyof typeof bounds])) augmentWindow.setBounds(bounds);
@@ -154,7 +156,8 @@ async function start() {
     const direction=battles.snapshot().direction;
     if(!value || !Array.isArray(value.items)||value.items.length>30||value.items.some(id=>typeof id!=='string'||!dataset.item(id)) || value.stage!==null&&![2,3,4,5].includes(value.stage) || value.boardId!==null&&!earlyStages(18).some(s=>s.boards.some(b=>b.id===value.boardId))&&!directionBoardUnits(value.boardId)&&!(direction?.ready&&direction.holds.boards.some(b=>b.id===value.boardId)))throw new Error('阵容助手输入无效');
     if(value.searchBudget!==undefined&&value.searchBudget!==null&&(!Number.isSafeInteger(value.searchBudget)||value.searchBudget<0||value.searchBudget>200))throw new Error('搜牌预算无效');
-    advisorPreferences={items:[...value.items],stage:value.stage,boardId:value.boardId,searchBudget:value.searchBudget??null};publishAdvisorPreferences();battles.update(reader.snapshot(),advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp);syncAugmentLayer(reader.snapshot());return advisorPreferences;
+    const purchase=selectedPurchase(reader.snapshot(),battles.snapshot(),value.purchase)?{context:value.purchase!.context,id:value.purchase!.id}:null;
+    advisorPreferences={items:[...value.items],stage:value.stage,boardId:value.boardId,searchBudget:value.searchBudget??null,purchase};publishAdvisorPreferences();battles.update(reader.snapshot(),advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp);syncAugmentLayer(reader.snapshot());return advisorPreferences;
   });
   ipcMain.handle('desktop:comp:get', event => { trusted(event); return selectedComp; });
   ipcMain.handle('desktop:comp:select', async (event,key,directionId?:string) => {
@@ -298,6 +301,27 @@ async function start() {
             if (overlayReady) break;
           }
           if (!overlayReady || !overlayWindow!.isAlwaysOnTop() || overlayWindow!.isVisible() !== !headlessSmoke) throw new Error('局内浮窗数据同步或置顶失败');
+          const availableId=reader.snapshot().cards.shop.find(c=>c?.known&&c.kind!=='wisp')!.id;
+          await overlayWindow!.webContents.executeJavaScript(`Array.from(document.querySelectorAll('[data-overlay-unit]')).find(e=>e.dataset.overlayUnit===${JSON.stringify(availableId)}).click()`);
+          for(let i=0;i<20;i++){if(await overlayWindow!.webContents.executeJavaScript(`!!document.querySelector('[data-current-shop-copy]')`))break;await new Promise(resolve=>setTimeout(resolve,50));}
+          const directCopy=await overlayWindow!.webContents.executeJavaScript(`({text:document.querySelector('[data-overlay-budget]')?.textContent,overflow:document.documentElement.scrollWidth>innerWidth})`);
+          if(!directCopy.text?.includes('无需刷新')||directCopy.text.includes('平均刷新')||directCopy.text.includes('90%')||directCopy.overflow)throw Error('当前商店副本仍被显示为未来刷牌预算');
+          await overlayWindow!.webContents.executeJavaScript(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+          await new Promise(resolve=>setTimeout(resolve,100));
+          await fs.writeFile(path.join(smokeDir,'shop-copy-overlay.png'),(await overlayWindow!.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+          await overlayWindow!.webContents.executeJavaScript(`document.querySelector('[aria-label="关闭英雄详情"]').click()`);
+          console.log('CURRENT_SHOP_COPY_SMOKE_PASS');
+          const visibleShop=new Set(reader.snapshot().cards.shop.flatMap(c=>c?.known?[c.id]:[]));
+          const futureId=selectedComp!.units.find(id=>!visibleShop.has(id)&&(dataset.characterById(id)?.cost??99)<=3);
+          if(!futureId)throw Error('测试阵容缺少尚未在商店中的低费目标');
+          await overlayWindow!.webContents.executeJavaScript(`Array.from(document.querySelectorAll('[data-overlay-unit]')).find(e=>e.dataset.overlayUnit===${JSON.stringify(futureId)}).click()`);
+          await overlayWindow!.webContents.executeJavaScript(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+          await new Promise(resolve=>setTimeout(resolve,100));
+          const futureCopy=await overlayWindow!.webContents.executeJavaScript(`({text:document.querySelector('[data-overlay-budget]')?.textContent,gold:document.querySelector('[data-overlay-budget] .gold-line b')?.textContent})`);
+          if(!futureCopy.text?.includes('平均刷新')||!futureCopy.gold?.includes('–')||futureCopy.text.includes('无需刷新'))throw Error('未来下一张的四至五英雄格范围未显示');
+          await fs.writeFile(path.join(smokeDir,'future-roll-overlay.png'),(await overlayWindow!.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+          await overlayWindow!.webContents.executeJavaScript(`document.querySelector('[aria-label="关闭英雄详情"]').click()`);
+          console.log('FUTURE_ROLL_RANGE_SMOKE_PASS');
           for(let i=0;i<40&&battles.snapshot().phase!=='ready';i++)await new Promise(resolve=>setTimeout(resolve,100));
           const forecast=battles.snapshot();
           if(forecast.phase!=='ready'||forecast.coverage!==1||forecast.winRate===null||forecast.opponents.length!==1)throw new Error('原生棋盘→本地模型→全场加权胜率失败：'+JSON.stringify(forecast));
@@ -318,6 +342,29 @@ async function start() {
           }
           await fs.writeFile(path.join(smokeDir,'shopping-tactics.json'),JSON.stringify(tactics,null,2));
           console.log('SHOPPING_TACTICS_SMOKE_PASS');
+          if(process.env.TFTBOT_TEST_PURCHASE==='1'){
+            if(!tactics.purchases.length)throw Error('购买组合测试没有产生额外补强：'+JSON.stringify(tactics.choices));
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-nav="advisor"]').click()`);
+            for(let i=0;i<30;i++){if(await window!.webContents.executeJavaScript(`!!document.querySelector('[data-purchase-highlight]:not(:disabled)')`))break;await new Promise(resolve=>setTimeout(resolve,50));}
+            const mainlineBefore=JSON.stringify(selectedComp);
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-purchase-highlight]').click()`);
+            for(let i=0;i<30&&!advisorPreferences.purchase;i++)await new Promise(resolve=>setTimeout(resolve,50));
+            const selected=selectedPurchase(reader.snapshot(),battles.snapshot(),advisorPreferences.purchase);
+            if(!selected||JSON.stringify(selectedComp)!==mainlineBefore)throw Error('购买组合选择未同步或改变了玩家主线：'+JSON.stringify({selection:!!advisorPreferences.purchase,selected:!!selected,mainlineChanged:JSON.stringify(selectedComp)!==mainlineBefore,phase:battles.snapshot().phase,ui:await window!.webContents.executeJavaScript(`({buttons:Array.from(document.querySelectorAll('[data-purchase-highlight]')).map(e=>({text:e.textContent,pressed:e.getAttribute('aria-pressed')})),text:document.querySelector('[data-purchase-opportunities]')?.textContent})`)}));
+            await new Promise(resolve=>setTimeout(resolve,100));
+            const slots=await augmentWindow!.webContents.executeJavaScript(`Array.from(document.querySelectorAll('[data-shop-highlight]')).map(e=>Number(e.dataset.shopHighlight)-1)`);
+            if(!selected.choice.buy.flatMap(b=>b.slots).every(slot=>slots.includes(slot)))throw Error('购买组合未同步到游戏商店高亮');
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-purchase-opportunities]').scrollIntoView({block:'center'});document.querySelector('[data-purchase-opportunities] summary').click();new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+            await new Promise(resolve=>setTimeout(resolve,100));
+            const view=await window!.webContents.executeJavaScript(`({text:document.querySelector('[data-purchase-opportunities]')?.textContent,overflow:document.documentElement.scrollWidth>innerWidth})`);
+            if(view.overflow||!view.text?.includes('已高亮')||!view.text.includes('相对免费换牌'))throw Error('购买组合说明或桌面布局异常');
+            await fs.writeFile(path.join(smokeDir,'purchase-opportunities.png'),(await window!.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-purchase-highlight][aria-pressed="true"]').click()`);
+            for(let i=0;i<30&&advisorPreferences.purchase;i++)await new Promise(resolve=>setTimeout(resolve,50));
+            if(advisorPreferences.purchase)throw Error('取消购买组合高亮失败');
+            console.log('PURCHASE_SELECTION_SMOKE_PASS');
+            if(timeout)clearTimeout(timeout);app.quit();return;
+          }
           for(let i=0;i<80&&!battles.snapshot().strategy?.ready;i++)await new Promise(resolve=>setTimeout(resolve,100));
           const strategy=battles.snapshot().strategy;
           if(!strategy?.ready||!strategy.rows.length||strategy.rows.some(row=>row.goal.evidence.length===0))throw new Error('原生全场持牌未进入跨阶段核心目标规划：'+JSON.stringify(strategy));

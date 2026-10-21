@@ -17,16 +17,25 @@ export interface TacticalChoice {
 }
 export interface TacticalUnit {key:string;id:string;combatId?:string;star:number;items:string[]}
 export interface TacticalReference {cores:string[]}
+export interface PurchaseOpportunity {
+  id:string;choice:TacticalChoice;spend:number;
+  /** Gain over the BEST no-purchase deployment, not the original idle board. */
+  gain:number|null;lowerGain:number;upperGain:number;
+}
+export const shoppingContextKey=(state:ShopState,request:Pick<BattleRequest,'round'|'local'|'targets'|'weightSource'>)=>JSON.stringify([state,request.round,request.local,request.targets,request.weightSource]);
 export interface TacticalOptions {
   cancelled?:()=>boolean;yield?:()=>Promise<void>;maxSwaps?:number;
   reference?:TacticalReference;supportsBoard?:(board:BattleBoard)=>boolean;
   auxiliary?:BattleUnit[];acceptsLineup?:(candidate:LineupCandidate)=>boolean;
+  /** Raw input context, before the model filters non-modeled entities. */
+  purchaseContext?:string;
 }
 export type ShoppingTactics={ready:false;reason:string}|{
   ready:true;choices:TacticalChoice[];baseline:number|null;coverage:number;
   searchedPlans:number;searchedBoards:number;maxSwaps:number;provisional:boolean;
   rulesVersion:string;gaps:string[];
   weightSource:BattleRequest['weightSource'];
+  purchaseContext:string;purchaseBaseline:number|null;purchases:PurchaseOpportunity[];
 };
 export type BatchPredictor=(pairs:Array<{player:BattleBoard;opponent:BattleBoard}>)=>Array<{winRate:number}>;
 export function mainlineTacticalReference(advice:DirectionAdvice|undefined):TacticalReference|undefined{
@@ -118,5 +127,25 @@ export async function shoppingTactics(state:ShopState,rules:TradingRules,request
   if(strongest&&(!economic||Math.abs(strongest.win-economic.win)>1e-6||strongest.plan.state.gold!==economic.plan.state.gold)){choices.push(choice(strongest,'tempo'));chosenBoards.add(strongest.lineup.key);}
   const mainline=entering[0];
   if(mainline&&!chosenBoards.has(mainline.lineup.key))choices.push(choice(mainline,'mainline'));
-  return {ready:true,choices,baseline:coverage>=1-1e-7?baseline:null,coverage,searchedPlans:search.plans.length,searchedBoards:boards.size,maxSwaps,provisional:rules.provisional,rulesVersion:rules.version,weightSource:request.weightSource,gaps:[...new Set([...request.localGaps,...request.targets.filter(t=>t.weight>0).flatMap(t=>t.gaps),'模型不含站位；装备保留在当前英雄上，未模拟拆卸、重做或转移',...(unsupported?['部分备选棋盘有模型未覆盖特征']:[]),...(incompleteEquipment?['部分备选英雄装备明细未齐']:[])])]};
+  const noPurchase=best.filter(row=>row.plan.buySlots.length===0).sort(sort)[0];
+  if(!noPurchase)return {ready:false,reason:'当前无购买棋盘待核对'};
+  // A two-card synergy is a BUNDLE. Do not attribute its gain to either card
+  // alone, or include a redundant purchase already matched by a cheaper plan.
+  const improving=best.filter(row=>row.plan.buySlots.length&&row.win>noPurchase.win+1e-6);
+  const frontier=improving.filter(row=>!best.some(other=>
+    other!==row&&other.plan.spent<=row.plan.spent&&other.win>=row.win-1e-6&&
+    (other.plan.spent<row.plan.spent||other.win>row.win+1e-6||other.plan.buySlots.length<row.plan.buySlots.length||
+      other.plan.spent===row.plan.spent&&Math.abs(other.win-row.win)<=1e-6&&other.plan.buySlots.length===row.plan.buySlots.length&&other.plan.buySlots.join('.')<row.plan.buySlots.join('.'))));
+  frontier.sort((a,b)=>a.plan.spent-b.plan.spent||sort(a,b));
+  // Retain both cost and strength extremes plus a middle option. This is a
+  // display bound, not an invented gold-to-combat exchange rate.
+  const visible=frontier.length<=3?frontier:[frontier[0],frontier[Math.floor((frontier.length-1)/2)],frontier[frontier.length-1]];
+  const purchases=visible.map(row=>{
+    const gain=row.win-noPurchase.win,missing=Math.max(0,1-coverage);
+    return {id:'buy:'+row.plan.buySlots.join('.'),choice:choice(row,'tempo'),spend:row.plan.spent,
+      gain:coverage>=1-1e-7?gain:null,lowerGain:Math.max(-1,gain-missing),upperGain:Math.min(1,gain+missing)};
+  });
+  return {ready:true,choices,baseline:coverage>=1-1e-7?baseline:null,coverage,searchedPlans:search.plans.length,searchedBoards:boards.size,maxSwaps,provisional:rules.provisional,rulesVersion:rules.version,weightSource:request.weightSource,
+    purchaseContext:options.purchaseContext??shoppingContextKey(state,request),purchaseBaseline:coverage>=1-1e-7?noPurchase.win:null,purchases,
+    gaps:[...new Set([...request.localGaps,...request.targets.filter(t=>t.weight>0).flatMap(t=>t.gaps),'模型不含站位；装备保留在当前英雄上，未模拟拆卸、重做或转移',...(unsupported?['部分备选棋盘有模型未覆盖特征']:[]),...(incompleteEquipment?['部分备选英雄装备明细未齐']:[])])]};
 }

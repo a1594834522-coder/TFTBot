@@ -24,10 +24,16 @@ function dealer(p:number,r:number,n:number,seed:number){
   };
 }
 it('逐槽穷举交叉核对各等级概率与多种剩余牌池',()=>{
-  for(const p of [.01,.05,.15,.3,.55,.75,1])for(const n of [6,14,30,345,420])for(const r of [1,Math.floor(n/2),n-1]){
-    const v=estimateRoll({tierProbability:p,remaining:r,tierRemaining:n});
-    expect(v.hit).toBeCloseTo(enumeratedHit(5,p,r,n),12);
+  for(const heroSlots of [4,5] as const)for(const p of [.01,.05,.15,.3,.55,.75,1])for(const n of [6,14,30,345,420])for(const r of [1,Math.floor(n/2),n-1]){
+    const v=estimateRoll({tierProbability:p,remaining:r,tierRemaining:n,heroSlots});
+    expect(v.hit).toBeCloseTo(enumeratedHit(heroSlots,p,r,n),12);
   }
+});
+it('四格和五格采用各自的抽牌数与耗尽门槛，现成商店牌仍无需刷新',()=>{
+  expect(estimateRoll({tierProbability:1,remaining:1,tierRemaining:10,heroSlots:4})).toMatchObject({hit:.4,meanGold:5,gold50:4,gold90:10});
+  expect(estimateRoll({tierProbability:1,remaining:1,tierRemaining:4,heroSlots:4}).hit).toBe(1);
+  expect(estimateRoll({tierProbability:1,remaining:1,tierRemaining:4,heroSlots:5}).meanGold).toBeNull();
+  expect(estimateRoll({tierProbability:0,remaining:0,tierRemaining:0,heroSlots:4,inShop:true}).meanGold).toBe(0);
 });
 it('上次实局阿卡丽快照：约10.024%单刷命中、19.952金均值、14/44金分位数',()=>{
   const v=estimateRoll({tierProbability:.3,remaining:24,tierRemaining:345});

@@ -1,9 +1,10 @@
-import {describe,it,expect} from 'vitest';
+import {describe,it,expect,vi} from 'vitest';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import {createLiveMonitor} from '../src/desktop/live-monitor';
 import {advisorDemo} from '../src/desktop/advisor-demo';
+import {decisionFingerprint} from '../src/desktop/trace-fingerprint';
 describe('local replay evidence',()=>{
   it('writes unknown native fields to dedicated contract evidence without using the native parser to approve them',async()=>{
     const dir=await fs.mkdtemp(path.join(os.tmpdir(),'tft-probe-'));
@@ -24,11 +25,43 @@ describe('local replay evidence',()=>{
       const after=(await fs.readFile(path.join(dir,'events.jsonl'),'utf8')).trim().split('\n').map(s=>JSON.parse(s));expect(after.filter(e=>e.type==='decision-state')).toHaveLength(1);
     }finally{await fs.rm(dir,{recursive:true,force:true});}
   });
-  it('respects the existing file cap across restarts',async()=>{
+  it('rotates a legacy full file across restart and continues recording without discarding it',async()=>{
     const dir=await fs.mkdtemp(path.join(os.tmpdir(),'tft-trace-')),file=path.join(dir,'events.jsonl');
     try{
       const handle=await fs.open(file,'w');await handle.truncate(50_000_000);await handle.close();
-      const monitor=createLiveMonitor(dir);monitor.note('test',{});await monitor.flush();expect((await fs.stat(file)).size).toBe(50_000_000);
+      const monitor=createLiveMonitor(dir);monitor.note('test',{});await monitor.flush();expect((await fs.stat(file)).size).toBeLessThan(16_000_000);expect((await fs.stat(path.join(dir,'events.1.jsonl'))).size).toBe(50_000_000);
+      const entries=(await fs.readFile(file,'utf8')).trim().split('\n').map(s=>JSON.parse(s));expect(entries.some(e=>e.type==='test')).toBe(true);
     }finally{await fs.rm(dir,{recursive:true,force:true});}
+  });
+  it('deduplicates timestamp/revision churn but records meaningful content and freshness changes',()=>{
+    const status=advisorDemo('ap'),now=status.lastFrameAt!;status.testMode=false;status.cards.battleBoards={local:{at:now,units:[]},opponents:{peer:{at:now,units:[]}}};
+    const first=decisionFingerprint(status,now),other=structuredClone(status);other.frames++;other.tracker!.revision++;other.lastFrameAt=now+1000;other.cards.goldAt=now+1000;other.cards.itemBenchesAt=now+1000;other.cards.battleBoards!.local!.at=now+1000;other.cards.battleBoards!.opponents.peer.at=now+1000;
+    expect(decisionFingerprint(other,now+1000)).toBe(first);
+    other.cards.gold=(other.cards.gold??0)+1;expect(decisionFingerprint(other,now+1000)).not.toBe(first);
+    other.cards.gold=status.cards.gold;other.lastFrameAt=now+17000;expect(decisionFingerprint(other,now+17000)).not.toBe(first);
+    other.cards.battleBoards!.opponents.peer.at=now+17000;expect(decisionFingerprint(other,now+17000)).toBe(first);
+  });
+  it('stores one physical decision state for repeated native clock updates, then records a changed round',async()=>{
+    const dir=await fs.mkdtemp(path.join(os.tmpdir(),'tft-churn-'));
+    try{
+      const monitor=createLiveMonitor(dir),status=advisorDemo('ap');status.testMode=false;status.frames=10;
+      status.cards.battleBoards={local:{at:Date.now(),units:[]},opponents:{}};monitor.status(status);await monitor.flush();
+      for(let n=0;n<40;n++){status.frames++;status.tracker!.revision++;status.lastFrameAt=Date.now();status.cards.goldAt=Date.now();status.cards.itemBenchesAt=Date.now();status.cards.battleBoards.local!.at=Date.now();monitor.status(status);}
+      await monitor.flush();let entries=(await fs.readFile(path.join(dir,'events.jsonl'),'utf8')).trim().split('\n').map(s=>JSON.parse(s));expect(entries.filter(e=>e.type==='decision-state')).toHaveLength(1);
+      status.cards.round='5-1';monitor.status(status);await monitor.flush();entries=(await fs.readFile(path.join(dir,'events.jsonl'),'utf8')).trim().split('\n').map(s=>JSON.parse(s));
+      expect(entries.filter(e=>e.type==='decision-state')).toHaveLength(2);expect(entries.filter(e=>e.type==='decision-state')[1].status.cards.goldAt).toBe(status.cards.goldAt);
+    }finally{await fs.rm(dir,{recursive:true,force:true});}
+  });
+  it('flushes the latest coalesced snapshot including reader stop, without recording later caller mutations',async()=>{
+    vi.useFakeTimers();vi.setSystemTime(new Date('2026-10-21T04:00:00Z'));const dir=await fs.mkdtemp(path.join(os.tmpdir(),'tft-final-frame-'));
+    try{
+      const monitor=createLiveMonitor(dir),status=advisorDemo('ap');status.testMode=false;status.frames=10;monitor.status(status);await monitor.flush();
+      vi.setSystemTime(Date.now()+100);status.cards.gold=12;monitor.status(status);status.cards.gold=99;await monitor.flush();
+      let entries=(await fs.readFile(path.join(dir,'events.jsonl'),'utf8')).trim().split('\n').map(s=>JSON.parse(s)).filter(e=>e.type==='decision-state');
+      expect(entries).toHaveLength(2);expect(entries[1].status.cards.gold).toBe(12);expect(entries[1].status.message).toBe(status.message);
+      monitor.status({...status,phase:'stopped',frames:0,lastFrameAt:null});await monitor.flush();
+      entries=(await fs.readFile(path.join(dir,'events.jsonl'),'utf8')).trim().split('\n').map(s=>JSON.parse(s)).filter(e=>e.type==='decision-state');
+      expect(entries.at(-1).status).toMatchObject({phase:'stopped',frames:0,lastFrameAt:null});expect(vi.getTimerCount()).toBe(0);
+    }finally{vi.useRealTimers();await fs.rm(dir,{recursive:true,force:true});}
   });
 });

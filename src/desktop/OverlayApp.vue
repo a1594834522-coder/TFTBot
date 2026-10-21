@@ -17,7 +17,7 @@ const holds=computed(()=>resolveHoldAdvice(battle.value?.direction,advisor.evalu
 const error=ref('');const off:Array<()=>void>=[];
 async function action(a:Parameters<typeof window.tftDesktop.overlay>[0]){state.value=await window.tftDesktop.overlay(a);}
 async function transition(id:string|null){try{comp.value=await window.tftDesktop.selectTransition(id);error.value='';}catch(e){error.value=String(e);}}
-async function focus(boardId:string|null){try{preferences.value=await window.tftDesktop.configureAdvisor({...preferences.value,items:[...preferences.value.items],boardId});error.value='';}catch(e){error.value=String(e);}}
+async function focus(boardId:string|null){try{preferences.value=await window.tftDesktop.configureAdvisor({...preferences.value,items:[...preferences.value.items],purchase:preferences.value.purchase?{...preferences.value.purchase}:null,boardId});error.value='';}catch(e){error.value=String(e);}}
 onMounted(async()=>{off.push(window.tftDesktop.onAdvisorPreferences(p=>preferences.value=p));preferences.value=await window.tftDesktop.advisorPreferences();});
 onMounted(async()=>{off.push(window.tftDesktop.onBattle(value=>battle.value=value));battle.value=await window.tftDesktop.battleSnapshot();});
 onMounted(async()=>{off.push(window.tftDesktop.onSelectedComp(c=>comp.value=c),window.tftDesktop.onReader(s=>status.value=s),window.tftDesktop.onOverlay(s=>state.value=s));comp.value=await window.tftDesktop.selectedComp();status.value=await window.tftDesktop.readerSnapshot();await action('snapshot');});

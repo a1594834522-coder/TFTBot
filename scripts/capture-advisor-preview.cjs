@@ -15,6 +15,7 @@ app.whenReady().then(async()=>{
   win.webContents.on('console-message',details=>{if(details.level==='error')console.error(details.message);});
   await win.loadURL('tftbot://app/index.html#advisor-design');
   const js=code=>win.webContents.executeJavaScript(code);
+  const settle=()=>js(`(async()=>{await Promise.race([Promise.all(Array.from(document.images).filter(i=>{const r=i.getBoundingClientRect();return r.width>0&&r.bottom>0&&r.top<innerHeight;}).map(i=>i.decode().catch(()=>{}))),new Promise(r=>setTimeout(r,1800))]);await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));})()`);
   const wait=async code=>{for(let i=0;i<80;i++){if(await js(code))return;await new Promise(resolve=>setTimeout(resolve,50));}throw Error('Preview did not reach '+code);};
   await wait(`!!document.querySelector('[data-direction-advisor]')`);
   await js(`Array.from(document.querySelectorAll('.preview-toolbar button')).find(b=>b.textContent.includes('4-2')).click()`);
@@ -91,12 +92,14 @@ app.whenReady().then(async()=>{
   await wait(`!document.querySelector('[data-game-overlay]')&&document.querySelector('[data-direction-advisor]')?.dataset.mode==='flex'`);
   // Verify the shared desktop shell at the supported minimum size and a wide window.
   report.responsive={};
-  for(const width of [1080,1280,1440]){
-   win.setSize(width,960);
+  for(const [width,height] of [[1080,720],[1080,960],[1280,960],[1440,960]]){
+   win.setSize(width,height);
    await js(`document.querySelector('.desktop-content').scrollTo(0,0);new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))`);
-   report.responsive[width]=await js(`({overflow:document.documentElement.scrollWidth>innerWidth||document.querySelector('.desktop-content').scrollWidth>document.querySelector('.desktop-content').clientWidth+2,sidebar:document.querySelector('.desktop-sidebar').getBoundingClientRect().width,tab:document.querySelector('[role=tab][aria-selected=true]')?.dataset.advisorWorkspace})`);
-   if(report.responsive[width].overflow||report.responsive[width].sidebar<140||report.responsive[width].sidebar>200)throw Error('Advisor shell layout failed at '+width+': '+JSON.stringify(report.responsive[width]));
-   await fs.writeFile(path.join(out,'advisor-'+width+'.png'),(await win.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+   const size=height===720?width+'x'+height:width;
+   report.responsive[size]=await js(`({overflow:document.documentElement.scrollWidth>innerWidth||document.querySelector('.desktop-content').scrollWidth>document.querySelector('.desktop-content').clientWidth+2,sidebar:document.querySelector('.desktop-sidebar').getBoundingClientRect().width,tab:document.querySelector('[role=tab][aria-selected=true]')?.dataset.advisorWorkspace})`);
+   if(report.responsive[size].overflow||report.responsive[size].sidebar<140||report.responsive[size].sidebar>200)throw Error('Advisor shell layout failed at '+size+': '+JSON.stringify(report.responsive[size]));
+   await settle();
+   await fs.writeFile(path.join(out,'advisor-'+size+'.png'),(await win.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
   }
   await js(`document.querySelector('[data-advisor-workspace="tactics"]').click();new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))`);
   if(!await js(`getComputedStyle(document.querySelector('#advisor-pane-routes')).display==='none'&&getComputedStyle(document.querySelector('#advisor-pane-tactics')).display!=='none'`))throw Error('Workspace tab did not change visible content');
@@ -108,6 +111,7 @@ app.whenReady().then(async()=>{
   for(const width of [1080,1440]){
    win.setSize(width,960);
    await js(`new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))`);
+   await settle();
    report.compositions[width]=await js(`({rows:document.querySelectorAll('[data-comp]').length,expandedWidth:document.querySelector('.comp-card.expanded')?.getBoundingClientRect().width,contentWidth:document.querySelector('.compositions').clientWidth,overflow:document.querySelector('.compositions').scrollWidth>document.querySelector('.compositions').clientWidth+2})`);
    if(report.compositions[width].rows<1||report.compositions[width].overflow||report.compositions[width].expandedWidth<report.compositions[width].contentWidth*.9)throw Error('Compositions layout failed at '+width);
    await fs.writeFile(path.join(out,'compositions-'+width+'.png'),(await win.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());

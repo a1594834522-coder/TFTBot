@@ -214,8 +214,8 @@ async function start() {
   ipcMain.handle('desktop:pin', (event, enabled) => { trusted(event); window!.setAlwaysOnTop(enabled === true); });
   window = new BrowserWindow({
     title: 'TFTBot · 云顶助手', width: 1440, height: 960, minWidth: 1080, minHeight: 720,
-    backgroundColor: '#141413', show: false, autoHideMenuBar: true,
-    titleBarStyle:'hidden',titleBarOverlay:{color:'#181817',symbolColor:'#aaa79e',height:44},
+    backgroundColor: '#242422', show: false, autoHideMenuBar: true,
+    titleBarStyle:'hidden',titleBarOverlay:{color:'#1e1e1c',symbolColor:'#b6b3a8',height:44},
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: !smoke },
   });
   window.once('closed', () => { overlayWindow?.close(); augmentWindow?.close(); app.quit(); });

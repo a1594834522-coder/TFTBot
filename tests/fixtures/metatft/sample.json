@@ -1,0 +1,65 @@
+{
+  "patch": { "patch": "18.4", "b_patch_version": "b", "count": 32575549, "start": "2026-10-01T00:00:00Z" },
+  "latest_cluster_id": { "updated": 1760000000, "tft_set": "TFTSet18", "cluster_id": 426 },
+  "comp_options": {
+    "results": {
+      "overall": { "count": 32575549 },
+      "options": {
+        "426007": {
+          "8": [
+            {
+              "cluster": 426,
+              "name": "虚空大龙",
+              "units_list": ["TFT18_ChoGath", "TFT18_RekSai", "TFT18_KogMaw", "TFT18_Kaisa", { "unit": "TFT18_Belveth" }],
+              "traits_list": [
+                { "trait": "TFT18_Void", "count": 5 },
+                { "trait": "TFT18_Brawler", "count": 2 }
+              ],
+              "tags": ["新手推荐"]
+            }
+          ]
+        },
+        "426012": {
+          "9": [
+            {
+              "cluster": 426,
+              "units_list": [{ "apiName": "Ahri" }, { "apiName": "Lux" }, { "apiName": "Sona" }],
+              "traits_list": ["Arcanist", { "name": "Scholar", "num_units": 2 }]
+            }
+          ]
+        },
+        "426030": {
+          "7": [{ "cluster": 426, "units_list": [], "traits_list": [] }]
+        }
+      }
+    }
+  },
+  "comp_details": {
+    "results": {
+      "placements": [120, 130, 140, 150, 160, 170, 180, 150],
+      "final_levels": [
+        { "level": "8", "count": 500, "avg": 4.66 },
+        { "level": "9", "count": 300, "avg": 3.53 }
+      ],
+      "levels": [
+        { "stage": 3, "round": 2, "level": 6, "count": 900 },
+        { "stage": 4, "round": 1, "level": 7, "count": 800 }
+      ],
+      "overall": { "count": 1200, "avg": 4.31 }
+    }
+  },
+  "explorer_level": [
+    { "level": "10", "placement_count": [382739, 234704, 200000, 180000, 170000, 160000, 150000, 140000] },
+    { "level": "9", "placement_count": [300000, 280000, 260000, 240000, 220000, 200000, 190000, 180000] }
+  ],
+  "early_comps": {
+    "tft_set": "TFTSet18",
+    "sampleSize": 185438,
+    "comps_overview": {
+      "stage-2": {
+        "stats": { "matchup_winrate": 0.5, "avg_hp": 88.4 },
+        "comps": [{ "units_list": ["TFT18_Ahri"], "final_place_avg": 4.4 }]
+      }
+    }
+  }
+}

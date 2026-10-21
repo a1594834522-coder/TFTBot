@@ -1,0 +1,19 @@
+node_modules/
+dist/
+desktop-release/
+artifacts/
+*.log
+.DS_Store
+backup/
+.vite/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+.agents/
+.codex/
+# Internal working notes may contain local machine and session details.
+/docs/DECISION-WORK-LOG.md

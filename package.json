@@ -1,0 +1,55 @@
+{
+  "name": "tftbot",
+  "private": true,
+  "version": "1.1.1",
+  "type": "module",
+  "main": "dist/desktop/main.cjs",
+  "description": "TFT 对局信息面板：事件驱动的悬浮窗、记牌器、三星预警与阵容推荐",
+  "scripts": {
+    "start": "npm run build:desktop && electron .",
+    "build:desktop": "node scripts/build-desktop.mjs",
+    "test:desktop": "node scripts/smoke-desktop.mjs",
+    "test:recognition:native": "node scripts/test-native-recognition.mjs",
+    "test:direction:worker": "node scripts/test-direction-worker.mjs",
+    "pack:desktop": "npm run build:desktop && node scripts/pack-desktop.mjs",
+    "dev": "vite",
+    "build": "npm run build:core && npm run build:ui && npm run build:boot",
+    "preview": "vite preview --port 5180 --strictPort",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json",
+    "coverage": "node scripts/coverage.mjs",
+    "demo": "node scripts/demo.mjs",
+    "demo:ui": "node scripts/ui-demo.mjs",
+    "demo:boot": "node scripts/boot-demo.mjs",
+    "build:core": "vite build && node scripts/demo.mjs",
+    "build:ui": "vite build --config vite.ui.config.ts && node scripts/ui-demo.mjs",
+    "build:boot": "vite build --config vite.boot.config.ts && node scripts/boot-demo.mjs",
+    "pack": "node scripts/pack.mjs",
+    "verify:release": "node scripts/verify-release.mjs",
+    "metatft:sync": "node scripts/metatft-sync.mjs"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs": "4.22.0",
+    "vue": "^3.5.13",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "electron": "44.9.0",
+    "esbuild": "^0.24.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7",
+    "vitest": "^3.2.4",
+    "vue-tsc": "^2.2.0"
+  },
+  "keywords": [
+    "tft",
+    "overlay",
+    "electron",
+    "vue",
+    "typescript"
+  ],
+  "license": "MIT"
+}

@@ -1,0 +1,362 @@
+{
+  "source": "2026-10-20 实局脱敏，只保留玩家索引、棋子与位置类型；非实时数据",
+  "frame": {
+    "players": [
+      {
+        "index": 0,
+        "champions": [
+          {
+            "id": "DA_18_Ornn",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Ornn",
+            "level": 1,
+            "location": 1,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Xayah",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Leona",
+            "level": 1,
+            "location": 1,
+            "copies": 1
+          }
+        ]
+      },
+      {
+        "index": 1,
+        "champions": [
+          {
+            "id": "DA_18_Camille",
+            "level": 1,
+            "location": 1,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Camille",
+            "level": 1,
+            "location": 1,
+            "copies": 1
+          },
+          {
+            "id": "DA_Karma18",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Yorick",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "champions": [
+          {
+            "id": "DA_18_Ornn",
+            "level": 1,
+            "location": 1,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Leona",
+            "level": 1,
+            "location": 1,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Kayle",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          }
+        ]
+      },
+      {
+        "index": 3,
+        "champions": [
+          {
+            "id": "DA_18_Camille",
+            "level": 1,
+            "location": 1,
+            "copies": 1
+          },
+          {
+            "id": "DA_Karma18",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Sentry",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Caitlyn",
+            "level": 1,
+            "location": 1,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Rakan",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Rakan",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          }
+        ]
+      },
+      {
+        "index": 4,
+        "champions": [
+          {
+            "id": "DA_18_Yorick",
+            "level": 1,
+            "location": 1,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Veigar",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          },
+          {
+            "id": "DA_Cinderling18",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Caitlyn",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          },
+          {
+            "id": "DA_Karma18",
+            "level": 1,
+            "location": 1,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_RekSai",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          }
+        ]
+      },
+      {
+        "index": 5,
+        "champions": [
+          {
+            "id": "DA_18_Sentry",
+            "level": 1,
+            "location": 1,
+            "copies": 1
+          }
+        ]
+      },
+      {
+        "index": 6,
+        "champions": [
+          {
+            "id": "DA_18_Xayah",
+            "level": 1,
+            "location": 1,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Shen",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Tristana",
+            "level": 1,
+            "location": 1,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Xayah",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Akali_AD",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Veigar",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Veigar",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Sentry",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          }
+        ]
+      },
+      {
+        "index": 7,
+        "champions": [
+          {
+            "id": "DA_18_Rakan",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Rakan",
+            "level": 1,
+            "location": 1,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_KhaZix",
+            "level": 1,
+            "location": 2,
+            "copies": 1
+          },
+          {
+            "id": "DA_18_Tristana",
+            "level": 1,
+            "location": 1,
+            "copies": 1
+          }
+        ]
+      }
+    ]
+  },
+  "roster": [
+    {
+      "summoner": "玩家0",
+      "tag_line": "测试",
+      "index": "0",
+      "health": "100",
+      "xp": "2",
+      "localplayer": "0",
+      "rank": "0"
+    },
+    {
+      "summoner": "玩家1",
+      "tag_line": "测试",
+      "index": "1",
+      "health": "100",
+      "xp": "2",
+      "localplayer": "0",
+      "rank": "0"
+    },
+    {
+      "summoner": "玩家2",
+      "tag_line": "测试",
+      "index": "2",
+      "health": "100",
+      "xp": "2",
+      "localplayer": "1",
+      "rank": "0"
+    },
+    {
+      "summoner": "玩家3",
+      "tag_line": "测试",
+      "index": "3",
+      "health": "100",
+      "xp": "2",
+      "localplayer": "0",
+      "rank": "0"
+    },
+    {
+      "summoner": "玩家4",
+      "tag_line": "测试",
+      "index": "4",
+      "health": "100",
+      "xp": "2",
+      "localplayer": "0",
+      "rank": "0"
+    },
+    {
+      "summoner": "玩家5",
+      "tag_line": "测试",
+      "index": "5",
+      "health": "100",
+      "xp": "2",
+      "localplayer": "0",
+      "rank": "0"
+    },
+    {
+      "summoner": "玩家6",
+      "tag_line": "测试",
+      "index": "6",
+      "health": "100",
+      "xp": "2",
+      "localplayer": "0",
+      "rank": "0"
+    },
+    {
+      "summoner": "玩家7",
+      "tag_line": "测试",
+      "index": "7",
+      "health": "100",
+      "xp": "2",
+      "localplayer": "0",
+      "rank": "0"
+    }
+  ],
+  "board": {
+    "cell_24": {
+      "name": "DA_18_Leona",
+      "level": "1",
+      "item_1": "",
+      "item_2": "",
+      "item_3": ""
+    },
+    "cell_25": {
+      "name": "DA_18_Ornn",
+      "level": "1",
+      "item_1": "",
+      "item_2": "",
+      "item_3": ""
+    }
+  },
+  "bench": {
+    "cell_2": {
+      "name": "DA_18_Kayle",
+      "level": "1",
+      "item_1": "",
+      "item_2": "",
+      "item_3": ""
+    }
+  }
+}

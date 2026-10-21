@@ -1,0 +1,24 @@
+{
+  "set": 18,
+  "fetchedAt": "2026-10-20T14:14:52.609Z",
+  "files": {
+    "lookups.json": {
+      "url": "https://data.metatft.com/model_lookupsEA_TFTSet18.json",
+      "bytes": 73394,
+      "sha256": "5801cf016925fb9500682c2de0dbf6922f9cee6ae32fa3dc4ab56748d5a0f1d7",
+      "lastModified": "Tue, 20 Oct 2026 08:56:59 GMT"
+    },
+    "model.json": {
+      "url": "https://data.metatft.com/WinRateModelImproved_BoardStrengthEA_TFTSet18/model.json",
+      "bytes": 68504,
+      "sha256": "f0c56077f2abb9e6616d8f68dd389915976f7591662d1492e1c032d9ca016429",
+      "lastModified": "Tue, 20 Oct 2026 08:56:59 GMT"
+    },
+    "group1-shard1of1.bin": {
+      "url": "https://data.metatft.com/WinRateModelImproved_BoardStrengthEA_TFTSet18/group1-shard1of1.bin",
+      "bytes": 917796,
+      "sha256": "d2ee5fb7af24b4eced63a9626424b0e1c09914c0a358f0ff206415bef22997cf",
+      "lastModified": "Tue, 20 Oct 2026 08:57:00 GMT"
+    }
+  }
+}

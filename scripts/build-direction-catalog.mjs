@@ -1,0 +1,14 @@
+import fs from 'node:fs/promises';
+import {build} from 'esbuild';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+const out=path.resolve('dist/comp-profile-analysis');
+await build({entryPoints:['src/decision/direction-catalog.ts'],outfile:path.join(out,'direction-adapter.mjs'),bundle:true,platform:'node',format:'esm'});
+const {compileDirectionProfiles,compileAugmentFact}=await import(pathToFileURL(path.join(out,'direction-adapter.mjs')));
+const {profiles,meta}=JSON.parse(await fs.readFile('data/metatft-strategic-profiles.json','utf8')),roles=JSON.parse(await fs.readFile('data/decision-unit-roles.json','utf8')).units;
+const referenceDir=process.env.METATFT_REFERENCE_DIR;
+if(!referenceDir)throw Error('Set METATFT_REFERENCE_DIR to the local MetaTFT reference-data directory. Normal builds use the committed snapshots and do not need it.');
+const lookup=JSON.parse((await fs.readFile(path.join(referenceDir,'TFTSet18_latest_en_us.json'),'utf8')).replace(/^\uFEFF/,''));
+const catalogue={meta,profiles:compileDirectionProfiles(profiles,roles),roles,augments:Object.fromEntries(lookup.augments.map(a=>[a.apiName,compileAugmentFact(a)])),traitThresholds:Object.fromEntries(lookup.traits.map(t=>[t.apiName,Math.min(...t.effects.filter(e=>e.minUnits>0).map(e=>e.minUnits))]).filter(([,v])=>Number.isFinite(v)))};
+await fs.writeFile('data/metatft-direction-catalog.json',JSON.stringify(catalogue));
+console.log(JSON.stringify({profiles:catalogue.profiles.length,pairs:catalogue.profiles.reduce((n,p)=>n+p.pairs.length,0),augments:Object.keys(catalogue.augments).length,bytes:Buffer.byteLength(JSON.stringify(catalogue))}));

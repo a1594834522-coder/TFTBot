@@ -1,0 +1,33 @@
+{
+  "events": 7,
+  "invalid": 0,
+  "alive": 2,
+  "players": [
+    {
+      "name": "Me#111",
+      "health": 100,
+      "champions": 2
+    },
+    {
+      "name": "Foe2#333",
+      "health": 51,
+      "champions": 0
+    },
+    {
+      "name": "Foe1#222",
+      "health": 0,
+      "champions": 1
+    }
+  ],
+  "owned": {
+    "DA_18_Ahri": 3,
+    "DA_18_Caitlyn": 9
+  },
+  "tracker": [
+    {
+      "champion": "DA_18_Ahri",
+      "remaining": 7
+    }
+  ],
+  "warnings": []
+}

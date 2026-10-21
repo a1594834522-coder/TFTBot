@@ -1,0 +1,12 @@
+import fs from 'node:fs/promises';
+import {build} from 'esbuild';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+const root=path.resolve(import.meta.dirname,'..'),out=path.join(root,'dist/transition-analysis');
+await fs.mkdir(out,{recursive:true});
+await build({entryPoints:[path.join(root,'src/decision/transition-goals.ts')],outfile:path.join(out,'library-adapter.mjs'),bundle:true,platform:'node',format:'esm'});
+const {transitionLibrary}=await import(pathToFileURL(path.join(out,'library-adapter.mjs')));
+const graph=JSON.parse(await fs.readFile(path.join(root,'data/metatft-transitions.json'),'utf8'));
+const library=transitionLibrary(graph),json=JSON.stringify(library);
+await fs.writeFile(path.join(root,'data/metatft-transition-library.json'),json);
+console.log(JSON.stringify({nodes:library.nodes.length,edges:library.edges.length,exits:library.exits.length,bytes:Buffer.byteLength(json),clusteringId:library.meta.clusteringId}));

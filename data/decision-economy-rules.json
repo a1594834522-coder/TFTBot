@@ -1,0 +1,75 @@
+{
+  "version": "S18-18.4-economy-reference",
+  "provisional": true,
+  "source": {
+    "metadata": {
+      "set": "TFTSet18",
+      "patch": "pbe",
+      "release": "rls-18.4.0.5637330.Set18FullPC.Shipping.pbe",
+      "manifest": "F9A0F56B2A0F292A",
+      "curveTables": 17,
+      "schemaVersion": 2,
+      "unitApiNameScheme": "TFT18_*",
+      "curveTableKeys": [
+        "CT_18_Charms",
+        "CT_Round_MatchupScores",
+        "abilityLevel",
+        "boardAoeRange",
+        "critChanceConversion",
+        "debuffLevels",
+        "expPerLevel",
+        "expPerLevelLegacy",
+        "lossStreakIncome",
+        "overtimeStats",
+        "passiveIncome",
+        "shopOdds",
+        "spellCritConversion",
+        "starMultipliers",
+        "threeStarBonuses",
+        "unitCost",
+        "winStreakIncome"
+      ]
+    },
+    "tablesSha256": "e8766c5eba70e83beb39e1d4ab2f18fb3e74742cedb18e04dfc5bb602d4c4eeb",
+    "lookupsSha256": "2b7d15ea589eaf45db193d2cea85b7bdd29c666533afa9f6c0c79ebc06577dce",
+    "officialXpCheck": "https://teamfighttactics.leagueoflegends.com/en-us/news/game-updates/teamfight-tactics-patch-18-2/",
+    "officialBuyCostReference": "https://teamfighttactics.leagueoflegends.com/en-sg/news/game-updates/teamfight-tactics-hyper-roll/",
+    "note": "User-provided PBE constants. High-level XP thresholds cross-checked against 18.2 mid-patch notes. Current native XP max takes precedence; standard 4g/4XP and modifier values still reference rules, not a live purchase verification."
+  },
+  "xpRequired": {
+    "1": 2,
+    "2": 2,
+    "3": 6,
+    "4": 10,
+    "5": 20,
+    "6": 36,
+    "7": 56,
+    "8": 68,
+    "9": 68
+  },
+  "goldPerBuy": 4,
+  "xpPerBuy": 4,
+  "maxLevel": 10,
+  "modifiers": {
+    "DA_LevelUp": {
+      "extraXpPerBuy": 2
+    },
+    "DA_UpwardMobility": {
+      "xpBuyDiscount": 1,
+      "freeShopsOnLevel": 2,
+      "healthOnLevel": 2
+    },
+    "DA_GoingLong": {
+      "interestDisabled": true
+    },
+    "DA_Hustler": {
+      "interestDisabled": true
+    },
+    "DA_HedgeFund": {
+      "interestCapBonus": 5
+    },
+    "DA_InvestmentStrategy": {
+      "interestCapBonus": 2
+    }
+  }
+}

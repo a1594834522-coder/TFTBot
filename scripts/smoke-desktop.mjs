@@ -1,0 +1,10 @@
+import { spawn } from 'node:child_process';
+import { createRequire } from 'node:module';
+import path from 'node:path';
+const require = createRequire(import.meta.url);
+const env = { ...process.env, TFTBOT_SMOKE_DIR: path.resolve('dist/desktop-smoke') };
+delete env.ELECTRON_RUN_AS_NODE;
+const packaged=process.env.TFTBOT_SMOKE_EXE;
+const child = spawn(packaged??require('electron'), [...(packaged?[]:[path.resolve('dist/desktop/main.cjs')]), '--smoke', ...process.argv.slice(2)], { env, stdio: 'inherit', windowsHide: true });
+child.on('error', (error) => { console.error(error); process.exitCode = 1; });
+child.on('exit', (code) => { process.exitCode = code ?? 1; });

@@ -1,0 +1,1064 @@
+{
+  "meta": {
+    "set": 18,
+    "locale": "zh_CN",
+    "source": "https://data.metatft.com/lookups/TFTSet18_latest_zh_cn.json",
+    "fetchedAt": "2026-10-19T16:24:36.374Z",
+    "generated": "2026-10-06T21:13:15.212Z",
+    "scope": "names-only",
+    "overrides": {
+      "DA_ChallengersGrace": "挑战者的恩典",
+      "DA_18_FloraFatalisAugmentPlus": "致命丽花+",
+      "DA_DoubleTrouble": "好事成双"
+    },
+    "sha256": "853c03be3acd299f83204a0735662cc2f317c0d78a1d4d46e3d3beb3b1e52c00"
+  },
+  "augments": {
+    "DA_AdvancedLoan": {
+      "name": "高级贷款",
+      "rarity": "Gold"
+    },
+    "DA_AdvancedLoanPlus": {
+      "name": "高级贷款+",
+      "rarity": "Gold"
+    },
+    "DA_ArcaneViktory": {
+      "name": "双城赢家",
+      "rarity": "Gold"
+    },
+    "DA_Ascension": {
+      "name": "飞升",
+      "rarity": "Gold"
+    },
+    "DA_PartialAscension": {
+      "name": "部分飞升",
+      "rarity": "Silver"
+    },
+    "DA_AugmentedPower": {
+      "name": "强化之能量",
+      "rarity": "Silver"
+    },
+    "DA_BacklineBlueprint": {
+      "name": "后排蓝图",
+      "rarity": "Gold"
+    },
+    "DA_BirthdayPresent": {
+      "name": "生日礼物",
+      "rarity": "Prismatic"
+    },
+    "DA_BodyguardTraining": {
+      "name": "利落保镖",
+      "rarity": "Gold"
+    },
+    "DA_BoosterPack": {
+      "name": "扩展包",
+      "rarity": "Gold"
+    },
+    "DA_BoosterPackPlus": {
+      "name": "扩展包+",
+      "rarity": "Gold"
+    },
+    "DA_BoosterPackPlusPlus": {
+      "name": "扩展包++",
+      "rarity": "Gold"
+    },
+    "DA_BoxingLessons": {
+      "name": "拳击课程",
+      "rarity": "Silver"
+    },
+    "DA_BronzeForLifeI": {
+      "name": "终身黄铜 I",
+      "rarity": "Gold"
+    },
+    "DA_BronzeForLifeII": {
+      "name": "终身黄铜 II",
+      "rarity": "Prismatic"
+    },
+    "DA_BuildABud": {
+      "name": "来个好伙计",
+      "rarity": "Prismatic"
+    },
+    "DA_CalculatedLoss": {
+      "name": "存心失利",
+      "rarity": "Gold"
+    },
+    "DA_CalledShot": {
+      "name": "进攻宣告",
+      "rarity": "Silver"
+    },
+    "DA_CapitalGainsI": {
+      "name": "资本利得 I",
+      "rarity": "Silver"
+    },
+    "DA_CapitalGainsII": {
+      "name": "资本利得 II",
+      "rarity": "Gold"
+    },
+    "DA_CelestialBlessingI": {
+      "name": "星界赐福 I",
+      "rarity": "Silver"
+    },
+    "DA_CelestialBlessingII": {
+      "name": "星界赐福 II",
+      "rarity": "Gold"
+    },
+    "DA_CelestialBlessingIII": {
+      "name": "星界赐福 III",
+      "rarity": "Prismatic"
+    },
+    "DA_ChallengersGrace": {
+      "name": "挑战者的恩典",
+      "rarity": "Gold"
+    },
+    "DA_ChampDelivery": {
+      "name": "弈子配送",
+      "rarity": "Silver"
+    },
+    "DA_ChampDeliveryPlus": {
+      "name": "弈子配送+",
+      "rarity": "Silver"
+    },
+    "DA_ChampDeliveryPlusPlus": {
+      "name": "弈子配送++",
+      "rarity": "Silver"
+    },
+    "DA_ClearMind": {
+      "name": "清晰头脑",
+      "rarity": "Gold"
+    },
+    "DA_ClockworkAccelerator": {
+      "name": "发条增速器",
+      "rarity": "Gold"
+    },
+    "DA_ClutteredMind": {
+      "name": "纷乱头脑",
+      "rarity": "Gold"
+    },
+    "DA_CognitiveTax": {
+      "name": "认知税",
+      "rarity": "Silver"
+    },
+    "DA_CognitiveTaxPlus": {
+      "name": "认知税+",
+      "rarity": "Silver"
+    },
+    "DA_ComebackStory": {
+      "name": "绝境反击",
+      "rarity": "Prismatic"
+    },
+    "DA_CommerceCore": {
+      "name": "贸易中心",
+      "rarity": "Prismatic"
+    },
+    "DA_ConstructACompanion": {
+      "name": "挑个好伙计！",
+      "rarity": "Gold"
+    },
+    "DA_ForgeAFriend": {
+      "name": "锻造挚友",
+      "rarity": "Silver"
+    },
+    "DA_Corrosion": {
+      "name": "腐蚀",
+      "rarity": "Silver"
+    },
+    "DA_CursedCrown": {
+      "name": "诅咒冠冕",
+      "rarity": "Prismatic"
+    },
+    "DA_GoldDestiny": {
+      "name": "黄金命运",
+      "rarity": "Gold"
+    },
+    "DA_GoldDestinyPlus": {
+      "name": "黄金命运+",
+      "rarity": "Gold"
+    },
+    "DA_PrismaticDestiny": {
+      "name": "棱彩命运",
+      "rarity": "Prismatic"
+    },
+    "DA_PrismaticDestinyPlus": {
+      "name": "棱彩命运+",
+      "rarity": "Prismatic"
+    },
+    "DA_SilverDestiny": {
+      "name": "白银命运",
+      "rarity": "Silver"
+    },
+    "DA_SilverDestinyPlus": {
+      "name": "白银命运+",
+      "rarity": "Silver"
+    },
+    "DA_SilverDestinyPlusPlus": {
+      "name": "白银命运++",
+      "rarity": "Silver"
+    },
+    "DA_EarlyLearnings": {
+      "name": "宝宝学院",
+      "rarity": "Gold"
+    },
+    "DA_ElectrochargeI": {
+      "name": "电火花 I",
+      "rarity": "Silver"
+    },
+    "DA_ElectrochargeII": {
+      "name": "电火花 II",
+      "rarity": "Gold"
+    },
+    "DA_EpicRolldown": {
+      "name": "8级D干的传说",
+      "rarity": "Gold"
+    },
+    "DA_Epoch": {
+      "name": "新纪元",
+      "rarity": "Gold"
+    },
+    "DA_EpochPlus": {
+      "name": "新纪元+",
+      "rarity": "Gold"
+    },
+    "DA_ExplosiveGrowth": {
+      "name": "爆炸式增长",
+      "rarity": "Gold"
+    },
+    "DA_ExplosiveGrowthPlus": {
+      "name": "爆炸式增长+",
+      "rarity": "Gold"
+    },
+    "DA_FeelingLucky": {
+      "name": "手气不错",
+      "rarity": "Silver"
+    },
+    "DA_FindYourCenter": {
+      "name": "C位的觉悟",
+      "rarity": "Silver"
+    },
+    "DA_FocusedFire": {
+      "name": "集中火力",
+      "rarity": "Silver"
+    },
+    "DA_FrontlineFoundation": {
+      "name": "前线地基",
+      "rarity": "Gold"
+    },
+    "DA_FutureFocused": {
+      "name": "高瞻远瞩",
+      "rarity": "Silver"
+    },
+    "DA_GainGold": {
+      "name": "获得21金币",
+      "rarity": "Gold"
+    },
+    "DA_GiantAndMighty": {
+      "name": "大而有力",
+      "rarity": "Prismatic"
+    },
+    "DA_GildedSteel": {
+      "name": "镀金钢铁",
+      "rarity": "Gold"
+    },
+    "DA_GlassCannon_Silver": {
+      "name": "玻璃大炮 I",
+      "rarity": "Silver"
+    },
+    "DA_GlassCannon_Gold": {
+      "name": "玻璃大炮 II",
+      "rarity": "Gold"
+    },
+    "DA_GoingLong": {
+      "name": "遥遥领先",
+      "rarity": "Prismatic"
+    },
+    "DA_GroupHugI": {
+      "name": "拥抱 I",
+      "rarity": "Silver"
+    },
+    "DA_GroupHugII": {
+      "name": "拥抱 II",
+      "rarity": "Gold"
+    },
+    "DA_HardBargain": {
+      "name": "砍价高手",
+      "rarity": "Gold"
+    },
+    "DA_HealingOrbsI": {
+      "name": "治疗法球 I",
+      "rarity": "Silver"
+    },
+    "DA_HealingOrbsII": {
+      "name": "治疗法球 II",
+      "rarity": "Gold"
+    },
+    "DA_HedgeFund": {
+      "name": "对冲基金",
+      "rarity": "Prismatic"
+    },
+    "DA_HoldTheLine": {
+      "name": "坚守防线",
+      "rarity": "Prismatic"
+    },
+    "DA_Hustler": {
+      "name": "花到上头",
+      "rarity": "Gold"
+    },
+    "DA_InvestmentStrategyI": {
+      "name": "投资策略 I",
+      "rarity": "Gold"
+    },
+    "DA_InvestmentStrategy": {
+      "name": "投资策略 II",
+      "rarity": "Prismatic"
+    },
+    "DA_ItsMeBaby": {
+      "name": "是我，宝贝！",
+      "rarity": "Gold"
+    },
+    "DA_JeweledLotus_I": {
+      "name": "珠光莲花 I",
+      "rarity": "Gold"
+    },
+    "DA_JeweledLotus_II": {
+      "name": "珠光莲花 II",
+      "rarity": "Prismatic"
+    },
+    "DA_KickStart": {
+      "name": "博弈开启",
+      "rarity": "Silver"
+    },
+    "DA_Kingslayer": {
+      "name": "弑君突刺",
+      "rarity": "Silver"
+    },
+    "DA_KnowYourEnemy": {
+      "name": "了解你的敌人",
+      "rarity": "Gold"
+    },
+    "DA_LateGameScaling": {
+      "name": "后期收益",
+      "rarity": "Gold"
+    },
+    "DA_LateGameSpecialist": {
+      "name": "后期专家",
+      "rarity": "Silver"
+    },
+    "DA_LevelUp": {
+      "name": "升级咯！",
+      "rarity": "Prismatic"
+    },
+    "DA_Lineup": {
+      "name": "双子守护神",
+      "rarity": "Silver"
+    },
+    "DA_MakeshiftArmorI": {
+      "name": "应急护甲 I",
+      "rarity": "Silver"
+    },
+    "DA_MakeshiftArmorII": {
+      "name": "应急护甲 II",
+      "rarity": "Gold"
+    },
+    "DA_MaliciousMonetization": {
+      "name": "恶意货币化",
+      "rarity": "Gold"
+    },
+    "DA_MissedConnections": {
+      "name": "别再错过",
+      "rarity": "Silver"
+    },
+    "DA_MoneyHungry_NotBroken": {
+      "name": "贪财",
+      "rarity": "Gold"
+    },
+    "DA_MoneyHungryPlus": {
+      "name": "贪财+",
+      "rarity": "Gold"
+    },
+    "DA_MoneyMonsoon": {
+      "name": "摇钱树",
+      "rarity": "Prismatic"
+    },
+    "DA_NestingDolls": {
+      "name": "弈子套娃",
+      "rarity": "Prismatic"
+    },
+    "DA_NestingDollsPlus": {
+      "name": "弈子套娃",
+      "rarity": "Prismatic"
+    },
+    "DA_NestingDollsPlusPlus": {
+      "name": "弈子套娃",
+      "rarity": "Prismatic"
+    },
+    "DA_NoScoutNoPivot": {
+      "name": "不侦察，不变阵",
+      "rarity": "Gold"
+    },
+    "DA_PandorasBench": {
+      "name": "潘朵拉的备战席",
+      "rarity": "Silver"
+    },
+    "DA_PatienceIsAVirtue": {
+      "name": "耐心是一种美德",
+      "rarity": "Silver"
+    },
+    "DA_PatientStudy": {
+      "name": "耐心学习",
+      "rarity": "Gold"
+    },
+    "DA_PlotArmor": {
+      "name": "应急护盾",
+      "rarity": "Gold"
+    },
+    "DA_PrismaticTicket": {
+      "name": "棱彩门票",
+      "rarity": "Prismatic"
+    },
+    "DA_QuickStreaks": {
+      "name": "连败连胜才能连鸡",
+      "rarity": "Silver"
+    },
+    "DA_RollingForDays": {
+      "name": "D个痛快！",
+      "rarity": "Silver"
+    },
+    "DA_ShoppingSpree": {
+      "name": "大买特买",
+      "rarity": "Prismatic"
+    },
+    "DA_SilverSpoon": {
+      "name": "银汤匙",
+      "rarity": "Silver"
+    },
+    "DA_SliceOfLife": {
+      "name": "人生切片",
+      "rarity": "Silver"
+    },
+    "DA_SoulAwakening": {
+      "name": "灵魂唤醒",
+      "rarity": "Prismatic"
+    },
+    "DA_StandUnited": {
+      "name": "联合作战",
+      "rarity": "Silver"
+    },
+    "DA_SubscriptionService": {
+      "name": "订阅服务",
+      "rarity": "Prismatic"
+    },
+    "DA_TimeSkip": {
+      "name": "时间跳跃",
+      "rarity": "Gold"
+    },
+    "DA_TonsOfStatsI": {
+      "name": "成吨的属性",
+      "rarity": "Gold"
+    },
+    "DA_TonsOfStatsII": {
+      "name": "成吨的属性！",
+      "rarity": "Prismatic"
+    },
+    "DA_TradeSector": {
+      "name": "DD街区",
+      "rarity": "Gold"
+    },
+    "DA_TradeSectorPlus": {
+      "name": "DD街区+",
+      "rarity": "Gold"
+    },
+    "DA_TwinGuardians": {
+      "name": "双子守护神",
+      "rarity": "Silver"
+    },
+    "DA_UpwardMobility": {
+      "name": "上进心",
+      "rarity": "Prismatic"
+    },
+    "DA_VerticalityI": {
+      "name": "纵深 I",
+      "rarity": "Silver"
+    },
+    "DA_VerticalityII": {
+      "name": "纵深 II",
+      "rarity": "Gold"
+    },
+    "DA_VerticalityIII": {
+      "name": "纵深 III",
+      "rarity": "Prismatic"
+    },
+    "DA_WorththeWait": {
+      "name": "值得等待",
+      "rarity": "Gold"
+    },
+    "DA_WorththeWaitII": {
+      "name": "值得等待 II",
+      "rarity": "Prismatic"
+    },
+    "DA_YoungAndWildAndFree": {
+      "name": "不拘一格",
+      "rarity": "Silver"
+    },
+    "DA_BackupBows": {
+      "name": "战时补给：反曲之弓",
+      "rarity": "Silver"
+    },
+    "DA_BandOfThieves": {
+      "name": "窃贼帮派",
+      "rarity": "Silver"
+    },
+    "DA_BandOfThievesII": {
+      "name": "窃贼帮派 II",
+      "rarity": "Prismatic"
+    },
+    "DA_BandOfThievesIIPlus": {
+      "name": "窃贼帮派 II+",
+      "rarity": "Prismatic"
+    },
+    "DA_BandOfThievesIIPlusPlus": {
+      "name": "窃贼帮派 II++",
+      "rarity": "Prismatic"
+    },
+    "DA_BaronsLair": {
+      "name": "男爵幻域",
+      "rarity": "Prismatic"
+    },
+    "DA_BeltOverflow": {
+      "name": "腰带溢流",
+      "rarity": "Prismatic"
+    },
+    "DA_BirthdayReunion": {
+      "name": "生日聚会",
+      "rarity": "Gold"
+    },
+    "DA_BuriedTreasuresIII": {
+      "name": "珍藏财宝 III",
+      "rarity": "Prismatic"
+    },
+    "DA_CallToChaos": {
+      "name": "混沌召唤",
+      "rarity": "Prismatic"
+    },
+    "DA_CaretakersFavor": {
+      "name": "游神的眷顾",
+      "rarity": "Gold"
+    },
+    "DA_CarveAPath": {
+      "name": "战时补给：暴风大剑",
+      "rarity": "Silver"
+    },
+    "DA_Staffsmith": {
+      "name": "杖之工匠",
+      "rarity": "Gold"
+    },
+    "DA_Swordsmith": {
+      "name": "剑之工匠",
+      "rarity": "Gold"
+    },
+    "DA_CognitiveOverload": {
+      "name": "认知过载",
+      "rarity": "Gold"
+    },
+    "DA_ComponentBuffet": {
+      "name": "基础装备自助餐",
+      "rarity": "Silver"
+    },
+    "DA_ComponentQuest": {
+      "name": "基础装备大冒险",
+      "rarity": "Prismatic"
+    },
+    "DA_CookingPot": {
+      "name": "金色炊具",
+      "rarity": "Gold"
+    },
+    "DA_Coronation": {
+      "name": "加冕礼",
+      "rarity": "Prismatic"
+    },
+    "DA_CraftedCrafting": {
+      "name": "精心打造",
+      "rarity": "Silver"
+    },
+    "DA_CryMeARiver": {
+      "name": "泪流成河",
+      "rarity": "Gold"
+    },
+    "DA_CyberneticImplants_Gold": {
+      "name": "源计划植入",
+      "rarity": "Gold"
+    },
+    "DA_CyberneticUplink_Gold": {
+      "name": "源计划上行链路",
+      "rarity": "Gold"
+    },
+    "DA_DeadlierBlades": {
+      "name": "更要命的战刃",
+      "rarity": "Prismatic"
+    },
+    "DA_DeadlierCaps": {
+      "name": "更要命的帽子",
+      "rarity": "Prismatic"
+    },
+    "DA_Dummify": {
+      "name": "假人化",
+      "rarity": "Silver"
+    },
+    "DA_ExclusiveCustomization": {
+      "name": "专属定制",
+      "rarity": "Gold"
+    },
+    "DA_Expedition": {
+      "name": "远征",
+      "rarity": "Silver"
+    },
+    "DA_ExtraBuckles": {
+      "name": "战时补给：巨人腰带",
+      "rarity": "Silver"
+    },
+    "DA_Flexible": {
+      "name": "灵活",
+      "rarity": "Prismatic"
+    },
+    "DA_FlowingTears": {
+      "name": "战时补给：女神之泪",
+      "rarity": "Silver"
+    },
+    "DA_ForgedInStrength": {
+      "name": "神力天铸",
+      "rarity": "Prismatic"
+    },
+    "DA_GoldenEgg": {
+      "name": "金蛋",
+      "rarity": "Prismatic"
+    },
+    "DA_GoldenGamble": {
+      "name": "黄金赌约",
+      "rarity": "Prismatic"
+    },
+    "DA_GoldenGamblePlus": {
+      "name": "黄金赌约+",
+      "rarity": "Prismatic"
+    },
+    "DA_GoldenGamblePlusPlus": {
+      "name": "黄金赌约++",
+      "rarity": "Prismatic"
+    },
+    "DA_HardCommit": {
+      "name": "硬性承诺",
+      "rarity": "Prismatic"
+    },
+    "DA_HeartOfSteel": {
+      "name": "心之钢",
+      "rarity": "Gold"
+    },
+    "DA_HeroicGrabBag": {
+      "name": "英勇福袋",
+      "rarity": "Gold"
+    },
+    "DA_HeroicGrabBagPlus": {
+      "name": "英勇福袋+",
+      "rarity": "Gold"
+    },
+    "DA_HeroicGrabBagPlusPlus": {
+      "name": "英勇福袋++",
+      "rarity": "Gold"
+    },
+    "DA_InfinityProtection": {
+      "name": "三相庇护",
+      "rarity": "Gold"
+    },
+    "DA_InvestedPlus": {
+      "name": "投资+",
+      "rarity": "Prismatic"
+    },
+    "DA_InvestedPlusPlus": {
+      "name": "投资++",
+      "rarity": "Prismatic"
+    },
+    "DA_IronAssets": {
+      "name": "黑铁资产",
+      "rarity": "Silver"
+    },
+    "DA_ItemGrabBag": {
+      "name": "装备百宝袋 I",
+      "rarity": "Silver"
+    },
+    "DA_LatentForge": {
+      "name": "休眠锻炉",
+      "rarity": "Silver"
+    },
+    "DA_LegionOfThrees": {
+      "name": "三幻神",
+      "rarity": "Gold"
+    },
+    "DA_LivingForge": {
+      "name": "活体锻炉",
+      "rarity": "Prismatic"
+    },
+    "DA_LuckyGloves": {
+      "name": "幸运手套",
+      "rarity": "Prismatic"
+    },
+    "DA_LuckyGlovesPlus": {
+      "name": "幸运手套+",
+      "rarity": "Prismatic"
+    },
+    "DA_LuxurySubscription": {
+      "name": "奢侈品订购",
+      "rarity": "Prismatic"
+    },
+    "DA_ExpectedUnexpectedness": {
+      "name": "意料之中的意外",
+      "rarity": "Prismatic"
+    },
+    "DA_MagicRoll": {
+      "name": "魔法投掷",
+      "rarity": "Gold"
+    },
+    "DA_SlightlyMagicRoll": {
+      "name": "轻量魔法投掷",
+      "rarity": "Silver"
+    },
+    "DA_MaxBuild": {
+      "name": "顶尖构筑",
+      "rarity": "Gold"
+    },
+    "DA_Min_Max": {
+      "name": "可大可小",
+      "rarity": "Prismatic"
+    },
+    "DA_NestingAnvils": {
+      "name": "锻造器套娃",
+      "rarity": "Prismatic"
+    },
+    "DA_NestingAnvilsPlus": {
+      "name": "锻造器套娃+",
+      "rarity": "Prismatic"
+    },
+    "DA_OneBuffTwoBuff": {
+      "name": "1个霸符，2个霸符",
+      "rarity": "Prismatic"
+    },
+    "DA_PandorasItemsI": {
+      "name": "潘朵拉的装备 I",
+      "rarity": "Silver"
+    },
+    "DA_PandorasItemsII": {
+      "name": "潘朵拉的装备 II",
+      "rarity": "Gold"
+    },
+    "DA_PandorasItemsIII": {
+      "name": "潘朵拉的装备 III",
+      "rarity": "Prismatic"
+    },
+    "DA_Pilfer": {
+      "name": "挖角",
+      "rarity": "Gold"
+    },
+    "DA_PortableForge": {
+      "name": "便携锻炉",
+      "rarity": "Gold"
+    },
+    "DA_PromisedProtection": {
+      "name": "承诺之护",
+      "rarity": "Gold"
+    },
+    "DA_RadiantRascal": {
+      "name": "光明无赖",
+      "rarity": "Prismatic"
+    },
+    "DA_RadiantRelic": {
+      "name": "光明圣物",
+      "rarity": "Prismatic"
+    },
+    "DA_Recombobulator": {
+      "name": "变形重组器",
+      "rarity": "Silver"
+    },
+    "DA_Replication": {
+      "name": "反响",
+      "rarity": "Gold"
+    },
+    "DA_Retribution": {
+      "name": "正义报复",
+      "rarity": "Prismatic"
+    },
+    "DA_SalvageBin": {
+      "name": "打捞桶",
+      "rarity": "Gold"
+    },
+    "DA_SalvageBinPlus": {
+      "name": "打捞桶+",
+      "rarity": "Gold"
+    },
+    "DA_SeraphimsStaff": {
+      "name": "炽天使之拥",
+      "rarity": "Gold"
+    },
+    "DA_ShimmerscaleEssence": {
+      "name": "金鳞精萃",
+      "rarity": "Prismatic"
+    },
+    "DA_Slammin": {
+      "name": "物尽其用",
+      "rarity": "Gold"
+    },
+    "DA_SlamminPlus": {
+      "name": "物尽其用+",
+      "rarity": "Gold"
+    },
+    "DA_SmallGrabBag": {
+      "name": "小小福袋",
+      "rarity": "Silver"
+    },
+    "DA_SoloLeveling": {
+      "name": "独自升级",
+      "rarity": "Gold"
+    },
+    "DA_SoloPlate": {
+      "name": "单身板甲",
+      "rarity": "Gold"
+    },
+    "DA_SpeedyDoubleKill": {
+      "name": "一波带走俩",
+      "rarity": "Gold"
+    },
+    "DA_SpiritOfRedemption": {
+      "name": "救赎盔甲",
+      "rarity": "Gold"
+    },
+    "DA_SpreadingRoots": {
+      "name": "蔓延之根",
+      "rarity": "Gold"
+    },
+    "DA_SpreadingRootsPlus": {
+      "name": "蔓延之根+",
+      "rarity": "Gold"
+    },
+    "DA_StarringUp": {
+      "name": "D出未来",
+      "rarity": "Prismatic"
+    },
+    "DA_SweetTreats": {
+      "name": "甜点",
+      "rarity": "Prismatic"
+    },
+    "DA_SwordOverflow": {
+      "name": "大剑溢流",
+      "rarity": "Prismatic"
+    },
+    "DA_TacticiansKitchen": {
+      "name": "锅铲厨房",
+      "rarity": "Prismatic"
+    },
+    "DA_TeamBuilding": {
+      "name": "团队建设",
+      "rarity": "Silver"
+    },
+    "DA_TheGoldenDragon": {
+      "name": "金霖龙",
+      "rarity": "Gold"
+    },
+    "DA_TheTower": {
+      "name": "高塔",
+      "rarity": "Silver"
+    },
+    "DA_TheTraitTree": {
+      "name": "羁绊树",
+      "rarity": "Prismatic"
+    },
+    "DA_TheTraitTreePlus": {
+      "name": "羁绊树+",
+      "rarity": "Prismatic"
+    },
+    "DA_TraitLadder": {
+      "name": "羁绊天梯",
+      "rarity": "Prismatic"
+    },
+    "DA_URF": {
+      "name": "厨神阿福",
+      "rarity": "Gold"
+    },
+    "DA_UrfsGrabBag": {
+      "name": "阿福的百宝袋",
+      "rarity": "Prismatic"
+    },
+    "DA_WandOverflow": {
+      "name": "法杖溢流",
+      "rarity": "Prismatic"
+    },
+    "DA_Warpath": {
+      "name": "征战之路",
+      "rarity": "Gold"
+    },
+    "DA_WeStickTogether": {
+      "name": "水乳交融",
+      "rarity": "Prismatic"
+    },
+    "DA_WovenMagic": {
+      "name": "纺织魔法",
+      "rarity": "Gold"
+    },
+    "DA_18_BigGrabBag": {
+      "name": "大百宝袋",
+      "rarity": "Gold"
+    },
+    "DA_BonusGift": {
+      "name": "意外之礼",
+      "rarity": "Gold"
+    },
+    "DA_BonusGiftPlus": {
+      "name": "意外之礼+",
+      "rarity": "Gold"
+    },
+    "DA_18_BranchingOut": {
+      "name": "节外生枝",
+      "rarity": "Silver"
+    },
+    "DA_18_BranchingOutPlus": {
+      "name": "节外生枝+",
+      "rarity": "Silver"
+    },
+    "DA_18_CaretakersAlly": {
+      "name": "游神的盟友",
+      "rarity": "Silver"
+    },
+    "DA_18_DuoQueue": {
+      "name": "双排",
+      "rarity": "Gold"
+    },
+    "DA_18_FOURcing": {
+      "name": "四之力",
+      "rarity": "Gold"
+    },
+    "DA_18_GoodForSomethingI": {
+      "name": "有用之材 I",
+      "rarity": "Silver"
+    },
+    "DA_LoadedDice": {
+      "name": "灌铅骰子",
+      "rarity": "Silver"
+    },
+    "DA_18_OnesTwosThree": {
+      "name": "一一二三",
+      "rarity": "Silver"
+    },
+    "DA_18_OneTwoFive": {
+      "name": "一，二，五！",
+      "rarity": "Silver"
+    },
+    "DA_18_ResidualMagic": {
+      "name": "残留魔力",
+      "rarity": "Silver"
+    },
+    "DA_18_ResidualMagicPlus": {
+      "name": "残留魔力+",
+      "rarity": "Silver"
+    },
+    "DA_18_ResidualMagicPlusPlus": {
+      "name": "残留魔力++",
+      "rarity": "Silver"
+    },
+    "DA_18_WeightTheWorth": {
+      "name": "等待得值",
+      "rarity": "Gold"
+    },
+    "DA_18_WispRebate": {
+      "name": "仙灵报恩",
+      "rarity": "Silver"
+    },
+    "DA_18_WispRebatePlus": {
+      "name": "仙灵报恩",
+      "rarity": "Silver"
+    },
+    "DA_18_WispRebatePlusPlus": {
+      "name": "仙灵报恩+",
+      "rarity": "Silver"
+    },
+    "DA_18_LuxAugmentII": {
+      "name": "创世神",
+      "rarity": "Prismatic"
+    },
+    "DA_BlackthornTraitAugment": {
+      "name": "装备提炼",
+      "rarity": "Gold"
+    },
+    "DA_18_BlossomTraitAugment": {
+      "name": "绽灵花的约定",
+      "rarity": "Gold"
+    },
+    "DA_18_CovenTraitAugment": {
+      "name": "女巫使魔",
+      "rarity": "Gold"
+    },
+    "DA_18_CovenTraitAugment_LootToAP": {
+      "name": "黑暗仪式",
+      "rarity": "Gold"
+    },
+    "DA_18_ElderwoodTraitAugment": {
+      "name": "自然庇护所",
+      "rarity": "Gold"
+    },
+    "DA_18_FaeTraitAugment": {
+      "name": "巨化术",
+      "rarity": "Gold"
+    },
+    "DA_18_FloraFatalisAugment": {
+      "name": "致命丽花",
+      "rarity": "Gold"
+    },
+    "DA_18_InfernoTraitAugment": {
+      "name": "烧起来",
+      "rarity": "Silver"
+    },
+    "DA_18_LunarTraitAugment": {
+      "name": "日月同辉",
+      "rarity": "Gold"
+    },
+    "DA_18_LunarTraitAugmentPlus": {
+      "name": "日月同辉+",
+      "rarity": "Gold"
+    },
+    "DA_18_PrimalAugment_Nidalee": {
+      "name": "兽性本能",
+      "rarity": "Gold"
+    },
+    "DA_18_PrimalAugment_Sivir": {
+      "name": "兽性本能",
+      "rarity": "Gold"
+    },
+    "DA_18_PrimalAugmentPlus_Nidalee": {
+      "name": "兽性本能+",
+      "rarity": "Gold"
+    },
+    "DA_18_PrimalAugmentPlus_Sivir": {
+      "name": "兽性本能+",
+      "rarity": "Gold"
+    },
+    "DA_18_RiftbeastTraitAugment": {
+      "name": "欧米茄之怪",
+      "rarity": "Gold"
+    },
+    "DA_18_RivalsAugment": {
+      "name": "世纪和解",
+      "rarity": "Gold"
+    },
+    "DA_18_RivalsAugmentPlus": {
+      "name": "世纪和解",
+      "rarity": "Gold"
+    },
+    "DA_18_SolarTraitAugment": {
+      "name": "太阳的抉择",
+      "rarity": "Silver"
+    },
+    "DA_18_SprykinAugment": {
+      "name": "毛茸茸小朋友",
+      "rarity": "Gold"
+    },
+    "DA_18_FloraFatalisAugmentPlus": {
+      "name": "致命丽花+"
+    },
+    "DA_DoubleTrouble": {
+      "name": "好事成双"
+    }
+  }
+}

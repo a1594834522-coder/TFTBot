@@ -1,0 +1,7 @@
+{"t":0,"key":"tft_roster","value":"[{\"summoner\":\"Me\",\"tag_line\":\"111\",\"health\":100,\"index\":0},{\"summoner\":\"Foe1\",\"tag_line\":\"222\",\"health\":82,\"index\":1},{\"summoner\":\"Foe2\",\"tag_line\":\"333\",\"health\":64,\"index\":2}]"}
+{"t":1200,"key":"players_info","value":"[{\"summoner\":\"Me\",\"tag_line\":\"111\",\"champions\":[{\"name\":\"DA_18_Caitlyn\",\"level\":2},{\"name\":\"DA_18_Caitlyn\",\"level\":1},{\"name\":\"DA_18_Ahri\",\"level\":1}]},{\"summoner\":\"Foe1\",\"tag_line\":\"222\",\"champions\":[{\"name\":\"DA_18_Caitlyn\",\"level\":1}]},{\"summoner\":\"Foe2\",\"tag_line\":\"333\",\"champions\":[]}]"}
+{"t":2400,"key":"tft_shop","value":"[{\"name\":\"DA_18_Caitlyn\"},{\"name\":\"DA_18_Ahri\"}]"}
+{"t":3000,"key":"players_info","value":"[{\"summoner\":\"Me\",\"tag_line\":\"111\",\"champions\":[{\"name\":\"DA_18_Caitlyn\",\"level\":3},{\"name\":\"DA_18_Ahri\",\"level\":2}]},{\"summoner\":\"Foe1\",\"tag_line\":\"222\",\"champions\":[{\"name\":\"DA_18_Caitlyn\",\"level\":2}]},{\"summoner\":\"Foe2\",\"tag_line\":\"333\",\"champions\":[]}]"}
+{"t":4200,"key":"tft_roster","value":"[{\"summoner\":\"Me\",\"tag_line\":\"111\",\"health\":100,\"index\":0},{\"summoner\":\"Foe1\",\"tag_line\":\"222\",\"health\":0,\"index\":1},{\"summoner\":\"Foe2\",\"tag_line\":\"333\",\"health\":51,\"index\":2}]"}
+{"t":4400,"key":"tft_augments","value":"{\"augment_1\":{\"name\":\"DA_LevelUp\"},\"augment_2\":{\"name\":\"\"},\"augment_3\":{\"name\":\"\"}}"}
+{"t":5000,"key":"tft_combat","value":"combat_end"}

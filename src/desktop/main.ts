@@ -21,11 +21,18 @@ import {createBattleService} from './battle-service';
 import {resolveHoldAdvice,directionBoardUnits} from '../game/resolve-hold-advice';
 import {applyDirectionSelection} from '../game/direction-selection';
 import {purchaseHighlightSlots,selectedPurchase} from '../game/purchase-selection';
+import {version as applicationVersion} from '../../package.json';
+import {createHash} from 'node:crypto';
 
 const smoke = process.argv.includes('--smoke');
+const developmentMonitor=process.argv.includes('--dev-monitor');
 const headlessSmoke=smoke&&process.argv.includes('--headless');
 const smokeDir = process.env.TFTBOT_SMOKE_DIR;
 app.setName('TFTBot');
+// Direct Electron file launches otherwise inherit its default application
+// profile. Share the released app's lock/config so a second collector cannot
+// be started accidentally through the normal shortcut.
+if(developmentMonitor&&!smoke)app.setPath('userData',path.join(app.getPath('appData'),'TFTBot'));
 if(smoke){const profile=path.resolve(smokeDir??app.getPath('temp'),`test-profile-${process.pid}`);mkdirSync(profile,{recursive:true});app.setPath('userData',profile);}
 protocol.registerSchemesAsPrivileged([{ scheme: 'tftbot', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
 let window: BrowserWindow | null = null;
@@ -66,8 +73,10 @@ async function start() {
   }
   const nativeSmoke = process.argv.includes('--native-smoke');
   const monitorDirectory=path.resolve(process.env.TFTBOT_MONITOR_DIR||path.join(app.getPath('userData'),'live-monitor'));
-  const monitor = !smoke ? createLiveMonitor(monitorDirectory) : null;
-  const battles=createBattleService(value=>{for(const target of [window,overlayWindow,augmentWindow])if(target&&!target.isDestroyed())target.webContents.send('desktop:battle:update',value);syncAugmentLayer(reader.snapshot());monitor?.note('battle-forecast',value);});
+  const monitor = !smoke ? createLiveMonitor(monitorDirectory,{detailed:developmentMonitor}) : null;
+  monitor?.note('app-runtime',{development:developmentMonitor,version:applicationVersion,pid:process.pid,executable:app.getPath('exe'),appPath:app.getAppPath(),userData:app.getPath('userData'),
+    ...(developmentMonitor?{mainSha256:createHash('sha256').update(await fs.readFile(__filename)).digest('hex')}:{}),versions:{electron:process.versions.electron,node:process.versions.node,chrome:process.versions.chrome}});
+  const battles=createBattleService(value=>{for(const target of [window,overlayWindow,augmentWindow])if(target&&!target.isDestroyed())target.webContents.send('desktop:battle:update',value);syncAugmentLayer(reader.snapshot());monitor?.note('battle-forecast',value);},developmentMonitor?event=>monitor?.note('decision-diagnostic',event):undefined);
   const reader = createNativeReader(status => { advice(status);refreshTransitions(status);battles.update(status,advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp,advisorPreferences.pursuitMode??'upgrade-first'); for (const target of [window, overlayWindow, augmentWindow]) if (target && !target.isDestroyed()) target.webContents.send('desktop:reader:update', status); syncAugmentLayer(status); monitor?.status(status); }, { onNativeLog: message=>monitor?.note('native-overlay',message), onPacket: (payload, accepted) => monitor?.packet(payload,accepted), cacheRoot: path.join(path.dirname(app.getPath('exe')), 'resources', 'tftbot-native'), ...(nativeSmoke ? { testMode: true, channel: process.env.TFTBOT_TEST_CHANNEL } : {}) });
   const battleFreshnessTimer=setInterval(()=>{const status=reader.snapshot();refreshTransitions(status);battles.update(status,advisorPreferences.items,advisorPreferences.searchBudget??null,selectedComp,advisorPreferences.pursuitMode??'upgrade-first');},1000);
   let capturedLiveView = false;
@@ -214,17 +223,20 @@ async function start() {
   });
   ipcMain.handle('desktop:pin', (event, enabled) => { trusted(event); window!.setAlwaysOnTop(enabled === true); });
   window = new BrowserWindow({
-    title: 'TFTBot · 云顶助手', width: 1440, height: 960, minWidth: 1080, minHeight: 720,
+    title: developmentMonitor?'TFTBot · 开发记录版':'TFTBot · 云顶助手', width: 1440, height: 960, minWidth: 1080, minHeight: 720,
     backgroundColor: '#242422', show: false, autoHideMenuBar: true,
     titleBarStyle:'hidden',titleBarOverlay:{color:'#1e1e1c',symbolColor:'#b6b3a8',height:44},
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: !smoke },
   });
   window.once('closed', () => { overlayWindow?.close(); augmentWindow?.close(); app.quit(); });
+  if(developmentMonitor)window.on('page-title-updated',event=>{event.preventDefault();window?.setTitle('TFTBot · 开发记录版');});
   window.setMenu(null);
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', (event, url) => { if (!url.startsWith('tftbot://app/')) event.preventDefault(); });
   window.webContents.on('render-process-gone', (_event, details) => { console.error('renderer stopped:', details.reason); monitor?.note('renderer-stopped',details); });
-  window.webContents.on('console-message', (details) => { if (details.level === 'error') console.error('[renderer]', details.message); });
+  window.webContents.on('console-message', (details) => { if (details.level === 'error') console.error('[renderer]', details.message);if(developmentMonitor)monitor?.note('renderer-console',{level:details.level,message:details.message,line:details.lineNumber,source:details.sourceId}); });
+  window.on('unresponsive',()=>monitor?.note('window-unresponsive',{}));
+  window.on('responsive',()=>monitor?.note('window-responsive',{}));
   augmentWindow = new BrowserWindow({ title: 'TFTBot · 海克斯卡片评级', ...screen.getPrimaryDisplay().bounds, frame: false, transparent: true, backgroundColor: '#00000000', alwaysOnTop: true, skipTaskbar: true, focusable: false, movable: false, resizable: false, show: false, webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: !smoke } });
   augmentWindow.setAlwaysOnTop(true, 'screen-saver');
   augmentWindow.setIgnoreMouseEvents(true, { forward: true });

@@ -1,11 +1,13 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-export interface TraceLimits {maxFileBytes?:number;maxArchives?:number}
+export interface TraceLimits {maxFileBytes?:number;maxArchives?:number;maxQueuedBytes?:number;maxQueuedRecords?:number}
 /** A single-writer ring of complete JSONL records. Only the reserved regular
  * files events.jsonl / events.N.jsonl inside this directory may be managed. */
 export function createRollingTrace(directory:string,limits:TraceLimits={}){
   const root=path.resolve(directory),maxFileBytes=limits.maxFileBytes??16_000_000,maxArchives=limits.maxArchives??7;
+  const maxQueuedBytes=limits.maxQueuedBytes??8_000_000,maxQueuedRecords=limits.maxQueuedRecords??2048;
   if(!Number.isSafeInteger(maxFileBytes)||maxFileBytes<512||maxFileBytes>50_000_000||!Number.isSafeInteger(maxArchives)||maxArchives<0||maxArchives>8)throw Error('Invalid trace retention limits');
+  if(!Number.isSafeInteger(maxQueuedBytes)||maxQueuedBytes<512||maxQueuedBytes>64_000_000||!Number.isSafeInteger(maxQueuedRecords)||maxQueuedRecords<1||maxQueuedRecords>65536)throw Error('Invalid trace queue limits');
   const maxTotalBytes=maxFileBytes*(maxArchives+1),active=path.join(root,'events.jsonl');
   const slot=(index:number)=>path.join(root,`events.${index}.jsonl`);
   function checked(file:string){const relative=path.relative(root,file);if(!relative||relative.startsWith('..')||path.isAbsolute(relative)||path.dirname(relative)!=='.'||!/^events(?:\.[1-9]\d*)?\.jsonl$/.test(relative))throw Error('Trace path outside reserved files');return file;}
@@ -20,9 +22,13 @@ export function createRollingTrace(directory:string,limits:TraceLimits={}){
     }
     return {bytes,archives:archives.sort((a,b)=>b.index-a.index)};
   }
-  let queue:Promise<void>=Promise.resolve();
-  function append(line:string){
-    const task=queue.then(async()=>{
+  let queue:Promise<void>=Promise.resolve(),queuedBytes=0,queuedRecords=0,droppedRecords=0,droppedBytes=0;
+  function takeGap(){
+    if(!droppedRecords)return '';
+    const line=JSON.stringify({at:new Date().toISOString(),type:'trace-backpressure',records:droppedRecords,bytes:droppedBytes,reason:'write-queue-full'})+'\n';
+    droppedRecords=0;droppedBytes=0;return line;
+  }
+  async function store(line:string){
       let size=Buffer.byteLength(line),state=await inventory();
       if(size>maxFileBytes){line=JSON.stringify({at:new Date().toISOString(),type:'trace-entry-omitted',bytes:size,reason:'entry-exceeds-segment'})+'\n';size=Buffer.byteLength(line);}
       if(state.bytes+size>maxFileBytes&&state.bytes){
@@ -39,8 +45,14 @@ export function createRollingTrace(directory:string,limits:TraceLimits={}){
         await fs.unlink(checked(entry.file));total-=entry.bytes;
       }
       await fs.appendFile(checked(active),line,'utf8');
-    });
-    queue=task.catch(()=>{});return task;
   }
-  return {append,flush:()=>queue,limits:{maxFileBytes,maxArchives,maxTotalBytes}};
+  function append(line:string){
+    const bytes=Buffer.byteLength(line);
+    if(queuedBytes+bytes>maxQueuedBytes||queuedRecords>=maxQueuedRecords){droppedRecords++;droppedBytes+=bytes;return Promise.resolve(false);}
+    const gap=takeGap();queuedBytes+=bytes;queuedRecords++;
+    const task=queue.then(async()=>{if(gap)await store(gap);await store(line);return true;}).finally(()=>{queuedBytes-=bytes;queuedRecords--;});
+    queue=task.then(()=>{},()=>{});return task;
+  }
+  function flush(){const gap=takeGap(),task=queue.then(async()=>{if(gap)await store(gap);});queue=task.catch(()=>{});return task;}
+  return {append,flush,limits:{maxFileBytes,maxArchives,maxTotalBytes,maxQueuedBytes,maxQueuedRecords}};
 }

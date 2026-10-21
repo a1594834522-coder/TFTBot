@@ -20,6 +20,15 @@ function reply(child:any){
 beforeEach(()=>{vi.useFakeTimers();state.children=[];});
 afterEach(()=>{vi.clearAllTimers();vi.useRealTimers();});
 describe('latest-state decision service',()=>{
+  it('correlates stale and current results with their own dispatch clocks without allowing diagnostic failures to alter scheduling',()=>{
+    const status=advisorDemo('ap'),events:Record<string,unknown>[]=[],service=createBattleService(()=>{},e=>{events.push(e);});
+    service.update(status);vi.advanceTimersByTime(120);const child=state.children[0],first=child.postMessage.mock.calls.at(-1)[0];
+    vi.advanceTimersByTime(500);service.update(status,[],null,null,'key-upgrade');vi.advanceTimersByTime(120);const second=child.postMessage.mock.calls.at(-1)[0];
+    child.emit('message',{type:'result',id:first.id,forecast:emptyBattleForecast('stale')});
+    expect(events.find(e=>e.event==='result'&&e.id===first.id)).toMatchObject({accepted:false,elapsedMs:620,currentId:second.id});expect(service.snapshot().message).not.toBe('stale');
+    child.emit('message',{type:'result',id:second.id,forecast:emptyBattleForecast('new')});expect(events.find(e=>e.event==='result'&&e.id===second.id)).toMatchObject({accepted:true,elapsedMs:0});
+    service.dispose();const broken=createBattleService(()=>{},()=>{throw Error('diagnostic only');});expect(()=>{broken.update(status);vi.advanceTimersByTime(120);}).not.toThrow();broken.dispose();
+  });
   it('invalidates old policy results immediately and includes the manual pursuit objective in worker scheduling',()=>{
     const status=advisorDemo('ap'),service=createBattleService(()=>{});service.update(status);vi.advanceTimersByTime(120);const child=state.children[0],first=child.postMessage.mock.calls[0][0];
     child.emit('message',{type:'result',id:first.id,forecast:{...emptyBattleForecast(),pursuit:{ready:false,reason:'old policy'}}});

@@ -6,6 +6,38 @@ import {createLiveMonitor} from '../src/desktop/live-monitor';
 import {advisorDemo} from '../src/desktop/advisor-demo';
 import {decisionFingerprint} from '../src/desktop/trace-fingerprint';
 describe('local replay evidence',()=>{
+  it('retries a meaningful decision snapshot after a full writer queue drains instead of deduplicating an unwritten state forever',async()=>{
+    const dir=await fs.mkdtemp(path.join(os.tmpdir(),'tft-dev-pressure-'));
+    try{
+      const monitor=createLiveMonitor(dir,{detailed:true,maxQueuedRecords:1}),status=advisorDemo('ap');status.testMode=false;status.frames=10;
+      monitor.status(status);await monitor.flush();monitor.status(status);await monitor.flush();
+      const entries=(await fs.readFile(path.join(dir,'events.jsonl'),'utf8')).trim().split('\n').map(s=>JSON.parse(s));
+      expect(entries.some(e=>e.type==='trace-backpressure')).toBe(true);expect(entries.filter(e=>e.type==='decision-state')).toHaveLength(1);
+    }finally{await fs.rm(dir,{recursive:true,force:true});}
+  });
+  it('captures every changed development packet with exact raw text beyond the standard sampling window, while coalescing identical repeats',async()=>{
+    vi.useFakeTimers();vi.setSystemTime(new Date('2026-10-21T04:00:00Z'));const dir=await fs.mkdtemp(path.join(os.tmpdir(),'tft-dev-trace-'));
+    try{
+      const monitor=createLiveMonitor(dir,{detailed:true}),packet=(n:number)=>new TextEncoder().encode(JSON.stringify({type:'info',category:'game_info',key:'synthetic_dev',value:JSON.stringify({n})}));
+      for(let n=0;n<15;n++)monitor.packet(packet(n),false);
+      monitor.packet(packet(14),false);monitor.packet(packet(14),false);vi.setSystemTime(Date.now()+5001);monitor.packet(packet(14),false);
+      monitor.packet(packet(14),true);await monitor.flush();
+      const entries=(await fs.readFile(path.join(dir,'events.jsonl'),'utf8')).trim().split('\n').map(s=>JSON.parse(s)),raw=entries.filter(e=>e.type==='native-packet-detailed');
+      expect(raw).toHaveLength(17);expect(raw.slice(0,15).map(e=>JSON.parse(JSON.parse(e.raw).value).n)).toEqual(Array.from({length:15},(_,n)=>n));
+      expect(raw[15]).toMatchObject({unchangedSinceLast:2,truncated:false});expect(raw[16].accepted).toBe(true);
+      expect(entries[0]).toMatchObject({detailed:true,decisionIntervalMs:100,retention:{maxTotalBytes:450_000_000}});
+    }finally{vi.useRealTimers();await fs.rm(dir,{recursive:true,force:true});}
+  });
+  it('marks oversized and malformed development packets explicitly and preserves their bounded original bytes',async()=>{
+    const dir=await fs.mkdtemp(path.join(os.tmpdir(),'tft-dev-bytes-'));
+    try{
+      const monitor=createLiveMonitor(dir,{detailed:true}),payload=new TextEncoder().encode(JSON.stringify({key:'synthetic_big',value:'x'.repeat(300000)}));
+      monitor.packet(payload,false);monitor.packet(Uint8Array.from([255,254,0]),false);await monitor.flush();
+      const entries=(await fs.readFile(path.join(dir,'events.jsonl'),'utf8')).trim().split('\n').map(s=>JSON.parse(s)),big=entries.find(e=>e.type==='native-packet-detailed'),invalid=entries.find(e=>e.type==='invalid-native-packet');
+      expect(big.truncated).toBe(true);expect(Buffer.from(big.prefixBase64,'base64')).toEqual(Buffer.from(payload.subarray(0,256000)));expect(big.raw).toBeUndefined();
+      expect(Buffer.from(invalid.prefixBase64,'base64')).toEqual(Buffer.from([255,254,0]));expect(invalid.truncated).toBe(false);
+    }finally{await fs.rm(dir,{recursive:true,force:true});}
+  });
   it('writes unknown native fields to dedicated contract evidence without using the native parser to approve them',async()=>{
     const dir=await fs.mkdtemp(path.join(os.tmpdir(),'tft-probe-'));
     try{

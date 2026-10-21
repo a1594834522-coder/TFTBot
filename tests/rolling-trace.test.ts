@@ -19,6 +19,14 @@ async function entries(dir:string){
   const result:any[]=[];for await(const line of traceLines(await traceFiles(dir))){if(typeof line.text!=='string')throw Error(line.error);result.push(JSON.parse(line.text));}return result;
 }
 describe('bounded trace retention and replay',()=>{
+  it('bounds an asynchronous burst, reports the missing records and accepts new events after draining',async()=>withDirectory(async dir=>{
+    const writer=createRollingTrace(dir,{maxFileBytes:4096,maxArchives:1,maxQueuedBytes:512,maxQueuedRecords:3});
+    const accepted=await Promise.all(Array.from({length:20},(_,n)=>writer.append(JSON.stringify({n,payload:'x'.repeat(100)})+'\n')));
+    expect(accepted.filter(Boolean)).toHaveLength(3);await writer.flush();
+    const first=await entries(dir);expect(first.filter(e=>typeof e.n==='number').map(e=>e.n)).toEqual([0,1,2]);
+    expect(first.find(e=>e.type==='trace-backpressure')).toMatchObject({records:17,reason:'write-queue-full'});
+    expect(await writer.append('{"n":20}\n')).toBe(true);await writer.flush();expect((await entries(dir)).at(-1)).toEqual({n:20});
+  }));
   it('retains a contiguous newest suffix of complete records in chronological archive order and continues after restart',async()=>withDirectory(async dir=>{
     await fs.writeFile(path.join(dir,'keep.txt'),'unrelated user file');
     const writer=createRollingTrace(dir,{maxFileBytes:512,maxArchives:2});

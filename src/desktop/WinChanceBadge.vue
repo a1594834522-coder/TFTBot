@@ -5,18 +5,21 @@ const props=defineProps<{forecast?:BattleForecast|null;collapsed?:boolean}>();
 const open=ref(false);
 const percent=(n:number)=>Math.round(n*100)+'%';
 const ready=computed(()=>props.forecast?.phase==='ready');
-const label=computed(()=>props.forecast?.weightSource==='uniform'?'全场':'下场');
+const candidatesKnown=computed(()=>!!props.forecast&&props.forecast.weightSource!=='uniform');
+const label=computed(()=>!candidatesKnown.value?'对手待识别':props.forecast?.weightSource==='manual'?'手选':'下场');
 const value=computed(()=>!ready.value?'—':props.forecast?.winRate!=null?percent(props.forecast.winRate):props.forecast&&props.forecast.coverage>0?`${percent(props.forecast.lower)}–${percent(props.forecast.upper)}`:'—');
+const headline=computed(()=>candidatesKnown.value?value.value:'—');
 </script>
 <template>
   <div class="win-chance" data-win-chance :data-phase="forecast?.phase??'waiting'" @mouseenter="open=true" @mouseleave="open=false" @focusin="open=true" @focusout="open=false" @keydown.esc="open=false">
-    <button :aria-label="label+'模型胜率 '+value" :aria-expanded="open" :class="{ready,approximate:forecast?.approximate}" @click="open=!open"><span>{{ label }}</span><b>{{ value }}</b><i v-if="ready&&forecast?.approximate">*</i></button>
+    <button :aria-label="label+' '+headline" :title="!candidatesKnown?'未采集到下一场候选，展开查看全场参考':forecast?.weightSource==='manual'?'手动选定对手的模型参考':'候选对手加权模型参考'" :aria-expanded="open" :class="{ready:ready&&candidatesKnown,approximate:forecast?.approximate}" @click="open=!open"><span>{{ label }}</span><b>{{ headline }}</b><i v-if="ready&&candidatesKnown&&forecast?.approximate">*</i></button>
     <aside v-if="open&&!collapsed" class="win-detail" role="status" data-win-chance-detail>
-      <header><strong>MetaTFT 单场胜率</strong><small>{{ forecast?.weightSource==='uniform'?'存活对手等权':'候选对手加权' }}</small></header>
+      <header><strong>{{ candidatesKnown?'MetaTFT 单场胜率':'全场战力参考' }}</strong><small>{{ !candidatesKnown?'候选未识别':forecast?.weightSource==='manual'?'手选对手加权':'候选对手加权' }}</small></header>
       <p v-if="!ready">{{ forecast?.message??'等待场上棋盘' }}</p>
       <template v-else>
+        <p v-if="!candidatesKnown">全场等权 {{ value }} · 不代表下一场胜率</p>
         <div v-for="o in forecast?.opponents.filter(o=>o.weight>0)" :key="o.id" class="win-opponent"><span>{{ o.name }}</span><small>{{ percent(o.weight) }}</small><b>{{ o.winRate===null?'—':percent(o.winRate) }}</b></div>
-        <p v-if="forecast?.coverage!==1">已覆盖 {{ percent(forecast?.coverage??0) }}，缺失对手保留未知范围</p>
+        <p v-if="(forecast?.coverage??0)<1-1e-7">已覆盖 {{ percent(forecast?.coverage??0) }}，缺失对手保留未知范围</p>
         <p v-if="forecast?.gaps.length">{{ forecast.gaps.join(' · ') }}</p>
         <footer>{{ forecast?.weightSource==='uniform'?'候选未识别，暂作全场战力参考。':'' }}模型不计站位与当前仙灵效果。</footer>
       </template>

@@ -6,7 +6,7 @@ TypeScript / Vue 重构的独立 Windows 云顶助手，直接打开桌面窗口
 
 双击 [启动TFTBot.cmd](启动TFTBot.cmd)，或运行已打包的 `desktop-release/TFTBot-win32-x64/TFTBot.exe`。请保留整个发布文件夹。
 
-1.9.0 更新桌面界面：侧边导航、统一深色视觉，以及“阵容与过渡 / 当前补强 / 搜牌与上限”三个工作区。包含1.8.0装备承接、预算落点和整组手选高亮。详见 [版本说明](docs/RELEASE-1.9.0.md)、[装备承接](docs/EQUIPMENT-HANDOFFS.md)、[预算落点](docs/SEARCH-LANDINGS.md) 与 [本地诊断](docs/LIVE-DIAGNOSTICS.md)。
+1.10.0 增加 MetaTFT 观测引导的三、四牌重组，可保留强打工牌而不强制一次换完整队。当前补强、预算落点和装备承接使用一致的部署范围，购买/出售收益先扣除已能做到的无出售方案。保留墨色界面及三个工作区。详见 [版本说明](docs/RELEASE-1.10.0.md)、[多牌重组](docs/OBSERVED-LINEUPS.md)、[装备承接](docs/EQUIPMENT-HANDOFFS.md) 与 [预算落点](docs/SEARCH-LANDINGS.md)。
 
 ```bash
 npm start              # 构建并打开独立桌面窗口

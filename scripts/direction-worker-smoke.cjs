@@ -21,13 +21,14 @@ app.whenReady().then(async()=>{
   const results=await Promise.all([
    check('missing-model',path.join(out,'broken/battle-worker.cjs'),fixtures.full,f=>f.phase==='error'&&f.direction?.ready&&f.strategy?.ready),
    check('without-opponents',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.single,f=>f.phase==='waiting'&&f.direction?.ready),
-   check('startup-mainline',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.startup,f=>f.direction?.ready&&f.direction.mode==='selected'&&f.tactics?.ready&&f.tactics.maxSwaps===2&&f.tactics.choices.some(c=>c.mainlineCores?.length===2))
+   check('startup-mainline',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.startup,f=>f.direction?.ready&&f.direction.mode==='selected'&&f.tactics?.ready&&f.tactics.deploymentSearch?.exactMaxSwaps===2&&f.tactics.maxSwaps===4&&f.tactics.choices.some(c=>c.mainlineCores?.length===2))
   ]);
   results.push(await check('unencoded-summons',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.unencoded,f=>f.phase==='ready'&&f.tactics?.ready&&f.gaps.some(g=>g.includes('召唤单位'))));
   results.push(await check('independent-tower',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.tower,f=>f.phase==='ready'&&f.tactics?.ready&&f.tactics.choices.every(c=>c.auxiliary?.some(u=>u.id==='DA_TheTower_TrainingDummy'&&u.items.includes('DA_WarmogsArmor')))));
   results.push(await check('live-lux-form',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.form,f=>f.phase==='ready'&&f.tactics?.ready&&f.tactics.choices.every(c=>c.onBoardCombatIds?.length===c.onBoard.length)));
   results.push(await check('search-landings',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.landing,f=>f.landings?.ready&&f.landings.plans.length>0&&f.landings.plans.every(p=>p.bands.length===2&&p.bands.every(b=>b.combat.lower<=b.combat.upper&&b.completion.lower<=b.completion.upper))));
   results.push(await check('equipment-handoffs',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.handoff,f=>f.handoffs?.ready&&f.handoffs.choices.length>0&&f.handoffs.choices.every(c=>c.moves.length>0&&c.lowerGain<=c.upperGain)));
+  results.push(await check('observed-mixed-lineups',path.resolve('dist/desktop/battle-worker.cjs'),fixtures.mixed,f=>f.tactics?.ready&&f.tactics.deploymentSearch?.observedBoards>0&&f.tactics.choices.some(c=>c.observedSources?.length&&c.outgoing.length>=3&&c.incoming.length>=3)));
   console.log('DIRECTION_WORKER_INDEPENDENCE_PASS',JSON.stringify(results));app.exit(0);
  }catch(error){console.error(error);app.exit(1);}
 });

@@ -3,6 +3,7 @@ import path from 'node:path';
 import {build} from 'esbuild';
 import {createRequire} from 'node:module';
 import {spawn} from 'node:child_process';
+const require=createRequire(import.meta.url),mixedFixture=require('./mixed-lineup-fixture.cjs').mixedLineupFixture();
 const out=path.resolve('dist/direction-worker-smoke');await fs.mkdir(path.join(out,'broken'),{recursive:true});
 await fs.copyFile('dist/desktop/battle-worker.cjs',path.join(out,'broken/battle-worker.cjs'));
 await build({stdin:{resolveDir:process.cwd(),contents:`
@@ -12,6 +13,7 @@ import {shoppingInput} from './src/decision/shopping-input';
 import {strategicInput} from './src/decision/strategic-input';
 import {battleRequest} from './src/game/battle-forecast';
 import catalog from './data/metatft-direction-catalog.json';
+import {createOriginalRecognition} from './src/recognition/original-events';
 export function fixtures(){
  const status=advisorDemo('ap'),local=status.tracker.snapshot.players.find(p=>p.isLocal),now=Date.now();
  status.cards.gold=40;status.cards.itemBenches=[{summoner:local.summoner,tag_line:local.tagLine,bench_items:[]}];
@@ -39,8 +41,11 @@ export function fixtures(){
  const handoffStatus=structuredClone(rollStatus);handoffStatus.cards.pickedAugments=['DA_TradeSector'];handoffStatus.cards.pickedAugmentsComplete=true;
  handoffStatus.cards.shop=[{id:pair.carry,known:true,name:'示例核心'},{id:pair.tank,known:true,name:'示例前排'},null,null,null];
  const handoff=make(handoffStatus);handoff.direction.intent=structuredClone(landing.direction.intent);
- return {full,single:make(single),startup,unencoded,tower,form,landing,handoff};
+ const mixedFixture=${JSON.stringify(mixedFixture)},mixedReader=createOriginalRecognition();
+ for(const [key,value]of mixedFixture.events)mixedReader.accept(JSON.stringify({type:'info',category:'game_info',key,value:JSON.stringify(value)}));
+ const mixed=make({...status,cards:mixedReader.view(),tracker:mixedReader.tracker(),lastFrameAt:Date.now()});mixed.direction.intent=mixedFixture.intent;mixed.strategy={ready:false,reason:'Isolated observed current-board projection'};
+ return {full,single:make(single),startup,unencoded,tower,form,landing,handoff,mixed};
 }`},bundle:true,platform:'node',format:'cjs',outfile:path.join(out,'fixtures.cjs')});
-const require=createRequire(import.meta.url),env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
+const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
 const child=spawn(require('electron'),[path.resolve('scripts/direction-worker-smoke.cjs')],{env,windowsHide:true,stdio:'inherit'});
 process.exitCode=await new Promise((resolve,reject)=>{child.once('error',reject);child.once('exit',code=>resolve(code??1));});

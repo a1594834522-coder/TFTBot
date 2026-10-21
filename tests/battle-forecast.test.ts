@@ -47,6 +47,7 @@ describe('weighted next-opponent evidence',()=>{
     expect(partial.winRate).toBeNull();expect(partial.coverage).toBe(.75);expect(partial.lower).toBeCloseTo(.6);expect(partial.upper).toBeCloseTo(.85);
     request.targets[1].board=b;
     const full=aggregateBattleForecast(request,{a:.8,b:.2},'test');expect(full.winRate).toBeCloseTo(.65);
+    const exact=aggregateBattleForecast(request,{a:.9,b:.9},'test');expect(exact.upper).toBeGreaterThanOrEqual(exact.lower);expect(exact.upper).toBeCloseTo(.9);
     expect(aggregateBattleForecast(request,{a:NaN,b:.2},'test').coverage).toBe(.25);
   });
 });

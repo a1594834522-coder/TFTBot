@@ -341,7 +341,7 @@ async function start() {
           for(let i=0;i<40&&!battles.snapshot().tactics?.ready;i++)await new Promise(resolve=>setTimeout(resolve,100));
           const tactics=battles.snapshot().tactics;
           if(!tactics?.ready||!tactics.choices.length||tactics.searchedPlans<2)throw new Error('原生经济数据未进入合法购买组合搜索：'+JSON.stringify(tactics));
-          if(tactics.maxSwaps!==2||tactics.choices.some(c=>c.id!=='mainline'&&c.delta!==null&&c.delta< -1e-6))throw new Error('战术方案错误地排除了真实不动棋盘对照');
+          if(tactics.maxSwaps<2||tactics.maxSwaps>4||tactics.deploymentSearch&&tactics.deploymentSearch.exactMaxSwaps!==2||tactics.choices.some(c=>c.id!=='mainline'&&c.delta!==null&&c.delta< -1e-6))throw new Error('战术方案错误地排除了真实不动棋盘对照');
           if(tactics.choices.some(c=>!c.incoming||!c.outgoing||!c.onBoardItems||c.onBoardItems.length!==c.onBoard.length))throw new Error('换牌方案缺少实际上下场与装备去向');
           if(process.env.TFTBOT_TEST_COMBAT_AUX==='1'){
             if(!forecast.gaps.some(g=>g.includes('召唤单位'))||tactics.choices.some(c=>!c.auxiliary.some(u=>u.id==='DA_TheTower_TrainingDummy'&&u.items.includes('DA_WarmogsArmor'))))throw new Error('原生非商店单位未正确进入模型与换牌保留');
@@ -350,6 +350,32 @@ async function start() {
           }
           await fs.writeFile(path.join(smokeDir,'shopping-tactics.json'),JSON.stringify(tactics,null,2));
           console.log('SHOPPING_TACTICS_SMOKE_PASS');
+          if(process.env.TFTBOT_TEST_MIXED==='1'){
+            const intent=JSON.parse(await fs.readFile(path.join(smokeDir,'mixed-intent.json'),'utf8'));
+            await fs.writeFile(path.join(smokeDir,'mixed-start'),'1');
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-nav="advisor"]').click();window.tftDesktop.selectComp(${JSON.stringify(intent.key)},${JSON.stringify(intent.directionId)})`);
+            for(let i=0;i<100;i++){
+              const current=battles.snapshot();
+              if(current.direction?.ready&&!current.direction.updating&&current.direction.focusId===intent.directionId&&current.tactics?.ready&&current.tactics.choices.some(c=>c.observedSources?.length&&c.outgoing.length>=3))break;
+              await new Promise(resolve=>setTimeout(resolve,100));
+            }
+            const mixed=battles.snapshot().tactics;
+            if(!mixed?.ready||!mixed.deploymentSearch?.observedBoards||!mixed.choices.some(c=>c.observedSources?.length&&c.incoming.length>=3&&c.outgoing.length>=3)||selectedComp?.directionId!==intent.directionId)throw Error('多牌重组未进入桌面或改变玩家主线');
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-advisor-workspace="tactics"]').click();new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-shopping-tactics]').scrollIntoView({block:'center'});new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+            const visibleChanges=await window!.webContents.executeJavaScript(`(()=>{const changes=document.querySelector('.tactical-changes'),r=changes?.getBoundingClientRect();return !!changes&&!changes.closest('details')&&r.width>0&&r.height>0&&changes.querySelectorAll('img').length>=6;})()`);
+            if(!visibleChanges)throw Error('默认换牌方案仍未直接显示上下场头像');
+            await fs.writeFile(path.join(smokeDir,'mixed-lineups-summary.png'),(await window!.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+            await window!.webContents.executeJavaScript(`Array.from(document.querySelectorAll('[data-tactical-details]')).find(e=>e.querySelector('.tactical-source'))?.querySelector('summary').click();new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+            await window!.webContents.executeJavaScript(`document.querySelector('[data-shopping-tactics]').scrollIntoView({block:'center'});new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+            await new Promise(resolve=>setTimeout(resolve,100));
+            const layout=await window!.webContents.executeJavaScript(`(()=>{const panel=document.querySelector('[data-shopping-tactics]'),r=panel.getBoundingClientRect();return {text:panel.textContent,open:!!panel.querySelector('details[open] .tactical-source'),top:r.top,bottom:r.bottom,height:innerHeight,overflow:document.querySelector('.desktop-content').scrollWidth>document.querySelector('.desktop-content').clientWidth+2};})()`);
+            if(!layout.open||layout.overflow||layout.top<60||layout.bottom>layout.height||!layout.text.includes('含观测重组')||!layout.text.includes('换上')||!layout.text.includes('换下'))throw Error('多牌重组明细布局异常：'+JSON.stringify(layout));
+            await fs.writeFile(path.join(smokeDir,'mixed-lineups.json'),JSON.stringify(mixed,null,2));
+            await fs.writeFile(path.join(smokeDir,'mixed-layout.json'),JSON.stringify(layout,null,2));
+            await fs.writeFile(path.join(smokeDir,'mixed-lineups.png'),(await window!.webContents.capturePage(undefined,{stayHidden:true,stayAwake:true})).toPNG());
+            console.log('OBSERVED_MIXED_LINEUPS_SMOKE_PASS');if(timeout)clearTimeout(timeout);app.quit();return;
+          }
           if(process.env.TFTBOT_TEST_HANDOFF==='1'){
             const intent=JSON.parse(await fs.readFile(path.join(smokeDir,'handoff-intent.json'),'utf8'));
             await window!.webContents.executeJavaScript(`document.querySelector('[data-nav="advisor"]').click();window.tftDesktop.selectComp(${JSON.stringify(intent.key)},${JSON.stringify(intent.id)})`);
@@ -449,8 +475,8 @@ async function start() {
           await window!.webContents.executeJavaScript(`document.querySelector('[data-tactical-details] summary').click();new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
           await window!.webContents.executeJavaScript(`document.querySelector('[data-shopping-tactics]').scrollIntoView({block:'center'});new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
           await new Promise(resolve=>setTimeout(resolve,100));
-          const tacticalDetails=await window!.webContents.executeJavaScript(`({open:document.querySelector('[data-tactical-details]')?.open,text:document.querySelector('[data-tactical-details]')?.textContent,overflow:document.documentElement.scrollWidth>innerWidth})`);
-          if(!tacticalDetails.open||!tacticalDetails.text.includes('换上')||!tacticalDetails.text.includes('换下')||tacticalDetails.overflow)throw new Error('换牌明细未渲染或出现横向溢出');
+          const tacticalDetails=await window!.webContents.executeJavaScript(`({open:document.querySelector('[data-tactical-details]')?.open,text:document.querySelector('[data-tactical-details]')?.closest('article')?.textContent,rows:document.querySelector('[data-tactical-details]')?.closest('article')?.querySelectorAll('.tactical-diff').length,overflow:document.documentElement.scrollWidth>innerWidth})`);
+          if(!tacticalDetails.open||tacticalDetails.overflow||![0,2].includes(tacticalDetails.rows)||tacticalDetails.rows===2&&(!tacticalDetails.text.includes('换上')||!tacticalDetails.text.includes('换下')))throw new Error('换牌明细未渲染或出现横向溢出');
           if(process.env.TFTBOT_TEST_COMBAT_AUX==='1'&&!await window!.webContents.executeJavaScript(`document.querySelector('.tactical-auxiliary')?.textContent.includes('巨塔假人')`))throw new Error('保留独立单位的中文说明未显示');
           await fs.writeFile(path.join(smokeDir,'shopping-tactics.png'),(await window!.webContents.capturePage()).toPNG());
           const firstDirection=battles.snapshot().direction;

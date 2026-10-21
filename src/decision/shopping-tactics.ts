@@ -3,6 +3,7 @@ import type {BattleRequest} from '../game/battle-forecast';
 import {enumerateShoppingPlans,interest,type ShopState,type TradingRules,type TradeAction,type OwnedUnit} from './shop-ledger';
 import {lineupCandidates,battleBoardKey,type LineupCandidate} from './lineup-search';
 import type {DirectionAdvice} from './direction-advisor';
+import {observedLineups,type ObservedLineupOptions} from './observed-lineups';
 
 export interface TacticalChoice {
   id:'economy'|'tempo'|'mainline';title:string;
@@ -14,6 +15,7 @@ export interface TacticalChoice {
   onBoardItems:string[][];mainlineCores:string[];
   onBoardCombatIds:string[];auxiliary:BattleUnit[];
   lowerDelta:number;upperDelta:number;
+  observedSources?:string[];
 }
 export interface TacticalUnit {key:string;id:string;combatId?:string;star:number;items:string[]}
 export interface TacticalReference {cores:string[]}
@@ -29,6 +31,7 @@ export interface TacticalOptions {
   auxiliary?:BattleUnit[];acceptsLineup?:(candidate:LineupCandidate)=>boolean;
   /** Raw input context, before the model filters non-modeled entities. */
   purchaseContext?:string;
+  observedLineups?:ObservedLineupOptions;
 }
 export type ShoppingTactics={ready:false;reason:string}|{
   ready:true;choices:TacticalChoice[];baseline:number|null;coverage:number;
@@ -36,6 +39,7 @@ export type ShoppingTactics={ready:false;reason:string}|{
   rulesVersion:string;gaps:string[];
   weightSource:BattleRequest['weightSource'];
   purchaseContext:string;purchaseBaseline:number|null;purchases:PurchaseOpportunity[];
+  deploymentSearch?:{exactMaxSwaps:number;observedMaxSwaps:number;templates:number;observedBoards:number;limited:boolean};
 };
 export type BatchPredictor=(pairs:Array<{player:BattleBoard;opponent:BattleBoard}>)=>Array<{winRate:number}>;
 export function mainlineTacticalReference(advice:DirectionAdvice|undefined):TacticalReference|undefined{
@@ -48,7 +52,9 @@ export function mainlineTacticalReference(advice:DirectionAdvice|undefined):Tact
  * Future bench option value stays with the strategic adviser; existing assets
  * are not sold and worn equipment is never transferred by this search. */
 export async function shoppingTactics(state:ShopState,rules:TradingRules,request:BattleRequest,predict:BatchPredictor,options:TacticalOptions={}):Promise<ShoppingTactics>{
-  const maxSwaps=options.maxSwaps??2;
+  const exactMaxSwaps=options.maxSwaps??2;
+  let maxSwaps=exactMaxSwaps,observedLimited=false;
+  const observedKeys=new Set<string>(),observedTemplates=new Set<string>();
   if(options.cancelled?.())return {ready:false,reason:'局面已变化'};
   const auxiliary=options.auxiliary??[];
   const physical:BattleBoard={units:[...state.units.filter(u=>u.area==='board').map(u=>({id:u.combatId??u.id,star:u.star,items:u.items.map(i=>i.id)})),...auxiliary],augments:request.local.augments,charms:request.local.charms};
@@ -62,12 +68,17 @@ export async function shoppingTactics(state:ShopState,rules:TradingRules,request
   const byPlan:Array<{plan:typeof search.plans[number];lineups:LineupCandidate[]}>=[];
   for(const plan of search.plans){
     if(options.cancelled?.())return {ready:false,reason:'局面已变化'};
-    const lineups=lineupCandidates(plan.state,request.local.augments,maxSwaps,request.local.charms,auxiliary).filter(candidate=>{
+    const local=lineupCandidates(plan.state,request.local.augments,exactMaxSwaps,request.local.charms,auxiliary);
+    const projections=options.observedLineups?observedLineups(plan.state,request.local.augments,options.observedLineups,request.local.charms,auxiliary):null;
+    if(projections){for(const template of projections.templateIds)observedTemplates.add(template);observedLimited||=projections.limited;maxSwaps=Math.max(maxSwaps,projections.maxSwaps);}
+    const combined=new Map(local.map(candidate=>[candidate.key,candidate]));
+    for(const candidate of projections?.candidates??[])if(!combined.has(candidate.key))combined.set(candidate.key,candidate);
+    const lineups=[...combined.values()].filter(candidate=>{
       if(options.acceptsLineup&&!options.acceptsLineup(candidate))return false;
       if(candidate.units.some(u=>u.equipmentKnown===false)){incompleteEquipment=true;return false;}
       let valid=supported.get(candidate.key);
       if(valid===undefined){valid=options.supportsBoard?.(candidate.board)??true;supported.set(candidate.key,valid);if(!valid)unsupported++;}
-      if(valid)candidates.set(candidate.key,candidate);return valid;
+      if(valid){candidates.set(candidate.key,candidate);if(candidate.observedSources?.length)observedKeys.add(candidate.key);}return valid;
     });
     byPlan.push({plan,lineups});await options.yield?.();
   }
@@ -118,6 +129,7 @@ export async function shoppingTactics(state:ShopState,rules:TradingRules,request
     return {id,title:id==='economy'?'保经济':id==='tempo'?'提战力':present(row.lineup).length>originalPresent?'主线接入':'主线保留',buy:[...buy.values()],actions:row.plan.actions,onBoard:row.lineup.units.map(u=>u.id),onBoardKeys:row.lineup.units.map(u=>u.key),onBoardStars:row.lineup.units.map(u=>u.star),onBoardItems:row.lineup.units.map(u=>u.items.map(i=>i.id)),goldAfter:row.plan.state.gold,interestIfLose:row.plan.interestIfLose,interestIfWin:row.plan.interestIfWin,knownWin:row.win,winRate:coverage>=1-1e-7?row.win:null,coverage,delta:coverage>=1-1e-7?delta:null,
       lowerDelta:Math.max(-1,delta-missing),upperDelta:Math.min(1,delta+missing),mainlineCores:present(row.lineup),
       onBoardCombatIds:row.lineup.units.map(u=>u.combatId??u.id),auxiliary:auxiliary.map(u=>({...u,items:[...u.items]})),
+      ...(row.lineup.observedSources?.length?{observedSources:[...row.lineup.observedSources]}:{}),
       incoming:row.lineup.units.filter(u=>!current.has(u.key)).map(view),outgoing:original.filter(u=>!selected.has(u.key)&&!consumed.has(u.key)).map(view),
       upgraded:row.lineup.units.flatMap(u=>{const old=original.find(p=>p.key===u.key);return old&&u.star>old.star?[{id:u.id,before:old.star,after:u.star}]:[]})};
   }
@@ -147,5 +159,6 @@ export async function shoppingTactics(state:ShopState,rules:TradingRules,request
   });
   return {ready:true,choices,baseline:coverage>=1-1e-7?baseline:null,coverage,searchedPlans:search.plans.length,searchedBoards:boards.size,maxSwaps,provisional:rules.provisional,rulesVersion:rules.version,weightSource:request.weightSource,
     purchaseContext:options.purchaseContext??shoppingContextKey(state,request),purchaseBaseline:coverage>=1-1e-7?noPurchase.win:null,purchases,
-    gaps:[...new Set([...request.localGaps,...request.targets.filter(t=>t.weight>0).flatMap(t=>t.gaps),'模型不含站位；装备保留在当前英雄上，未模拟拆卸、重做或转移',...(unsupported?['部分备选棋盘有模型未覆盖特征']:[]),...(incompleteEquipment?['部分备选英雄装备明细未齐']:[])])]};
+    ...(options.observedLineups?{deploymentSearch:{exactMaxSwaps,observedMaxSwaps:options.observedLineups.maxSwaps??4,templates:observedTemplates.size,observedBoards:observedKeys.size,limited:observedLimited}}:{}),
+    gaps:[...new Set([...request.localGaps,...request.targets.filter(t=>t.weight>0).flatMap(t=>t.gaps),'模型不含站位；装备保留在当前英雄上，未模拟拆卸、重做或转移',...(options.observedLineups?['两牌邻域外仅比较实际持有英雄投影的MetaTFT观测重组，不是完整全队最优搜索']:[]),...(observedLimited?['观测重组候选达到搜索限额']:[]),...(unsupported?['部分备选棋盘有模型未覆盖特征']:[]),...(incompleteEquipment?['部分备选英雄装备明细未齐']:[])])]};
 }

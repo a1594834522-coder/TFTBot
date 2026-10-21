@@ -3,6 +3,7 @@ import {loadBattleModel} from '../decision/battle-model';
 import {encodeBattleBoard} from '../game/battle-model-encoding';
 import {aggregateBattleForecast,emptyBattleForecast,type BattleRequest} from '../game/battle-forecast';
 import {shoppingTactics,mainlineTacticalReference,shoppingContextKey} from '../decision/shopping-tactics';
+import {tacticalLineupTemplates} from '../decision/observed-lineups';
 import {tradingRules,type ShoppingInput} from '../decision/shopping-input';
 import {strategicAdvice} from '../decision/strategic-advisor';
 import type {StrategicInput} from '../decision/strategic-input';
@@ -67,14 +68,16 @@ async function run(){
     process.parentPort?.postMessage({type:'result',id,forecast});
     if(shopping?.ready&&request&&model){
       try{const context=battleTacticalContext(request,shopping.state,model.lookup);
-        const tactics=context.ready?await shoppingTactics(shopping.state,tradingRules,context.request,model.predictCachedBatch,{cancelled:()=>id!==latestId,yield:()=>new Promise(resolve=>setImmediate(resolve)),reference:mainlineTacticalReference(forecast.direction),supportsBoard:board=>encodeBattleBoard(board,model.lookup,'player').unknown.length===0,auxiliary:context.auxiliary,acceptsLineup:context.accepts,purchaseContext:shoppingContextKey(shopping.state,raw!)}):context;
+        const templates=tacticalLineupTemplates(forecast.direction,shopping.state.boardCapacity);
+        const tactics=context.ready?await shoppingTactics(shopping.state,tradingRules,context.request,model.predictCachedBatch,{cancelled:()=>id!==latestId,yield:()=>new Promise(resolve=>setImmediate(resolve)),reference:mainlineTacticalReference(forecast.direction),observedLineups:templates.length?{templates,maxSwaps:4}:undefined,supportsBoard:board=>encodeBattleBoard(board,model.lookup,'player').unknown.length===0,auxiliary:context.auxiliary,acceptsLineup:context.accepts,purchaseContext:shoppingContextKey(shopping.state,raw!)}):context;
         if(id===latestId){forecast={...forecast,tactics:tactics.ready?{...tactics,gaps:[...new Set([...tactics.gaps,...shopping.gaps,...(context.ready?context.gaps:[])])]}:tactics};process.parentPort?.postMessage({type:'result',id,forecast});}
       }catch(error){if(id===latestId){forecast={...forecast,tactics:{ready:false,reason:'商店方案暂不可用：'+(error as Error).message}};process.parentPort?.postMessage({type:'result',id,forecast});}}
     }
     if(shopping?.ready&&request&&model&&forecast.direction?.ready&&forecast.direction.mode==='selected'&&id===latestId){
       try{
         const context=battleTacticalContext(request,shopping.state,model.lookup);
-        const result=context.ready?await equipmentHandoffs(shopping,tradingRules,equipmentRules,forecast.direction,context.request,model.predictCachedBatch,gearModel,{cancelled:()=>id!==latestId,yield:()=>new Promise(resolve=>setImmediate(resolve)),auxiliary:context.auxiliary,acceptsLineup:context.accepts,supportsBoard:board=>encodeBattleBoard(board,model.lookup,'player').unknown.length===0}):context;
+        const noSaleReference=forecast.tactics?.ready?[...forecast.tactics.choices].sort((a,b)=>b.knownWin-a.knownWin||b.goldAfter-a.goldAfter)[0]:undefined;
+        const result=context.ready?await equipmentHandoffs(shopping,tradingRules,equipmentRules,forecast.direction,context.request,model.predictCachedBatch,gearModel,{noSaleReference,cancelled:()=>id!==latestId,yield:()=>new Promise(resolve=>setImmediate(resolve)),auxiliary:context.auxiliary,acceptsLineup:context.accepts,supportsBoard:board=>encodeBattleBoard(board,model.lookup,'player').unknown.length===0}):context;
         if(id===latestId){forecast={...forecast,handoffs:result};process.parentPort?.postMessage({type:'result',id,forecast});}
       }catch(error){if(id===latestId){forecast={...forecast,handoffs:{ready:false,reason:'装备承接暂不可用：'+(error as Error).message}};process.parentPort?.postMessage({type:'result',id,forecast});}}
     }

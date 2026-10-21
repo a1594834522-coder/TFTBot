@@ -5,6 +5,7 @@ import {materializeAcquisitions,unitCopyCounts,type TradingRules,type ShopState}
 import {shoppingTactics,type BatchPredictor,type TacticalOptions,type TacticalUnit} from './shopping-tactics';
 import {searchDistribution} from './search-distribution';
 import policy from '../../data/battle-unit-policy.json';
+import {tacticalLineupTemplates} from './observed-lineups';
 const formPools=new Set(Object.values(policy.forms).map(f=>f.poolId));
 
 export interface LandingBand {
@@ -18,6 +19,7 @@ export interface LandingPlan {id:string;name:string;alternative?:string[];target
 export type SearchLandings={ready:false;reason:string}|{
   ready:true;budget:number;level:number;baseline:number|null;opponentCoverage:number;weightSource:BattleRequest['weightSource'];
   plans:LandingPlan[];gaps:string[];
+  observedDeployment?:boolean;
 };
 export function landingDefinitions(advice:DirectionAdvice):Array<{id:string;name:string;rows:DirectionRow[];targets:Array<{id:string;copies:number}>}>{
   if(!advice.ready||advice.updating||advice.mode!=='selected')return [];
@@ -38,11 +40,13 @@ export async function searchLandings(advice:DirectionAdvice,input:StrategicInput
   const declared=options.budget??input.state.gold;if(!Number.isSafeInteger(declared)||declared<0||declared>200)return {ready:false,reason:'搜牌预算无效'};
   const budget=Math.min(input.state.gold,declared),owned=unitCopyCounts(input.state.units),reserve=input.state.gold-budget;
   if(definitions[0].targets.every(t=>(owned[t.id]??0)>=t.copies))return {ready:false,reason:'主线核心已齐，查看当前换牌与上限参考'};
-  const original=await shoppingTactics({...input.state,offers:[]},rules,request,predict,options);
+  const templates=tacticalLineupTemplates(advice,input.state.boardCapacity);
+  const deploymentOptions={...options,observedLineups:options.observedLineups??(templates.length?{templates}:undefined)};
+  const original=await shoppingTactics({...input.state,offers:[]},rules,request,predict,deploymentOptions);
   if(!original.ready)return original;
   const baseline=original.choices.reduce((n,c)=>Math.max(n,c.knownWin),0),coverage=original.coverage;
   const cache=new Map<string,{win:number;units:TacticalUnit[]}|null>();
-  const gaps=new Set([...input.gaps,...original.gaps,'固定当前人口与对手棋盘，不含未来收入、卖牌回收、接装或站位变化','购买策略为当前可完成升星优先，其次接近升星，再按主线顺序；非最优搜牌策略','落点部署最多两牌联动，未覆盖完整整体变阵']);
+  const gaps=new Set([...input.gaps,...original.gaps,'固定当前人口与对手棋盘，不含未来收入、卖牌回收、接装或站位变化','购买策略为当前可完成升星优先，其次接近升星，再按主线顺序；非最优搜牌策略',deploymentOptions.observedLineups?'当前参考与未来落点均比较两牌联动及限量的MetaTFT观测引导三四牌重组':'落点部署最多两牌联动，未覆盖完整整体变阵']);
   const plans:LandingPlan[]=[];
   for(const definition of definitions){
     let evaluated=0;
@@ -71,14 +75,14 @@ export async function searchLandings(advice:DirectionAdvice,input:StrategicInput
             else{
               const state:ShopState={...input.state,gold:reserve+landing.cash,offers:[],units:materialized.units};
               const local={...request.local,units:[...state.units.filter(u=>u.area==='board').map(u=>({id:u.combatId??u.id,star:u.star,items:u.items.map(i=>i.id)})),...(options.auxiliary??[])]};
-              const result=await shoppingTactics(state,rules,{...request,local},predict,options);
+              const result=await shoppingTactics(state,rules,{...request,local},predict,deploymentOptions);
               if(result.ready){const best=result.choices.reduce((a,b)=>b.knownWin>a.knownWin?b:a);value={win:best.knownWin,units:best.onBoard.map((id,i)=>({key:best.onBoardKeys[i],id,combatId:best.onBoardCombatIds[i],star:best.onBoardStars[i],items:best.onBoardItems[i]}))};result.gaps.forEach(g=>issues.add(g));}
               else{value=null;issues.add(result.reason);}
             }
           }
           cache.set(key,value);
         }
-        const mass=landing.probability,known=value!==null&&value!==undefined,lower=known?value!.win:0,upper=known?value!.win+1-coverage:1;
+        const mass=landing.probability,known=value!==null&&value!==undefined,lower=known?value!.win:0,upper=known?value!.win+(1-coverage):1;
         combatLower+=mass*lower;combatUpper+=mass*upper;if(known)knownMass+=mass;
         const delta=known?value!.win-baseline:0,missing=1-coverage;
         if(known&&delta+missing< -1e-6){weakerLower+=mass;weakerUpper+=mass;}
@@ -95,5 +99,5 @@ export async function searchLandings(advice:DirectionAdvice,input:StrategicInput
     }
     plans.push({id:definition.id,name:definition.rows.length===1?'主线优先':'兼留备选',...(definition.rows[1]?{alternative:[definition.rows[1].carry,definition.rows[1].tank]}:{}),targets:definition.targets,bands,buyNow});
   }
-  return {ready:true,budget,level:input.state.level,baseline:coverage>=1-1e-7?baseline:null,opponentCoverage:coverage,weightSource:request.weightSource,plans,gaps:[...gaps]};
+  return {ready:true,budget,level:input.state.level,baseline:coverage>=1-1e-7?baseline:null,opponentCoverage:coverage,weightSource:request.weightSource,plans,gaps:[...gaps],observedDeployment:!!deploymentOptions.observedLineups};
 }

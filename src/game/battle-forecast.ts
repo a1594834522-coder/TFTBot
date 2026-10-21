@@ -109,5 +109,5 @@ export function aggregateBattleForecast(request:BattleRequest,predictions:Record
   if(Math.abs(total-1)>1e-7||request.targets.some(t=>!Number.isFinite(t.weight)||t.weight<0))throw new Error('Opponent weights must sum to one');
   coverage=Math.min(1,coverage);
   const gaps=[...new Set([...request.localGaps,...opponents.filter(o=>o.weight>0).flatMap(o=>o.gaps)])];
-  return {phase:'ready',message:'MetaTFT 单场模型参考',at,round:request.round,weightSource:request.weightSource,winRate:coverage>=1-1e-7?lower:null,lower,upper:Math.min(1,lower+1-coverage),coverage,approximate:gaps.length>0,gaps,modelVersion,opponents};
+  return {phase:'ready',message:'MetaTFT 单场模型参考',at,round:request.round,weightSource:request.weightSource,winRate:coverage>=1-1e-7?lower:null,lower,upper:Math.min(1,lower+(1-coverage)),coverage,approximate:gaps.length>0,gaps,modelVersion,opponents};
 }

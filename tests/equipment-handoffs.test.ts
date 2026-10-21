@@ -24,6 +24,21 @@ function fixture(){
  return {input,advice,request,model};
 }
 describe('physical equipment handoff comparisons',()=>{
+ it('replays and re-scores a known stronger no-sale tactical reference before crediting liquidation',async()=>{
+  const {input,advice,request}=fixture(),extended={...rules,heroes:{...rules.heroes,...Object.fromEntries(['D','E','F','G'].map(id=>[id,{cost:1,maxStar:3,sellValues:{1:1,2:3,3:9}}]))}};
+  input.state.boardCapacity=3;input.state.units.push({key:'current-d',id:'D',star:1,area:'board',slot:2,items:[],equipmentKnown:true},...['E','F','G'].map((id,slot)=>({key:'bench-'+id,id,star:1,area:'bench' as const,slot,items:[],equipmentKnown:true})));
+  request.local.units.push({id:'D',star:1,items:[]});
+  const model=(pairs:Array<{player:BattleRequest['local'];opponent:BattleRequest['local']}>)=>pairs.map(({player})=>({winRate:['E','F','G'].every(id=>player.units.some(u=>u.id===id))?.95:player.units.some(u=>u.id==='B'&&u.items.includes('IE'))?.85:.6}));
+  const narrow=await equipmentHandoffs(input,extended,eq,advice,request,model,gear);
+  const guarded=await equipmentHandoffs(input,extended,eq,advice,request,model,gear,{noSaleReference:{actions:[],onBoardKeys:['bench-E','bench-F','bench-G'],goldAfter:2}});
+  if(!narrow.ready||!guarded.ready)throw Error();expect(narrow.baseline).toBe(.6);expect(guarded.baseline).toBe(.95);expect(guarded.baselineGold).toBe(2);expect(guarded.choices.every(c=>(c.gain??0)<0)).toBe(true);
+ });
+ it('rejects a reference with stale entities, gold or a hidden sale rather than trusting its old model value',async()=>{
+  const {input,advice,request,model}=fixture();
+  for(const reference of [{actions:[],onBoardKeys:['missing'],goldAfter:2},{actions:[],onBoardKeys:['worker','tank'],goldAfter:99},{actions:[{type:'sell' as const,key:'worker'}],onBoardKeys:['tank'],goldAfter:5}]){
+   const result=await equipmentHandoffs(input,rules,eq,advice,request,model,gear,{noSaleReference:reference});expect(result.ready).toBe(false);
+  }
+ });
  it('pays for a visible core with a declared worker sale, transfers the same token, and keeps capacity uncertainty explicit',async()=>{
   const {input,advice,request,model}=fixture(),before=JSON.stringify(input);const result=await equipmentHandoffs(input,rules,eq,advice,request,model,gear);
   if(!result.ready)throw Error(result.reason);expect(result.baseline).toBe(.6);expect(result.choices).toHaveLength(1);
